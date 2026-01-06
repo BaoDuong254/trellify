@@ -13,5 +13,13 @@ export default [
         tsconfigRootDir: __dirname,
       },
     },
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [{ regex: "^@mui/[^/]+$" }],
+        },
+      ],
+    },
   },
 ];
