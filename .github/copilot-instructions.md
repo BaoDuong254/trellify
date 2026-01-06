@@ -1,11 +1,11 @@
-# Copilot Instructions
+# Copilot Instructions - Trellify
 
 You are GitHub Copilot Chat. These instructions override default behavior. Apply them to ALL code generation, refactors, and explanations.
 
 ## Project Structure
 
 ```
-└── 📁monorepo                    # Root directory
+└── 📁trellify                    # Root directory
     └── 📁apps                    # Application folders
         └── 📁client              # Frontend app
             └── 📁public          # Public assets

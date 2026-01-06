@@ -1,5 +1,5 @@
 {
-  "name": "monorepo",
+  "name": "trellify",
   "private": true,
   "packageManager": "pnpm@10.27.0",
   "license": "MIT",
