@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "debug-server-app",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["start:debug"],
+      "console": "integratedTerminal",
+      "restart": true,
+      "autoAttachChildProcesses": true,
+      "cwd": "${workspaceFolder}/apps/server"
+    },
+    {
+      "name": "debug-client-app",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/apps/client",
+      "sourceMaps": true
+    }
+  ]
+}

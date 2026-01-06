@@ -1,0 +1,4 @@
+{
+  "extends": "@workspace/typescript/react.node.json",
+  "include": ["vite.config.ts"]
+}

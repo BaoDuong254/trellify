@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create .env for server build
+        run: echo "${{ secrets.SERVER_ENV }}" > apps/server/.env
+
+      - name: Create .env for client build
+        run: echo "${{ secrets.CLIENT_ENV }}" > apps/client/.env
+
+      # - name: Generate Prisma client
+      #   run: pnpm --filter server exec prisma generate
+
+      - name: Run lint
+        run: pnpm run lint
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Run format check
+        run: pnpm run format
+
+      - name: Run build
+        run: pnpm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096

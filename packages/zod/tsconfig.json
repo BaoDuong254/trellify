@@ -1,0 +1,12 @@
+{
+  "extends": "@workspace/typescript/server.json",
+  "compilerOptions": {
+    "jsx": "react",
+    "outDir": "./dist",
+    "paths": {
+      "src/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*.spec.ts", "**/*.d.ts", "**/*.ts"],
+  "exclude": ["node_modules", "dist", "generated", "coverage"]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@workspace/zod",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
+    "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
+    "preinstall": "pnpm dlx only-allow pnpm"
+  },
+  "engines": {
+    "node": "24.12.0",
+    "pnpm": "10.27.0"
+  },
+  "dependencies": {
+    "zod": "4.3.4"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "@types/node": "25.0.3",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3"
+  },
+  "exports": {
+    "./validation/*": "./src/validation/*.ts"
+  }
+}

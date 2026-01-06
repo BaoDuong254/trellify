@@ -1,0 +1,28 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "*"
+      run: pnpm exec prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+
+    lint:
+      glob: "**/*.{js,ts,jsx,tsx}"
+      run: bash scripts/lint-staged.sh {staged_files}
+      stage_fixed: true
+
+    check-lockfile:
+      run: bash scripts/check-lockfile.sh
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}
+
+post-commit:
+  commands:
+    success-message:
+      run: |
+        git update-index --again
+        echo "⬆️ Commit successfully made!"
+        echo "🚀 Don't forget to push your changes!"

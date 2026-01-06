@@ -1,0 +1,181 @@
+name: Deploy Production
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file for server
+        run: echo "${{ secrets.SERVER_ENV }}" > server/.env
+
+      - name: Create .env file for client
+        run: echo "${{ secrets.CLIENT_ENV }}" > client/.env
+        # Note: For production with Nginx proxy, CLIENT_ENV should NOT include VITE_BACKEND_URL
+        # or it should be empty/commented out. Images are served via Nginx proxy at /images
+
+      - name: Create root .env file for docker-compose
+        run: |
+          echo "DB_PASS=${{ secrets.DB_PASS }}" > .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and push server image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./server/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-server:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-server:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-server:buildcache,mode=max
+
+      - name: Build and push client image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./client/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-client:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-client:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-client:buildcache,mode=max
+
+      - name: Send telegram message after build success
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ✅ Build and push Docker images completed successfully.
+            👤 ${{ github.event.workflow_run.actor.login }} created commit:
+            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            📦 Repository: ${{ github.repository }}
+            🐳 Images:
+            - ${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-server:latest
+            - ${{ secrets.DOCKERHUB_USERNAME }}/nestcommerce-client:latest
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
+
+      - name: Send telegram message after build failure
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ❌ Build and push Docker images failed.
+            👤 ${{ github.event.workflow_run.actor.login }} created commit:
+            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            📦 Repository: ${{ github.repository }}
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Checkout code for docker-compose
+        uses: actions/checkout@v4
+
+      - name: Create .env file for server
+        run: echo "${{ secrets.SERVER_ENV }}" > server/.env
+
+      - name: Create .env file for client
+        run: echo "${{ secrets.CLIENT_ENV }}" > client/.env
+
+      - name: Create root .env file for docker-compose
+        run: |
+          echo "DB_PASS=${{ secrets.DB_PASS }}" > .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
+
+      - name: Copy files to LXC
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST_VPS }}
+          username: ${{ secrets.USERNAME_VPS }}
+          key: ${{ secrets.KEY_VPS }}
+          port: ${{ secrets.PORT_VPS }}
+          source: "server/.env,client/.env,.env,docker-compose.yml"
+          target: "~/nestcommerce"
+
+      - name: Deploy to LXC via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST_VPS }}
+          username: ${{ secrets.USERNAME_VPS }}
+          key: ${{ secrets.KEY_VPS }}
+          port: ${{ secrets.PORT_VPS }}
+          script: |
+            cd ~/nestcommerce
+
+            # Login to Docker Hub
+            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+            # Set environment variables for docker-compose
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            export DB_PASS=${{ secrets.DB_PASS }}
+            export DB_USER=${{ secrets.DB_USER }}
+            export DB_NAME=${{ secrets.DB_NAME }}
+
+            # Stop and remove old containers first
+            docker compose down
+
+            # Pull latest images
+            docker compose pull
+
+            # Start containers with new images
+            docker compose up -d
+
+            # Clean up unused images
+            docker image prune -af
+
+            # Show running containers
+            docker compose ps
+
+      - name: Send telegram message after deploy success
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ✅ Deployment to LXC completed successfully.
+            👤 ${{ github.event.workflow_run.actor.login }} created commit:
+            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            📦 Repository: ${{ github.repository }}
+            🚀 Application is now running on LXC
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
+
+      - name: Send telegram message after deploy failure
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ❌ Deployment to LXC failed.
+            👤 ${{ github.event.workflow_run.actor.login }} created commit:
+            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            📦 Repository: ${{ github.repository }}
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}

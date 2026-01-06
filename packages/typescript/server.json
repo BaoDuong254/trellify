@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Server Config",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+
+    // Node.js specific module resolution
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+
+    // Decorators support (for NestJS/Express with decorators)
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    // Build output
+    "target": "ES2022",
+    "sourceMap": true,
+    "removeComments": true,
+    "incremental": true,
+
+    // Relaxed strict checks for framework compatibility
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false
+  }
+}

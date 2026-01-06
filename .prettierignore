@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+generated/
+schema.gql
+coverage/
+*.log
+.turbo/
+.next/
+pnpm-lock.yaml
