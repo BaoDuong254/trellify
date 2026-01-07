@@ -3,6 +3,10 @@ import { cyan, deepOrange, orange, teal } from "@mui/material/colors";
 
 // Create a theme instance.
 const theme = createTheme({
+  trellify: {
+    appBarHeight: 58,
+    boardBarHeight: 58,
+  },
   colorSchemes: {
     light: {
       palette: {

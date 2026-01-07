@@ -7,8 +7,9 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import SettingsBrightnessIcon from "@mui/icons-material/SettingsBrightness";
 import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 
-export default function ModeSelect() {
+function ModeSelect() {
   const { mode, setMode } = useColorScheme();
 
   const handleChange = (event: SelectChangeEvent) => {
@@ -46,5 +47,42 @@ export default function ModeSelect() {
         </MenuItem>
       </Select>
     </FormControl>
+  );
+}
+
+export default function App() {
+  return (
+    <Container sx={{ height: "100vh", backgroundColor: "primary.main" }} disableGutters maxWidth={false}>
+      <Box
+        sx={{
+          backgroundColor: "primary.light",
+          width: "100%",
+          height: (theme) => theme.trellify.appBarHeight,
+          display: "flex",
+          alignItems: "center",
+        }}>
+        <ModeSelect />
+      </Box>
+      <Box
+        sx={{
+          backgroundColor: "primary.dark",
+          width: "100%",
+          height: (theme) => theme.trellify.boardBarHeight,
+          display: "flex",
+          alignItems: "center",
+        }}>
+        Board Bar
+      </Box>
+      <Box
+        sx={{
+          backgroundColor: "primary.main",
+          width: "100%",
+          height: (theme) => `calc(100vh - ${theme.trellify.appBarHeight + theme.trellify.boardBarHeight}px)`,
+          display: "flex",
+          alignItems: "center",
+        }}>
+        Board Content
+      </Box>
+    </Container>
   );
 }
