@@ -2,7 +2,15 @@ import { execSync } from "child_process";
 import { existsSync } from "fs";
 import { resolve } from "path";
 
-const packages = [".", "apps/client", "apps/server", "packages/eslint", "packages/typescript", "packages/ui"];
+const packages = [
+  ".",
+  "apps/client",
+  "apps/server",
+  "packages/eslint",
+  "packages/typescript",
+  "packages/ui",
+  "packages/zod",
+];
 
 const colors = {
   reset: "\x1b[0m",
