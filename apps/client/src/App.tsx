@@ -1,42 +1,50 @@
-import { useColorScheme } from "@mui/material/styles";
-import Box from "@mui/material/Box";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Radio from "@mui/material/Radio";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
+import { useColorScheme } from "@mui/material/styles";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import SettingsBrightnessIcon from "@mui/icons-material/SettingsBrightness";
+import Box from "@mui/material/Box";
 
-export default function ButtonUsage() {
+export default function ModeSelect() {
   const { mode, setMode } = useColorScheme();
-  if (!mode) {
-    return null;
-  }
+
+  const handleChange = (event: SelectChangeEvent) => {
+    setMode(event.target.value as "light" | "dark" | "system");
+  };
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        width: "100%",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "background.default",
-        color: "text.primary",
-        borderRadius: 1,
-        p: 3,
-        minHeight: "56px",
-      }}>
-      <FormControl>
-        <FormLabel id='demo-theme-toggle'>Theme</FormLabel>
-        <RadioGroup
-          aria-labelledby='demo-theme-toggle'
-          name='theme-toggle'
-          row
-          value={mode}
-          onChange={(event) => setMode(event.target.value as "system" | "light" | "dark")}>
-          <FormControlLabel value='system' control={<Radio />} label='System' />
-          <FormControlLabel value='light' control={<Radio />} label='Light' />
-          <FormControlLabel value='dark' control={<Radio />} label='Dark' />
-        </RadioGroup>
-      </FormControl>
-    </Box>
+    <FormControl sx={{ m: 1, minWidth: 120 }} size='small'>
+      <InputLabel id='label-select-dark-light-mode'>
+        {mode === "light" ? "Light" : mode === "dark" ? "Dark" : "System"}
+      </InputLabel>
+      <Select
+        labelId='label-select-dark-light-mode'
+        id='select-dark-light-mode'
+        value={mode}
+        label='Mode'
+        onChange={handleChange}>
+        <MenuItem value='light'>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <LightModeIcon fontSize='small' />
+            Light
+          </Box>
+        </MenuItem>
+        <MenuItem value='dark'>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DarkModeOutlinedIcon fontSize='small' />
+            Dark
+          </Box>
+        </MenuItem>
+        <MenuItem value='system'>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <SettingsBrightnessIcon fontSize='small' />
+            System
+          </Box>
+        </MenuItem>
+      </Select>
+    </FormControl>
   );
 }
