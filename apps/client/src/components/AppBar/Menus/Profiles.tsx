@@ -31,7 +31,7 @@ function Profiles() {
           aria-haspopup='true'
           aria-expanded={open ? "true" : undefined}
         >
-          <Avatar sx={{ width: 34, height: 34 }} src='/trello.svg' alt='User avatar' />
+          <Avatar sx={{ width: 36, height: 36 }} src='/trello.svg' alt='User avatar' />
         </IconButton>
       </Tooltip>
       <Menu
