@@ -42,6 +42,7 @@ function AppBar() {
             sx={{
               color: "primary.main",
             }}
+            fontSize='small'
           />
           <Typography
             variant='body1'
@@ -70,13 +71,14 @@ function AppBar() {
               cursor: "pointer",
             }}
           >
-            <NotificationsNoneIcon />
+            <NotificationsNoneIcon sx={{ color: "primary.main" }} />
           </Badge>
         </Tooltip>
         <Tooltip title='Help'>
           <HelpOutlineIcon
             sx={{
               cursor: "pointer",
+              color: "primary.main",
             }}
           />
         </Tooltip>

@@ -21,6 +21,46 @@ const theme = createTheme({
       },
     },
   },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: ({ theme }) => {
+          return {
+            color: theme.palette.primary.main,
+            fontSize: "0.875rem",
+          };
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: ({ theme }) => {
+          return {
+            color: theme.palette.primary.main,
+            fontSize: "0.875rem",
+            ".MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.primary.light,
+            },
+            "&:hover": {
+              ".MuiOutlinedInput-notchedOutline": {
+                borderColor: theme.palette.primary.light,
+              },
+            },
+            "& fieldset": {
+              borderWidth: "1px !important",
+            },
+          };
+        },
+      },
+    },
+  },
 });
 
 export default theme;
