@@ -5,7 +5,7 @@ import { cyan, deepOrange, orange, teal } from "@mui/material/colors";
 const theme = createTheme({
   trellify: {
     appBarHeight: 58,
-    boardBarHeight: 58,
+    boardBarHeight: 60,
   },
   colorSchemes: {
     light: {

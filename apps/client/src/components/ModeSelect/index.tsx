@@ -26,7 +26,8 @@ export default function ModeSelect() {
         id='select-dark-light-mode'
         value={mode}
         label='Mode'
-        onChange={handleChange}>
+        onChange={handleChange}
+      >
         <MenuItem value='light'>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <LightModeIcon fontSize='small' />

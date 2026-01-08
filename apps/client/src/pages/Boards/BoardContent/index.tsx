@@ -9,7 +9,8 @@ function BoardContent() {
         height: (theme) => `calc(100vh - ${theme.trellify.appBarHeight + theme.trellify.boardBarHeight}px)`,
         display: "flex",
         alignItems: "center",
-      }}>
+      }}
+    >
       Board Content
     </Box>
   );

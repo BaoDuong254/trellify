@@ -9,7 +9,8 @@ function BoardBar() {
         height: (theme) => theme.trellify.boardBarHeight,
         display: "flex",
         alignItems: "center",
-      }}>
+      }}
+    >
       Board Bar
     </Box>
   );
