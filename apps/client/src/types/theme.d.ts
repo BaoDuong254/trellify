@@ -5,6 +5,9 @@ declare module "@mui/material/styles" {
     trellify: {
       appBarHeight: number;
       boardBarHeight: number;
+      boardContentHeight: number | string;
+      columnHeaderHeight: number;
+      columnFooterHeight: number;
     };
   }
 
@@ -12,6 +15,9 @@ declare module "@mui/material/styles" {
     trellify?: {
       appBarHeight?: number;
       boardBarHeight?: number;
+      boardContentHeight?: number | string;
+      columnHeaderHeight?: number;
+      columnFooterHeight?: number;
     };
   }
 }
