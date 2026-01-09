@@ -19,8 +19,22 @@ import Box from "@mui/material/Box";
 import ListCards from "@/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
 import type { Column as ColumnType } from "@/types/board.type";
 import { mapOrder } from "@/utils/sort";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function Column({ column }: { column: ColumnType }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: column._id,
+    data: {
+      ...column,
+    },
+  });
+
+  const dndKitColumnStyles = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
   const [anchorEl, setAnchorEl] = useState<HTMLElement | SVGSVGElement | null>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<SVGSVGElement>) => {
@@ -29,9 +43,15 @@ function Column({ column }: { column: ColumnType }) {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
   const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
+
   return (
     <Box
+      ref={setNodeRef}
+      style={dndKitColumnStyles}
+      {...attributes}
+      {...listeners}
       sx={{
         minWidth: "300px",
         maxWidth: "300px",
