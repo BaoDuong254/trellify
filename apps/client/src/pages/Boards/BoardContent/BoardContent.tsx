@@ -13,11 +13,13 @@ import {
   DragOverlay,
   type DropAnimation,
   defaultDropAnimationSideEffects,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import { useEffect, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import ColumnC from "@/pages/Boards/BoardContent/ListColumns/Column/Column";
 import CardC from "@/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
+import { cloneDeep } from "lodash";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -42,7 +44,7 @@ function BoardContent({ board }: { board: Board }) {
     mapOrder(board?.columns, board?.columnOrderIds, "_id")
   );
 
-  const [activeDragItemId, setActiveDragItemId] = useState<string | null>(null);
+  const [_activeDragItemId, setActiveDragItemId] = useState<string | null>(null);
   const [activeDragItemType, setActiveDragItemType] = useState<string | null>(null);
   const [activeDragItemData, setActiveDragItemData] = useState<Card | Column | null>(null);
 
@@ -50,6 +52,10 @@ function BoardContent({ board }: { board: Board }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
     setOrderedColumns(mapOrder(board?.columns, board?.columnOrderIds, "_id"));
   }, [board?.columns, board?.columnOrderIds]);
+
+  const findColumnByCardId = (cardId: string) => {
+    return orderedColumns.find((column) => column?.cards?.map((card) => card._id)?.includes(cardId));
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragItemId(event?.active?.id as string);
@@ -59,10 +65,65 @@ function BoardContent({ board }: { board: Board }) {
     setActiveDragItemData(event?.active?.data?.current as Card | Column);
   };
 
+  const handleDragOver = (event: DragOverEvent) => {
+    if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
+      return;
+    }
+
+    const { active, over } = event;
+
+    if (!over || !active) return;
+
+    const {
+      id: activeDraggingCardId,
+      data: { current: activeDraggingCardData },
+    } = active;
+    const { id: overCardId } = over;
+
+    const activeColumn = findColumnByCardId(activeDraggingCardId as string);
+    const overColumn = findColumnByCardId(overCardId as string);
+
+    if (!activeColumn || !overColumn) return;
+
+    if (activeColumn._id !== overColumn._id) {
+      setOrderedColumns((prevColumns) => {
+        const overCardIndex = overColumn?.cards?.findIndex((card) => card._id === overCardId);
+
+        const isBelowOverItem =
+          active.rect.current.translated && active.rect.current.translated.top > over.rect.top + over.rect.height;
+        const modifier = isBelowOverItem ? 1 : 0;
+        const newCardIndex = overCardIndex >= 0 ? overCardIndex + modifier : overColumn?.cards?.length + 1;
+
+        const nextColumns = cloneDeep(prevColumns);
+        const nextActiveColumn = nextColumns.find((col) => col._id === activeColumn._id);
+        const nextOverColumn = nextColumns.find((col) => col._id === overColumn._id);
+
+        if (nextActiveColumn) {
+          nextActiveColumn.cards = nextActiveColumn.cards.filter(
+            (card) => card._id !== (activeDraggingCardId as string)
+          );
+          nextActiveColumn.cardOrderIds = nextActiveColumn.cards.map((card) => card._id);
+        }
+
+        if (nextOverColumn) {
+          nextOverColumn.cards = nextOverColumn.cards.filter((card) => card._id !== (activeDraggingCardId as string));
+          nextOverColumn.cards.splice(newCardIndex, 0, activeDraggingCardData as Card);
+          nextOverColumn.cardOrderIds = nextOverColumn.cards.map((card) => card._id);
+        }
+
+        return nextColumns;
+      });
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over) return;
+    if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
+      return;
+    }
+
+    if (!over || !active) return;
 
     if (active.id !== over?.id) {
       const oldIndex = orderedColumns.findIndex((col) => col._id === active.id);
@@ -88,7 +149,7 @@ function BoardContent({ board }: { board: Board }) {
   };
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       <Box
         sx={{
           bgcolor: (theme) => (theme.palette.mode === "dark" ? "#34495e" : "#1976d2"),
