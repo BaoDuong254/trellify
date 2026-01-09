@@ -1,7 +1,8 @@
 import Card from "@/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
+import type { Card as CardType } from "@/types/board.type";
 import Box from "@mui/material/Box";
 
-function ListCards() {
+function ListCards({ cards }: { cards: CardType[] }) {
   return (
     <Box
       sx={{
@@ -22,12 +23,9 @@ function ListCards() {
         },
       }}
     >
-      <Card />
-      <Card temporaryHideMedia />
-      <Card temporaryHideMedia />
-      <Card temporaryHideMedia />
-      <Card temporaryHideMedia />
-      <Card temporaryHideMedia />
+      {cards?.map((card) => (
+        <Card key={card._id} card={card} />
+      ))}
     </Box>
   );
 }

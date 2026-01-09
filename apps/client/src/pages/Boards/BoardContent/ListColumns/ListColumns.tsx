@@ -2,8 +2,9 @@ import Column from "@/pages/Boards/BoardContent/ListColumns/Column/Column";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import type { Column as ColumnType } from "@/types/board.type";
 
-function ListColumns() {
+function ListColumns({ columns }: { columns: ColumnType[] }) {
   return (
     <Box
       sx={{
@@ -18,8 +19,9 @@ function ListColumns() {
         },
       }}
     >
-      <Column />
-      <Column />
+      {columns?.map((column) => (
+        <Column key={column._id} column={column} />
+      ))}
       <Box
         sx={{
           minWidth: "200px",

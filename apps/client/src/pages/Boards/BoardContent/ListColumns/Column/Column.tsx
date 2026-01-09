@@ -17,8 +17,10 @@ import Button from "@mui/material/Button";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import Box from "@mui/material/Box";
 import ListCards from "@/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
+import type { Column as ColumnType } from "@/types/board.type";
+import { mapOrder } from "@/utils/sort";
 
-function Column() {
+function Column({ column }: { column: ColumnType }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | SVGSVGElement | null>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<SVGSVGElement>) => {
@@ -27,6 +29,7 @@ function Column() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+  const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
   return (
     <Box
       sx={{
@@ -57,7 +60,7 @@ function Column() {
             cursor: "pointer",
           }}
         >
-          Column Title
+          {column?.title}
         </Typography>
         <Box>
           <Tooltip title='More options'>
@@ -126,7 +129,7 @@ function Column() {
       </Box>
 
       {/* List Card */}
-      <ListCards />
+      <ListCards cards={orderedCards} />
 
       {/* Box Column Footer */}
       <Box
