@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "private": true,
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@10.28.0",
   "license": "MIT",
   "scripts": {
     "copy-files": "copyfiles -u 1 \"src/openapi/**/*.yaml\" \"src/mailtrap/template/**\" dist/",
@@ -21,7 +21,7 @@
   },
   "engines": {
     "node": "24.12.0",
-    "pnpm": "10.27.0"
+    "pnpm": "10.28.0"
   },
   "dependencies": {
     "@workspace/zod": "workspace:*",
@@ -31,7 +31,7 @@
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "@types/express": "5.0.6",
-    "@types/node": "25.0.3",
+    "@types/node": "25.0.5",
     "eslint": "9.39.2",
     "globals": "17.0.0",
     "rimraf": "6.1.2",

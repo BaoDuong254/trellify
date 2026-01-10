@@ -14,6 +14,7 @@ import {
   type DropAnimation,
   defaultDropAnimationSideEffects,
   type DragOverEvent,
+  closestCorners,
 } from "@dnd-kit/core";
 import { useEffect, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -149,7 +150,13 @@ function BoardContent({ board }: { board: Board }) {
   };
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      collisionDetection={closestCorners}
+    >
       <Box
         sx={{
           bgcolor: (theme) => (theme.palette.mode === "dark" ? "#34495e" : "#1976d2"),

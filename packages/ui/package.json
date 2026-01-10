@@ -2,7 +2,7 @@
   "name": "@workspace/ui",
   "private": true,
   "version": "1.0.0",
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@10.28.0",
   "license": "MIT",
   "scripts": {
     "lint": "eslint .",
@@ -13,10 +13,10 @@
   },
   "engines": {
     "node": "24.12.0",
-    "pnpm": "10.27.0"
+    "pnpm": "10.28.0"
   },
   "devDependencies": {
-    "@types/node": "25.0.3",
+    "@types/node": "25.0.5",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react-swc": "4.2.2",
@@ -36,7 +36,7 @@
     "lucide-react": "0.562.0",
     "tailwind-merge": "3.4.0",
     "tailwindcss": "4.1.18",
-    "vite-tsconfig-paths": "6.0.3",
+    "vite-tsconfig-paths": "6.0.4",
     "react": "19.2.3"
   },
   "exports": {
