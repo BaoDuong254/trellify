@@ -26,7 +26,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import ColumnC from "@/pages/Boards/BoardContent/ListColumns/Column/Column";
 import CardC from "@/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEmpty } from "lodash";
+import { generatePlaceholderCard } from "@/utils/formatters";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -90,6 +91,9 @@ function BoardContent({ board }: { board: Board }) {
 
       if (nextActiveColumn) {
         nextActiveColumn.cards = nextActiveColumn.cards.filter((card) => card._id !== (activeDraggingCardId as string));
+        if (isEmpty(nextActiveColumn.cards)) {
+          nextActiveColumn.cards = [generatePlaceholderCard(nextActiveColumn)];
+        }
         nextActiveColumn.cardOrderIds = nextActiveColumn.cards.map((card) => card._id);
       }
 
@@ -100,6 +104,9 @@ function BoardContent({ board }: { board: Board }) {
           columnId: nextOverColumn._id,
         };
         nextOverColumn.cards = nextOverColumn.cards.toSpliced(newCardIndex, 0, rebuildActiveDraggingCardData);
+        // Remove placeholder card if exists
+        nextOverColumn.cards = nextOverColumn.cards.filter((card) => !card.FE_PlaceholderCard);
+        // Update card order ids
         nextOverColumn.cardOrderIds = nextOverColumn.cards.map((card) => card._id);
       }
 
