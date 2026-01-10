@@ -18,9 +18,9 @@ import {
   type Active,
   type CollisionDetection,
   closestCenter,
-  rectIntersection,
   pointerWithin,
   getFirstCollision,
+  closestCorners,
 } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -226,12 +226,14 @@ function BoardContent({ board }: { board: Board }) {
         return closestCenter({ ...args });
       }
       const pointerIntersections = pointerWithin(args);
-      const intersections = pointerIntersections?.length > 0 ? pointerIntersections : rectIntersection(args);
-      let overId = getFirstCollision(intersections, "id") as string | null;
+
+      if (!pointerIntersections?.length) return [];
+
+      let overId = getFirstCollision(pointerIntersections, "id") as string | null;
       if (overId) {
         const checkColumn = orderedColumns.find((col) => col._id === overId);
         if (checkColumn) {
-          overId = closestCenter({
+          overId = closestCorners({
             ...args,
             droppableContainers: args.droppableContainers.filter((container) => {
               return container.id !== overId && checkColumn?.cardOrderIds?.includes(container.id as string);
