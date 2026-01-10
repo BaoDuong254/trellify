@@ -72,4 +72,4 @@ You are GitHub Copilot Chat. These instructions override default behavior. Apply
 
 - See `.github/instructions/nodejs-javascript-vitest.instructions.md` for Node.js and JavaScript guidelines
 - See `.github/instructions/reactjs.instructions.md` for React patterns
-- See `.github/instructions/typescript-5-es2023.instructions.md` for TypeScript rules
+- See `.github/instructions/typescript-5-es2022.instructions.md` for TypeScript rules

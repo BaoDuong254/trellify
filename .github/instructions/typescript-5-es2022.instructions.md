@@ -1,11 +1,11 @@
 ---
-description: "Guidelines for TypeScript Development targeting TypeScript 5.x and ES2023 output"
+description: "Guidelines for TypeScript Development targeting TypeScript 5.x and ES2022 output"
 applyTo: "**/*.ts"
 ---
 
 # TypeScript Development
 
-> These instructions assume projects are built with TypeScript 5.x (or newer) compiling to an ES2023 JavaScript baseline. Adjust guidance if your runtime requires older language targets or down-level transpilation.
+> These instructions assume projects are built with TypeScript 5.x (or newer) compiling to an ES2022 JavaScript baseline. Adjust guidance if your runtime requires older language targets or down-level transpilation.
 
 ## Core Intent
 
@@ -16,7 +16,7 @@ applyTo: "**/*.ts"
 
 ## General Guardrails
 
-- Target TypeScript 5.x / ES2023 and prefer native features over polyfills.
+- Target TypeScript 5.x / ES2022 and prefer native features over polyfills.
 - Use pure ES modules; never emit `require`, `module.exports`, or CommonJS helpers.
 - Rely on the project's build, lint, and test scripts unless asked otherwise.
 - Note design trade-offs when intent is not obvious.
