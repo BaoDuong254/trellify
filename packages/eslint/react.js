@@ -3,7 +3,6 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import baseConfig from "./base.js";
 import eslintReact from "@eslint-react/eslint-plugin";
-import reactDebug from "eslint-plugin-react-debug";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 
 export default [
@@ -12,7 +11,6 @@ export default [
   reactHooks.configs.flat.recommended,
   reactRefresh.configs.recommended,
   jsxA11y.flatConfigs.recommended,
-  reactDebug.configs.all,
   {
     languageOptions: {
       globals: globals.browser,
