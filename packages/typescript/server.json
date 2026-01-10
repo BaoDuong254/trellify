@@ -3,7 +3,7 @@
   "display": "Server Config",
   "extends": "./base.json",
   "compilerOptions": {
-    "lib": ["ES2022"],
+    "lib": ["ES2023"],
 
     // Node.js specific module resolution
     "module": "NodeNext",
@@ -15,7 +15,7 @@
     "experimentalDecorators": true,
 
     // Build output
-    "target": "ES2022",
+    "target": "ES2023",
     "sourceMap": true,
     "removeComments": true,
     "incremental": true,
