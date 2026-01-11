@@ -6,6 +6,7 @@ import importPlugin from "eslint-plugin-import";
 import eslintPlugin from "eslint-plugin-eslint-plugin";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 
+/** @type {import("eslint").Linter.Config[]} */
 export default [
   {
     ignores: ["**/eslint.config.mjs", "**/dist", "**/node_modules", "**/generated", "**/coverage", "**/vite.config.ts"],

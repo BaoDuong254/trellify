@@ -6,6 +6,7 @@ import pluginSecurity from "eslint-plugin-security";
 import nodePlugin from "eslint-plugin-n";
 import baseConfig from "./base.js";
 
+/** @type {import("eslint").Linter.Config[]} */
 export default [
   ...baseConfig,
   pluginPromise.configs["flat/recommended"],

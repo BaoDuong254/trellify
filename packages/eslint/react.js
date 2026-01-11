@@ -5,6 +5,7 @@ import baseConfig from "./base.js";
 import eslintReact from "@eslint-react/eslint-plugin";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 
+/** @type {import("eslint").Linter.Config[]} */
 export default [
   ...baseConfig,
   eslintReact.configs["strict-typescript"],

@@ -4,6 +4,7 @@ import path from "node:path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/** @type {import("eslint").Linter.Config[]} */
 export default [
   ...reactEslint,
   {
