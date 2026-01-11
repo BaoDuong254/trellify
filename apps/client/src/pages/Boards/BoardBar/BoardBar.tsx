@@ -10,8 +10,8 @@ import Avatar from "@mui/material/Avatar";
 import Tooltip from "@mui/material/Tooltip";
 import Button from "@mui/material/Button";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import type { Board } from "@/types/board.type";
-import { capitalizeFirstLetter } from "@/utils/formatters";
+import type { Board } from "src/types/board.type";
+import { capitalizeFirstLetter } from "src/utils/formatters";
 
 const MENU_STYLES = {
   color: "white",

@@ -4,7 +4,7 @@
     "jsx": "react",
     "outDir": "./dist",
     "paths": {
-      "src/*": ["./src/*"]
+      "@workspace/shared/*": ["./src/*"]
     }
   },
   "include": ["**/*.spec.ts", "**/*.d.ts", "**/*.ts"],

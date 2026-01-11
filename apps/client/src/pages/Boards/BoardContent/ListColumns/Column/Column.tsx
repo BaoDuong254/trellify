@@ -16,9 +16,9 @@ import AddCardIcon from "@mui/icons-material/AddCard";
 import Button from "@mui/material/Button";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import Box from "@mui/material/Box";
-import ListCards from "@/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
-import type { Column as ColumnType } from "@/types/board.type";
-import { mapOrder } from "@/utils/sort";
+import ListCards from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
+import type { Column as ColumnType } from "src/types/board.type";
+import { mapOrder } from "src/utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 

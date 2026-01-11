@@ -1,6 +1,6 @@
-import ListColumns from "@/pages/Boards/BoardContent/ListColumns/ListColumns";
-import { type Card, type Board, type Column } from "@/types/board.type";
-import { mapOrder } from "@/utils/sort";
+import ListColumns from "src/pages/Boards/BoardContent/ListColumns/ListColumns";
+import { type Card, type Board, type Column } from "src/types/board.type";
+import { mapOrder } from "src/utils/sort";
 import Box from "@mui/material/Box";
 import {
   DndContext,
@@ -24,10 +24,10 @@ import {
 } from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
-import ColumnC from "@/pages/Boards/BoardContent/ListColumns/Column/Column";
-import CardC from "@/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
+import ColumnC from "src/pages/Boards/BoardContent/ListColumns/Column/Column";
+import CardC from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
 import { cloneDeep, isEmpty } from "lodash";
-import { generatePlaceholderCard } from "@/utils/formatters";
+import { generatePlaceholderCard } from "src/utils/formatters";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",

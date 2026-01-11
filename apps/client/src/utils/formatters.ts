@@ -1,4 +1,4 @@
-import type { Column } from "@/types/board.type";
+import type { Column } from "src/types/board.type";
 
 /**
  * Capitalize the first letter of a string

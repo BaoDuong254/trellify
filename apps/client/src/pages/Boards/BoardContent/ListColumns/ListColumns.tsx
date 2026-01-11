@@ -1,8 +1,8 @@
-import Column from "@/pages/Boards/BoardContent/ListColumns/Column/Column";
+import Column from "src/pages/Boards/BoardContent/ListColumns/Column/Column";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
-import type { Column as ColumnType } from "@/types/board.type";
+import type { Column as ColumnType } from "src/types/board.type";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 
 function ListColumns({ columns }: { columns: ColumnType[] }) {

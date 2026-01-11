@@ -1,8 +1,8 @@
-import AppBar from "@/components/AppBar/AppBar";
-import BoardBar from "@/pages/Boards/BoardBar/BoardBar";
-import BoardContent from "@/pages/Boards/BoardContent/BoardContent";
+import AppBar from "src/components/AppBar/AppBar";
+import BoardBar from "src/pages/Boards/BoardBar/BoardBar";
+import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
 import Container from "@mui/material/Container";
-import { mockData } from "@/apis/mock-data";
+import { mockData } from "src/apis/mock-data";
 
 function Board() {
   return (

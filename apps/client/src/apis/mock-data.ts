@@ -1,4 +1,4 @@
-import type { Board } from "@/types/board.type";
+import type { Board } from "src/types/board.type";
 
 export const mockData = {
   board: {

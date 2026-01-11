@@ -1,4 +1,4 @@
-import Board from "@/pages/Boards/_id";
+import Board from "src/pages/Boards/_id";
 
 export default function App() {
   return <Board />;

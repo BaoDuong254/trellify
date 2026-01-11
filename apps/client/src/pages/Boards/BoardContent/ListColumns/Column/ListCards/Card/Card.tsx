@@ -7,7 +7,7 @@ import CommentIcon from "@mui/icons-material/ModeComment";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import type { Card as CardType } from "@/types/board.type";
+import type { Card as CardType } from "src/types/board.type";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
