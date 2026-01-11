@@ -9,7 +9,7 @@ const packages = [
   "packages/eslint",
   "packages/typescript",
   "packages/ui",
-  "packages/zod",
+  "packages/shared",
 ];
 
 const colors = {

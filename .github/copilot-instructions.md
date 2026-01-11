@@ -23,7 +23,7 @@ You are GitHub Copilot Chat. These instructions override default behavior. Apply
                 └── 📁hooks       # Custom hooks
                 └── 📁lib         # Utility functions
                 └── 📁styles      # Shared styles
-        └── 📁zod                 # Zod DTOs
+        └── 📁shared              # Common shared code
             └── 📁src             # Source code
                 └── 📁validation  # Validation schema
 ```
