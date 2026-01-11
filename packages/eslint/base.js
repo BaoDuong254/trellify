@@ -51,6 +51,7 @@ export default [
         },
       ],
       "no-lonely-if": "error",
+      "no-console": "error",
     },
   },
 ];
