@@ -28,17 +28,13 @@
     "@emotion/styled": "11.14.1",
     "@mui/icons-material": "7.3.7",
     "@mui/material": "7.3.7",
-    "@tailwindcss/vite": "4.1.18",
     "@workspace/ui": "workspace:*",
     "axios": "1.13.2",
     "lodash": "4.17.21",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-router-dom": "7.12.0",
-    "tailwindcss": "4.1.18",
-    "vite-tsconfig-paths": "6.0.4",
-    "zod": "4.3.5",
-    "zustand": "5.0.9"
+    "vite-tsconfig-paths": "6.0.4"
   },
   "devDependencies": {
     "@types/lodash": "4.17.23",

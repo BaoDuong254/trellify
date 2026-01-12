@@ -21,6 +21,13 @@ remove_if_exists() {
     fi
 }
 
+# Remove pnpm-lock.yaml if exists
+if [ -f "$ROOT_DIR/pnpm-lock.yaml" ]; then
+    echo "  Removing: $ROOT_DIR/pnpm-lock.yaml"
+    rm -f "$ROOT_DIR/pnpm-lock.yaml"
+    echo "  ✓ Deleted: pnpm-lock.yaml"
+fi
+
 # Clean root level
 echo ""
 echo "📁 Cleaning root directory..."
