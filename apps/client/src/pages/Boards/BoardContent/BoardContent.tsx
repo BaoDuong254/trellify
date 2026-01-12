@@ -103,7 +103,11 @@ function BoardContent({ board }: { board: Board }) {
           ...(activeDraggingCardData as Card),
           columnId: nextOverColumn._id,
         };
-        nextOverColumn.cards = nextOverColumn.cards.splice(newCardIndex, 0, rebuildActiveDraggingCardData);
+        nextOverColumn.cards = [
+          ...nextOverColumn.cards.slice(0, newCardIndex),
+          rebuildActiveDraggingCardData,
+          ...nextOverColumn.cards.slice(newCardIndex),
+        ];
         // Remove placeholder card if exists
         nextOverColumn.cards = nextOverColumn.cards.filter((card) => !card.FE_PlaceholderCard);
         // Update card order ids
