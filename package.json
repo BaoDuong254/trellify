@@ -10,7 +10,7 @@
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "eslint": "9.39.2",
-    "lefthook": "2.0.13",
+    "lefthook": "2.0.14",
     "npm-check-updates": "19.3.1",
     "prettier": "3.7.4",
     "prettier-package-json": "2.8.0",
