@@ -11,21 +11,22 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
     "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
-    "preinstall": "pnpm dlx only-allow pnpm"
+    "preinstall": "pnpm dlx only-allow pnpm",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": "24.12.0",
     "pnpm": "10.28.0"
   },
   "dependencies": {
-    "zod": "4.3.5"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
-    "@types/node": "25.0.8",
-    "eslint": "9.39.2",
-    "typescript": "5.9.3"
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
   },
   "exports": {
     "./validation/*": "./src/validation/*.ts"

@@ -46,6 +46,6 @@ done
 for dir in "${!dir_files[@]}"; do
   if [ -n "${dir_files[$dir]}" ]; then
     echo "🔍 Running ESLint in $dir"
-    (cd "$dir" && pnpm exec eslint ${dir_files[$dir]} --fix)
+    (cd "$dir" && pnpm exec eslint ${dir_files[$dir]} --fix --cache)
   fi
 done

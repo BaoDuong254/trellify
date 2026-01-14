@@ -17,7 +17,8 @@
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
     "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
     "preinstall": "pnpm dlx only-allow pnpm",
-    "clean": "rimraf dist/"
+    "clean": "rimraf dist/",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": "24.12.0",
@@ -25,23 +26,23 @@
   },
   "dependencies": {
     "@workspace/shared": "workspace:*",
-    "chalk": "5.6.2",
-    "express": "5.2.1",
-    "morgan": "1.10.1",
-    "winston": "3.19.0"
+    "chalk": "catalog:",
+    "express": "catalog:",
+    "morgan": "catalog:",
+    "winston": "catalog:"
   },
   "devDependencies": {
-    "@types/express": "5.0.6",
-    "@types/morgan": "1.9.10",
-    "@types/node": "25.0.8",
+    "@types/express": "catalog:",
+    "@types/morgan": "catalog:",
+    "@types/node": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
-    "copyfiles": "2.4.1",
-    "eslint": "9.39.2",
-    "nodemon": "3.1.11",
-    "rimraf": "6.1.2",
-    "tsc-alias": "1.8.16",
-    "tsx": "4.21.0",
-    "typescript": "5.9.3"
+    "copyfiles": "catalog:",
+    "eslint": "catalog:",
+    "nodemon": "catalog:",
+    "rimraf": "catalog:",
+    "tsc-alias": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

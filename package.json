@@ -4,21 +4,22 @@
   "packageManager": "pnpm@10.28.0",
   "license": "MIT",
   "devDependencies": {
-    "@commitlint/cli": "20.3.1",
-    "@commitlint/config-conventional": "20.3.1",
-    "@types/node": "25.0.8",
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "@types/node": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
-    "eslint": "9.39.2",
-    "lefthook": "2.0.15",
-    "npm-check-updates": "19.3.1",
-    "prettier": "3.7.4",
-    "prettier-package-json": "2.8.0",
-    "prettier-plugin-prisma": "5.0.0",
-    "prettier-plugin-tailwindcss": "0.7.2",
-    "tsx": "4.21.0",
-    "turbo": "2.7.3",
-    "typescript": "5.9.3"
+    "commitizen": "catalog:",
+    "cz-git": "catalog:",
+    "eslint": "catalog:",
+    "lefthook": "catalog:",
+    "prettier": "catalog:",
+    "prettier-package-json": "catalog:",
+    "prettier-plugin-prisma": "catalog:",
+    "prettier-plugin-tailwindcss": "catalog:",
+    "tsx": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:"
   },
   "scripts": {
     "prepare": "lefthook install",
@@ -31,7 +32,19 @@
     "format:fix": "turbo run format:fix",
     "start:prod": "turbo run start:prod --parallel",
     "clean": "turbo run clean",
-    "ncu": "tsx scripts/check-updates.ts"
+    "typecheck": "turbo run typecheck",
+    "cz": "cz",
+    "ncu": "pnpm update --latest --workspace-root",
+    "fe": "pnpm --filter=client",
+    "be": "pnpm --filter=server",
+    "eslint": "pnpm --filter=eslint",
+    "shared": "pnpm --filter=shared",
+    "ui": "pnpm --filter=ui"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-git"
+    }
   },
   "engines": {
     "node": "24.12.0",
