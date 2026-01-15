@@ -30,6 +30,7 @@ export default [
       "@typescript-eslint/no-extraneous-class": "off",
       "n/no-missing-import": "off",
       "security/detect-object-injection": "off",
+      "unicorn/prefer-top-level-await": "off",
     },
   },
 ];

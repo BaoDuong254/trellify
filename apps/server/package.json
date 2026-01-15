@@ -27,9 +27,12 @@
   "dependencies": {
     "@workspace/shared": "workspace:*",
     "chalk": "catalog:",
+    "dotenv": "catalog:",
     "express": "catalog:",
+    "mongodb": "catalog:",
     "morgan": "catalog:",
-    "winston": "catalog:"
+    "winston": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/express": "catalog:",
