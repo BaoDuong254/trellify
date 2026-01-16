@@ -1,5 +1,6 @@
 import express, { Router } from "express";
 import { StatusCodes } from "http-status-codes";
+import { boardController } from "src/controllers/board.controller";
 import { boardValidation } from "src/validations/board.validation";
 
 const router: Router = express.Router();
@@ -12,6 +13,6 @@ router
       status: StatusCodes.OK,
     });
   })
-  .post(boardValidation.createNew);
+  .post(boardValidation.createNew, boardController.createNew);
 
 export const boardRoute = router;

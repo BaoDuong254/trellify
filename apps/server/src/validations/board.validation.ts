@@ -17,10 +17,6 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
   });
   try {
     await correctConditions.parseAsync(request.body);
-    response.status(StatusCodes.CREATED).json({
-      message: "Board created successfully",
-      status: StatusCodes.CREATED,
-    });
     next();
   } catch (error) {
     response.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
