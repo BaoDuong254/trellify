@@ -5,15 +5,15 @@ import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
 import logger from "src/utils/logger";
 import exitHook from "async-exit-hook";
+import { APIs_V1 } from "src/routes/v1";
 
 const START_SERVER = () => {
   // Create Express app
   const app = express();
   const port = environmentConfig.PORT;
 
-  app.get("/", (_request, response) => {
-    response.send("Hello World!");
-  });
+  // App routes setup
+  app.use("/api/v1", APIs_V1);
 
   // Setup morgan with winston for logging
   app.use(

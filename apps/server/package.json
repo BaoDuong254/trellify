@@ -26,20 +26,21 @@
   },
   "dependencies": {
     "@workspace/shared": "workspace:*",
+    "async-exit-hook": "catalog:",
     "chalk": "catalog:",
     "dotenv": "catalog:",
     "express": "catalog:",
+    "http-status-codes": "catalog:",
     "mongodb": "catalog:",
     "morgan": "catalog:",
     "winston": "catalog:",
-    "zod": "catalog:",
-    "async-exit-hook": "catalog:"
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/async-exit-hook": "catalog:",
     "@types/express": "catalog:",
     "@types/morgan": "catalog:",
     "@types/node": "catalog:",
-    "@types/async-exit-hook": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "copyfiles": "catalog:",
