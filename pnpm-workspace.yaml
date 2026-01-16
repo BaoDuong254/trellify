@@ -78,6 +78,8 @@ catalog:
   vite-tsconfig-paths: 6.0.4
   winston: 3.19.0
   zod: 4.3.5
+  async-exit-hook: 2.0.1
+  "@types/async-exit-hook": 2.0.2
 
 cleanupUnusedCatalogs: true
 

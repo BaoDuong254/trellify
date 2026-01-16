@@ -32,12 +32,14 @@
     "mongodb": "catalog:",
     "morgan": "catalog:",
     "winston": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "async-exit-hook": "catalog:"
   },
   "devDependencies": {
     "@types/express": "catalog:",
     "@types/morgan": "catalog:",
     "@types/node": "catalog:",
+    "@types/async-exit-hook": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "copyfiles": "catalog:",

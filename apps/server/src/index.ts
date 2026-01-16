@@ -1,9 +1,10 @@
 import chalk from "chalk";
 import express from "express";
 import morgan from "morgan";
-import { CONNECT_DB } from "src/config/database";
+import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
 import logger from "src/utils/logger";
+import exitHook from "async-exit-hook";
 
 const app = express();
 const port = environmentConfig.PORT;
@@ -24,6 +25,12 @@ const START_SERVER = () => {
 
   app.listen(port, () => {
     logger.info(chalk.bgBlueBright(`Server is running at http://localhost:${port}`));
+  });
+
+  exitHook(() => {
+    logger.info("4. Closing MongoDB Cloud Atlas connection...");
+    void CLOSE_DB();
+    logger.info(chalk.bgBlueBright("Shutting down server..."));
   });
 };
 

@@ -26,3 +26,8 @@ export const GET_DB = (): Db => {
   }
   return trellifyDatabaseInstance;
 };
+
+export const CLOSE_DB = async (): Promise<void> => {
+  await mongoClientInstance.close();
+  trellifyDatabaseInstance = undefined;
+};
