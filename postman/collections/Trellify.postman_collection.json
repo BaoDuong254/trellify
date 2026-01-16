@@ -1,0 +1,41 @@
+{
+  "info": {
+    "_postman_id": "fb978a8c-1430-4216-8369-45f72cecda43",
+    "name": "Trellify",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "41961051"
+  },
+  "item": [
+    {
+      "name": "module boards",
+      "item": [
+        {
+          "name": "list boards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Check API status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{host}}/api/v1/status",
+          "host": ["{{host}}"],
+          "path": ["api", "v1", "status"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
