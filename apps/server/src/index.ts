@@ -6,10 +6,11 @@ import environmentConfig from "src/config/environment";
 import logger from "src/utils/logger";
 import exitHook from "async-exit-hook";
 
-const app = express();
-const port = environmentConfig.PORT;
-
 const START_SERVER = () => {
+  // Create Express app
+  const app = express();
+  const port = environmentConfig.PORT;
+
   app.get("/", (_request, response) => {
     response.send("Hello World!");
   });
@@ -23,10 +24,12 @@ const START_SERVER = () => {
     })
   );
 
+  // Start the server
   app.listen(port, () => {
     logger.info(chalk.bgBlueBright(`Server is running at http://localhost:${port}`));
   });
 
+  // Handle graceful shutdown
   exitHook(() => {
     logger.info("4. Closing MongoDB Cloud Atlas connection...");
     void CLOSE_DB();
