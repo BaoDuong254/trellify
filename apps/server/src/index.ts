@@ -3,7 +3,7 @@ import express from "express";
 import morgan from "morgan";
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
-import logger from "src/utils/logger";
+import logger from "@workspace/shared/utils/logger";
 import exitHook from "async-exit-hook";
 import { APIs_V1 } from "src/routes/v1";
 
@@ -11,6 +11,9 @@ const START_SERVER = () => {
   // Create Express app
   const app = express();
   const port = environmentConfig.PORT;
+
+  // Middleware to parse JSON requests
+  app.use(express.json());
 
   // App routes setup
   app.use("/api/v1", APIs_V1);

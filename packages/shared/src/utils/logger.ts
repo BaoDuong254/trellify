@@ -17,7 +17,7 @@ const logFormat = printf(({ level, message, timestamp }) => {
  *
  * @example
  * ```ts
- * import logger from "src/utils/logger";
+ * import logger from "@workspace/shared/utils/logger";
  * logger.error("This is an error message");
  * logger.warn("This is a warning message");
  * logger.info("This is an info message");

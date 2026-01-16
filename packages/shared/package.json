@@ -19,16 +19,21 @@
     "pnpm": "10.28.0"
   },
   "dependencies": {
+    "chalk": "catalog:",
+    "express": "catalog:",
+    "http-status-codes": "catalog:",
+    "winston": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
-    "@types/node": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:"
   },
   "exports": {
-    "./validation/*": "./src/validation/*.ts"
+    "./utils/*": "./src/utils/*.ts"
   }
 }

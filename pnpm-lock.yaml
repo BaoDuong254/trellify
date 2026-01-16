@@ -523,10 +523,25 @@ importers:
 
   packages/shared:
     dependencies:
+      chalk:
+        specifier: 'catalog:'
+        version: 5.6.2
+      express:
+        specifier: 'catalog:'
+        version: 5.2.1
+      http-status-codes:
+        specifier: 'catalog:'
+        version: 2.3.0
+      winston:
+        specifier: 'catalog:'
+        version: 3.19.0
       zod:
         specifier: 'catalog:'
         version: 4.3.5
     devDependencies:
+      '@types/express':
+        specifier: 'catalog:'
+        version: 5.0.6
       '@types/node':
         specifier: 'catalog:'
         version: 25.0.8
