@@ -5,7 +5,8 @@
     "outDir": "./dist",
     "paths": {
       "src/*": ["./src/*"],
-      "generated/*": ["./generated/*"]
+      "generated/*": ["./generated/*"],
+      "@workspace/shared/*": ["../../packages/shared/src/*"]
     }
   },
   "include": ["**/*.spec.ts", "**/*.d.ts", "**/*.ts"],

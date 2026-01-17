@@ -544,6 +544,9 @@ importers:
       http-status-codes:
         specifier: 'catalog:'
         version: 2.3.0
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.2
       winston:
         specifier: 'catalog:'
         version: 3.19.0
@@ -566,6 +569,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 9.39.2(jiti@2.6.1)
+      tsc-alias:
+        specifier: 'catalog:'
+        version: 1.8.16
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

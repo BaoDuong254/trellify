@@ -4,7 +4,9 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "paths": {
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      "@workspace/shared/*": ["../../packages/shared/src/*"],
+      "@workspace/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
