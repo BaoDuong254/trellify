@@ -17,7 +17,7 @@ export const BOARD_COLLECTION_SCHEMA = z.object({
     .array(z.string({ error: "Error.ColumnIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
     .default([]),
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
-  updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).optional(),
+  updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });
 

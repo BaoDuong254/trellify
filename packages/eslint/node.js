@@ -31,6 +31,7 @@ export default [
       "n/no-missing-import": "off",
       "security/detect-object-injection": "off",
       "unicorn/prefer-top-level-await": "off",
+      "unicorn/no-null": "off",
     },
   },
 ];
