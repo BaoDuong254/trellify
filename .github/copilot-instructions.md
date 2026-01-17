@@ -169,6 +169,6 @@ Page → Container Components → Presentational Components → UI Primitives
 
 ## Related Instructions
 
-- See [.github/instructions/nodejs-javascript-vitest.instructions.md](.github/instructions/nodejs-javascript-vitest.instructions.md) for Node.js and JavaScript guidelines
-- See [.github/instructions/reactjs.instructions.md](.github/instructions/reactjs.instructions.md) for React patterns
-- See [.github/instructions/typescript-5-es2022.instructions.md](.github/instructions/typescript-5-es2022.instructions.md) for TypeScript rules
+- See [./instructions/nodejs-javascript-vitest.instructions.md](./instructions/nodejs-javascript-vitest.instructions.md) for Node.js and JavaScript guidelines
+- See [./instructions/reactjs.instructions.md](./instructions/reactjs.instructions.md) for React patterns
+- See [./instructions/typescript-5-es2022.instructions.md](./instructions/typescript-5-es2022.instructions.md) for TypeScript rules
