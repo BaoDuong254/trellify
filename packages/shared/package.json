@@ -34,6 +34,7 @@
     "typescript": "catalog:"
   },
   "exports": {
-    "./utils/*": "./src/utils/*.ts"
+    "./utils/*": "./src/utils/*.ts",
+    "./schemas/*": "./src/schemas/*.ts"
   }
 }

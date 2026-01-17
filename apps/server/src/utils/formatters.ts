@@ -1,0 +1,22 @@
+/**
+ * Converts a string into a URL-friendly slug.
+ * @param value - The string to be slugify.
+ * @returns The slugify string.
+ * @example
+ * ```ts
+ * slugify("Hello World!"); // "hello-world"
+ * slugify("Café del Mar"); // "cafe-del-mar"
+ * slugify("  Multiple   Spaces  "); // "multiple-spaces"
+ * ```
+ */
+export default function slugify(value: string) {
+  if (!value) return "";
+  return String(value)
+    .normalize("NFKD") // split accented characters into their base characters and diacritical marks
+    .replaceAll(/[\u0300-\u036F]/g, "") // remove all the accents, which happen to be all in the \u03xx UNICODE block.
+    .trim() // trim leading or trailing whitespace
+    .toLowerCase() // convert to lowercase
+    .replaceAll(/[^a-z0-9 -]/g, "") // remove non-alphanumeric characters
+    .replaceAll(/\s+/g, "-") // replace spaces with hyphens
+    .replaceAll(/-+/g, "-"); // remove consecutive hyphens
+}
