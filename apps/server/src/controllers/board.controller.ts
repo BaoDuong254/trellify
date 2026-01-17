@@ -16,6 +16,21 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
   }
 };
 
+const getDetails = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const boardId = (request.params.id as string) ?? "";
+    const boardDetails = await boardService.getDetails(boardId);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Board details fetched successfully",
+      data: boardDetails,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const boardController = {
   createNew,
+  getDetails,
 };

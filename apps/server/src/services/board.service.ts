@@ -1,5 +1,7 @@
 import { CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
+import { StatusCodes } from "http-status-codes";
 import { boardModel } from "src/models/board.model";
+import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
 
 const createNew = async (requestBody: CreateNewBoardType) => {
@@ -16,6 +18,19 @@ const createNew = async (requestBody: CreateNewBoardType) => {
   }
 };
 
+const getDetails = async (boardId: string) => {
+  try {
+    const boardDetails = await boardModel.getDetails(boardId);
+    if (!boardDetails) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+    }
+    return boardDetails;
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : String(error));
+  }
+};
+
 export const boardService = {
   createNew,
+  getDetails,
 };

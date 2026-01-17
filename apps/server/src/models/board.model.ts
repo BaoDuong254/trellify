@@ -27,8 +27,20 @@ const fineOneById = async (id: ObjectId) => {
   }
 };
 
+const getDetails = async (boardId: string) => {
+  try {
+    const board = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOne({ _id: new ObjectId(boardId) });
+    return board;
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : String(error));
+  }
+};
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
   fineOneById,
+  getDetails,
 };
