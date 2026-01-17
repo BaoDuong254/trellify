@@ -6,6 +6,7 @@ import environmentConfig from "src/config/environment";
 import logger from "@workspace/shared/utils/logger";
 import exitHook from "async-exit-hook";
 import { APIs_V1 } from "src/routes/v1";
+import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
 
 const START_SERVER = () => {
   // Create Express app
@@ -17,6 +18,8 @@ const START_SERVER = () => {
 
   // App routes setup
   app.use("/api/v1", APIs_V1);
+
+  app.use(errorHandlingMiddleware);
 
   // Setup morgan with winston for logging
   app.use(

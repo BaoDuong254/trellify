@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
+import ApiError from "src/utils/api-error";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   const correctConditions = z.object({
@@ -19,11 +20,9 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
     await correctConditions.parseAsync(request.body);
     next();
   } catch (error) {
-    response.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-      message: "Invalid data provided",
-      status: StatusCodes.UNPROCESSABLE_ENTITY,
-      errors: error instanceof z.ZodError ? error.issues : [error instanceof Error ? error.message : String(error)],
-    });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
+    next(customError);
   }
 };
 
