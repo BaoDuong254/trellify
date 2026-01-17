@@ -1,7 +1,7 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 
-const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+const createNew = async (_request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
     response.status(StatusCodes.CREATED).json({
       statusCode: StatusCodes.CREATED,

@@ -13,14 +13,6 @@ const START_SERVER = () => {
   const app = express();
   const port = environmentConfig.PORT;
 
-  // Middleware to parse JSON requests
-  app.use(express.json());
-
-  // App routes setup
-  app.use("/api/v1", APIs_V1);
-
-  app.use(errorHandlingMiddleware);
-
   // Setup morgan with winston for logging
   app.use(
     morgan("combined", {
@@ -29,6 +21,15 @@ const START_SERVER = () => {
       },
     })
   );
+
+  // Middleware to parse JSON requests
+  app.use(express.json());
+
+  // App routes setup
+  app.use("/api/v1", APIs_V1);
+
+  // Error handling middleware
+  app.use(errorHandlingMiddleware);
 
   // Start the server
   app.listen(port, () => {
