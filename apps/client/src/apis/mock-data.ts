@@ -8,6 +8,10 @@ export const mockData = {
     type: "public" as const, // "private"
     ownerIds: [],
     memberIds: [],
+    slug: "baoduong254-board",
+    createdAt: new Date(),
+    updatedAt: null,
+    _destroy: false,
     columnOrderIds: ["column-id-01", "column-id-02", "column-id-03", "column-id-04"],
     columns: [
       {

@@ -2,7 +2,9 @@
   "extends": "@workspace/typescript/react.app.json",
   "compilerOptions": {
     "paths": {
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      "@workspace/shared/schemas/*": ["../../packages/shared/src/schemas/*.ts"],
+      "@workspace/shared/utils/*": ["../../packages/shared/src/utils/*.ts"]
     },
     "types": ["vite/client", "vite-plugin-svgr/client"]
   },

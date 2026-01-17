@@ -1,3 +1,5 @@
+import type { BoardCollectionType } from "@workspace/shared/schemas/board.schema";
+
 export interface Card {
   _id: string;
   boardId: string;
@@ -19,14 +21,11 @@ export interface Column {
   cards: Card[];
 }
 
-export interface Board {
+export interface Board extends BoardCollectionType {
   _id: string;
-  title: string;
-  description: string;
   type: BoardType;
   ownerIds: string[];
   memberIds: string[];
-  columnOrderIds: string[];
   columns: Column[];
 }
 

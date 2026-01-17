@@ -30,12 +30,14 @@
     "@mui/icons-material": "catalog:",
     "@mui/material": "catalog:",
     "@workspace/ui": "workspace:*",
+    "@workspace/shared": "workspace:*",
     "axios": "catalog:",
     "lodash": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router-dom": "catalog:",
-    "vite-tsconfig-paths": "catalog:"
+    "vite-tsconfig-paths": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/lodash": "catalog:",
