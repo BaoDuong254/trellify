@@ -34,7 +34,7 @@ const ACTIVE_DRAG_ITEM_TYPE = {
   CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",
 };
 
-function BoardContent({ board }: { board: Board }) {
+function BoardContent({ board }: { board?: Board }) {
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
       distance: 10,

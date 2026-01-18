@@ -5,10 +5,9 @@ import Container from "@mui/material/Container";
 import { useEffect, useState } from "react";
 import { fetchBoardDetailsAPI } from "src/apis";
 import type { Board as BoardType } from "src/types/board.type";
-import { mockData } from "src/apis/mock-data";
 
 function Board() {
-  const [board, setBoard] = useState<BoardType>(mockData.board);
+  const [board, setBoard] = useState<BoardType | undefined>(undefined);
   useEffect(() => {
     const boardId = "696b27eb43125756b0a0e13f";
     fetchBoardDetailsAPI(boardId).then((board) => {

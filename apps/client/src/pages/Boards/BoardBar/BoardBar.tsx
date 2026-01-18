@@ -27,7 +27,7 @@ const MENU_STYLES = {
   },
 };
 
-function BoardBar({ board }: { board: Board }) {
+function BoardBar({ board }: { board?: Board }) {
   return (
     <Box
       sx={{
@@ -47,7 +47,7 @@ function BoardBar({ board }: { board: Board }) {
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         <Chip icon={<DashboardIcon />} label={board?.title} clickable sx={MENU_STYLES} />
-        <Chip icon={<VpnLockIcon />} label={capitalizeFirstLetter(board.type)} clickable sx={MENU_STYLES} />
+        <Chip icon={<VpnLockIcon />} label={capitalizeFirstLetter(board?.type)} clickable sx={MENU_STYLES} />
         <Chip icon={<AddToDriveIcon />} label='Add To Goole Drive' clickable sx={MENU_STYLES} />
         <Chip icon={<BoltIcon />} label='Automation' clickable sx={MENU_STYLES} />
         <Chip icon={<FilterListIcon />} label='Filters' clickable sx={MENU_STYLES} />

@@ -28,6 +28,7 @@
     "@workspace/shared": "workspace:*",
     "async-exit-hook": "catalog:",
     "chalk": "catalog:",
+    "cors": "catalog:",
     "cross-env": "catalog:",
     "dotenv": "catalog:",
     "express": "catalog:",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@types/async-exit-hook": "catalog:",
+    "@types/cors": "catalog:",
     "@types/express": "catalog:",
     "@types/morgan": "catalog:",
     "@types/node": "catalog:",

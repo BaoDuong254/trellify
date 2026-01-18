@@ -7,7 +7,7 @@ import type { Column } from "src/types/board.type";
  * @example
  * capitalizeFirstLetter("hello") // "Hello"
  */
-export const capitalizeFirstLetter = (val: string) => {
+export const capitalizeFirstLetter = (val?: string) => {
   if (!val) return "";
   return `${val.charAt(0).toUpperCase()}${val.slice(1)}`;
 };

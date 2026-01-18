@@ -7,11 +7,16 @@ import logger from "@workspace/shared/utils/logger";
 import exitHook from "async-exit-hook";
 import { APIs_V1 } from "src/routes/v1";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
+import cors from "cors";
+import { corsOptions } from "src/config/cors";
 
 const START_SERVER = () => {
   // Create Express app
   const app = express();
   const port = environmentConfig.PORT;
+
+  // Setup CORS
+  app.use(cors(corsOptions));
 
   // Setup morgan with winston for logging
   app.use(

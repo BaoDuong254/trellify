@@ -23,9 +23,9 @@
  * ```
  */
 export const mapOrder = <T extends Record<string, any>>(
-  originalArray: T[],
-  orderArray: string[],
-  key: keyof T
+  originalArray?: T[],
+  orderArray?: string[],
+  key?: keyof T
 ): T[] => {
   if (!originalArray || !orderArray || !key) return [];
 
