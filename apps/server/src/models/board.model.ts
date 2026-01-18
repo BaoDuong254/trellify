@@ -1,6 +1,8 @@
 import { BOARD_COLLECTION_SCHEMA, CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
 import { ObjectId } from "mongodb";
 import { GET_DB } from "src/config/database";
+import { cardModel } from "src/models/card.model";
+import { columnModel } from "src/models/column.model";
 
 const BOARD_COLLECTION_NAME = "boards";
 
@@ -31,8 +33,32 @@ const getDetails = async (boardId: string) => {
   try {
     const board = await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(boardId) });
-    return board;
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectId(boardId),
+            _destroy: false,
+          },
+        },
+        {
+          $lookup: {
+            from: columnModel.COLUMN_COLLECTION_NAME,
+            localField: "_id",
+            foreignField: "boardId",
+            as: "columns",
+          },
+        },
+        {
+          $lookup: {
+            from: cardModel.CARD_COLLECTION_NAME,
+            localField: "_id",
+            foreignField: "boardId",
+            as: "cards",
+          },
+        },
+      ])
+      .toArray();
+    return board[0] ?? {};
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : String(error));
   }

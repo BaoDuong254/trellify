@@ -1,3 +1,4 @@
+import { BOARD_TYPES } from "@workspace/shared/utils/constants";
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "@workspace/shared/utils/validators";
 import { z } from "zod";
 
@@ -13,6 +14,7 @@ export const BOARD_COLLECTION_SCHEMA = z.object({
     .min(3, { error: "Error.DescriptionTooShort" })
     .max(256, { error: "Error.DescriptionTooLong" })
     .trim(),
+  type: z.enum([BOARD_TYPES.PRIVATE, BOARD_TYPES.PUBLIC], { error: "Error.TypeMustBePrivateOrPublic" }),
   columnOrderIds: z
     .array(z.string({ error: "Error.ColumnIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
     .default([]),
@@ -24,6 +26,7 @@ export const BOARD_COLLECTION_SCHEMA = z.object({
 export const CREATE_NEW_BOARD_SCHEMA = BOARD_COLLECTION_SCHEMA.pick({
   title: true,
   description: true,
+  type: true,
 });
 
 export type BoardCollectionType = z.infer<typeof BOARD_COLLECTION_SCHEMA>;

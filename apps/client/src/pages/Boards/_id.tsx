@@ -9,7 +9,7 @@ import type { Board as BoardType } from "src/types/board.type";
 function Board() {
   const [board, setBoard] = useState<BoardType | undefined>(undefined);
   useEffect(() => {
-    const boardId = "696b27eb43125756b0a0e13f";
+    const boardId = "696cf8e1464f12fbc4ad6c37";
     fetchBoardDetailsAPI(boardId).then((board) => {
       setBoard(board);
     });

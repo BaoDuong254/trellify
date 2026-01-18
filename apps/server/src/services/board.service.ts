@@ -1,3 +1,4 @@
+import { cloneDeep } from "lodash";
 import { CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
 import { StatusCodes } from "http-status-codes";
 import { boardModel } from "src/models/board.model";
@@ -24,7 +25,12 @@ const getDetails = async (boardId: string) => {
     if (!boardDetails) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
     }
-    return boardDetails;
+    const resultBoard = cloneDeep(boardDetails);
+    for (const column of resultBoard.columns) {
+      column.cards = resultBoard.cards.filter((card) => card.columnId.equals(column._id));
+    }
+    delete resultBoard.cards;
+    return resultBoard;
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : String(error));
   }

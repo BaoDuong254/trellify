@@ -420,6 +420,9 @@ importers:
       http-status-codes:
         specifier: 'catalog:'
         version: 2.3.0
+      lodash:
+        specifier: 'catalog:'
+        version: 4.17.21
       mongodb:
         specifier: 'catalog:'
         version: 7.0.0
@@ -442,6 +445,9 @@ importers:
       '@types/express':
         specifier: 'catalog:'
         version: 5.0.6
+      '@types/lodash':
+        specifier: 'catalog:'
+        version: 4.17.23
       '@types/morgan':
         specifier: 'catalog:'
         version: 1.9.10
