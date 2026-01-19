@@ -7,8 +7,6 @@ import {
   type DragEndEvent,
   useSensor,
   useSensors,
-  MouseSensor,
-  TouchSensor,
   type DragStartEvent,
   DragOverlay,
   type DropAnimation,
@@ -22,6 +20,7 @@ import {
   getFirstCollision,
   closestCorners,
 } from "@dnd-kit/core";
+import { MouseSensor, TouchSensor } from "src/lib/DndKitSensors";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import ColumnC from "src/pages/Boards/BoardContent/ListColumns/Column/Column";
