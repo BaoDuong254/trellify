@@ -11,57 +11,45 @@ const validateBeforeCreate = async (data: unknown) => {
 };
 
 const createNew = async (data: CreateNewBoardType & { slug: string }) => {
-  try {
-    const validData = await validateBeforeCreate(data);
-    const createdBoard = await GET_DB().collection(BOARD_COLLECTION_NAME).insertOne(validData);
-    return createdBoard;
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : String(error));
-  }
+  const validData = await validateBeforeCreate(data);
+  const createdBoard = await GET_DB().collection(BOARD_COLLECTION_NAME).insertOne(validData);
+  return createdBoard;
 };
 
 const fineOneById = async (id: ObjectId) => {
-  try {
-    const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ _id: id });
-    return board;
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : String(error));
-  }
+  const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ _id: id });
+  return board;
 };
 
 const getDetails = async (boardId: string) => {
-  try {
-    const board = await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
-      .aggregate([
-        {
-          $match: {
-            _id: new ObjectId(boardId),
-            _destroy: false,
-          },
+  const board = await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .aggregate([
+      {
+        $match: {
+          _id: new ObjectId(boardId),
+          _destroy: false,
         },
-        {
-          $lookup: {
-            from: columnModel.COLUMN_COLLECTION_NAME,
-            localField: "_id",
-            foreignField: "boardId",
-            as: "columns",
-          },
+      },
+      {
+        $lookup: {
+          from: columnModel.COLUMN_COLLECTION_NAME,
+          localField: "_id",
+          foreignField: "boardId",
+          as: "columns",
         },
-        {
-          $lookup: {
-            from: cardModel.CARD_COLLECTION_NAME,
-            localField: "_id",
-            foreignField: "boardId",
-            as: "cards",
-          },
+      },
+      {
+        $lookup: {
+          from: cardModel.CARD_COLLECTION_NAME,
+          localField: "_id",
+          foreignField: "boardId",
+          as: "cards",
         },
-      ])
-      .toArray();
-    return board[0] ?? {};
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : String(error));
-  }
+      },
+    ])
+    .toArray();
+  return board[0] || null;
 };
 
 export const boardModel = {

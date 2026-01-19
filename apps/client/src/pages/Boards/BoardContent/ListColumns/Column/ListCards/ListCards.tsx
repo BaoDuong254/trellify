@@ -11,7 +11,7 @@ function ListCards({ cards }: { cards: CardType[] }) {
           display: "flex",
           flexDirection: "column",
           gap: 1,
-          p: "0 5px",
+          p: "0 5px 5px 5px",
           m: "0 5px",
           overflowY: "auto",
           overflowX: "hidden",
