@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "src/theme.ts";
+import { ToastContainer } from "react-toastify";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -15,6 +16,7 @@ createRoot(rootElement).render(
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <App />
+      <ToastContainer position='bottom-left' theme='colored' />
     </ThemeProvider>
   </StrictMode>
 );

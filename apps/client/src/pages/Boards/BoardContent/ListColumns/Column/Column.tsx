@@ -23,6 +23,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import CloseIcon from "@mui/icons-material/Close";
 import TextField from "@mui/material/TextField";
+import { toast } from "react-toastify";
 
 function Column({ column }: { column: ColumnType }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -57,6 +58,9 @@ function Column({ column }: { column: ColumnType }) {
 
   const addNewCard = () => {
     if (!newCardTitle) {
+      toast.error("Card title cannot be empty", {
+        position: "bottom-right",
+      });
       return;
     }
 

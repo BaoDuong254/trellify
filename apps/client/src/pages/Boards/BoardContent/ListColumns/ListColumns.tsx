@@ -7,6 +7,7 @@ import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortabl
 import { useState } from "react";
 import TextField from "@mui/material/TextField";
 import CloseIcon from "@mui/icons-material/Close";
+import { toast } from "react-toastify";
 
 function ListColumns({ columns }: { columns: ColumnType[] }) {
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false);
@@ -17,6 +18,7 @@ function ListColumns({ columns }: { columns: ColumnType[] }) {
 
   const addNewColumn = () => {
     if (!newColumnTitle) {
+      toast.error("Column title cannot be empty");
       return;
     }
 
