@@ -5,12 +5,26 @@ import Container from "@mui/material/Container";
 import { useEffect, useState } from "react";
 import { createNewCardAPI, createNewColumnAPI, fetchBoardDetailsAPI } from "src/apis";
 import type { Board as BoardType, Card, Column } from "src/types/board.type";
+import { generatePlaceholderCard } from "src/utils/formatters";
+import { isEmpty } from "lodash";
+import { mapOrder } from "src/utils/sort";
 
 function Board() {
   const [board, setBoard] = useState<BoardType | undefined>(undefined);
   useEffect(() => {
     const boardId = "696cf8e1464f12fbc4ad6c37";
     fetchBoardDetailsAPI(boardId).then((board) => {
+      board.columns = mapOrder(board.columns, board.columnOrderIds, "_id");
+
+      board.columns.forEach((column) => {
+        if (isEmpty(column.cards)) {
+          column.cards = [generatePlaceholderCard(column)];
+          column.cardOrderIds = [generatePlaceholderCard(column)._id];
+        } else {
+          column.cards = mapOrder(column.cards, column.cardOrderIds, "_id");
+        }
+      });
+
       setBoard(board);
     });
   }, []);
@@ -18,17 +32,19 @@ function Board() {
   const createNewColumn = async (newColumnData: Partial<Column>): Promise<void> => {
     if (!board) return;
     const createdColumn = await createNewColumnAPI({
-      title: newColumnData.title || "",
+      ...newColumnData,
       boardId: board._id,
     });
 
-    // createdColumn.cards = [generatePlaceholderCard(createdColumn)];
-    // createdColumn.cardOrderIds = [generatePlaceholderCard(createdColumn)._id];
+    const placeholderCard = generatePlaceholderCard(createdColumn);
+    createdColumn.cards = [placeholderCard];
+    createdColumn.cardOrderIds = [placeholderCard._id];
 
-    // const newBoard = { ...board };
-    // newBoard.columns.push(createdColumn);
-    // newBoard.columnOrderIds.push(createdColumn._id);
-    // setBoard(newBoard);
+    setBoard({
+      ...board,
+      columns: [...board.columns, createdColumn],
+      columnOrderIds: [...board.columnOrderIds, createdColumn._id],
+    });
   };
 
   const createNewCard = async (newCardData: Partial<Card>): Promise<void> => {
@@ -38,18 +54,20 @@ function Board() {
       boardId: board._id,
     });
 
-    // const newBoard = { ...board };
-    // const columnToUpdate = newBoard.columns.find((column) => column._id === createdCard.columnId);
-    // if (columnToUpdate) {
-    //   if (columnToUpdate.cards.some((card) => card.FE_PlaceholderCard)) {
-    //     columnToUpdate.cards = [createdCard];
-    //     columnToUpdate.cardOrderIds = [createdCard._id];
-    //   } else {
-    //     columnToUpdate.cards.push(createdCard);
-    //     columnToUpdate.cardOrderIds.push(createdCard._id);
-    //   }
-    // }
-    // setBoard(newBoard);
+    setBoard({
+      ...board,
+      columns: board.columns.map((column) => {
+        if (column._id === createdCard.columnId) {
+          const hasPlaceholder = column.cards.some((card) => card.FE_PlaceholderCard);
+          return {
+            ...column,
+            cards: hasPlaceholder ? [createdCard] : [...column.cards, createdCard],
+            cardOrderIds: hasPlaceholder ? [createdCard._id] : [...column.cardOrderIds, createdCard._id],
+          };
+        }
+        return column;
+      }),
+    });
   };
 
   return (

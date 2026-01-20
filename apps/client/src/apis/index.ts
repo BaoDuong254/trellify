@@ -7,7 +7,7 @@ export const fetchBoardDetailsAPI = async (boardId: string): Promise<Board> => {
   return response.data.data;
 };
 
-export const createNewColumnAPI = async (newColumnData: Partial<Card>): Promise<Column> => {
+export const createNewColumnAPI = async (newColumnData: Partial<Column>): Promise<Column> => {
   const response = await axios.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/columns`, newColumnData);
   return response.data.data;
 };
