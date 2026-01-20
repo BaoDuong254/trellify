@@ -1,5 +1,5 @@
 import { BOARD_COLLECTION_SCHEMA, CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
-import { ObjectId } from "mongodb";
+import { ObjectId, UpdateFilter, Document } from "mongodb";
 import { GET_DB } from "src/config/database";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
@@ -52,9 +52,20 @@ const getDetails = async (boardId: string) => {
   return board[0] || null;
 };
 
+const pushColumnOrderIds = async (column) => {
+  await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(column.boardId as string) },
+      { $push: { columnOrderIds: new ObjectId(column._id as string) } } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+};
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
   fineOneById,
   getDetails,
+  pushColumnOrderIds,
 };

@@ -10,13 +10,18 @@ const validateBeforeCreate = async (data: unknown) => {
 
 const createNew = async (data: CreateNewCardType) => {
   const validData = await validateBeforeCreate(data);
-  const createdBoard = await GET_DB().collection(CARD_COLLECTION_NAME).insertOne(validData);
-  return createdBoard;
+  const newCardToAdd = {
+    ...validData,
+    boardId: new ObjectId(validData.boardId),
+    columnId: new ObjectId(validData.columnId),
+  };
+  const createdCard = await GET_DB().collection(CARD_COLLECTION_NAME).insertOne(newCardToAdd);
+  return createdCard;
 };
 
 const fineOneById = async (id: ObjectId) => {
-  const board = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ _id: id });
-  return board;
+  const card = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ _id: id });
+  return card;
 };
 
 export const cardModel = {
