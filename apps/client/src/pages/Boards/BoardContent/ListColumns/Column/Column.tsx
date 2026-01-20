@@ -17,7 +17,7 @@ import Button from "@mui/material/Button";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import Box from "@mui/material/Box";
 import ListCards from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
-import type { Column as ColumnType } from "src/types/board.type";
+import type { Card, Column as ColumnType } from "src/types/board.type";
 import { mapOrder } from "src/utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -25,7 +25,13 @@ import CloseIcon from "@mui/icons-material/Close";
 import TextField from "@mui/material/TextField";
 import { toast } from "react-toastify";
 
-function Column({ column }: { column: ColumnType }) {
+function Column({
+  column,
+  createNewCard,
+}: {
+  column: ColumnType;
+  createNewCard?: (newCardData: Partial<Card>) => Promise<void>;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column._id,
     data: {
@@ -56,13 +62,20 @@ function Column({ column }: { column: ColumnType }) {
 
   const [newCardTitle, setNewCardTitle] = useState("");
 
-  const addNewCard = () => {
+  const addNewCard = async () => {
     if (!newCardTitle) {
       toast.error("Card title cannot be empty", {
         position: "bottom-right",
       });
       return;
     }
+
+    const newCardData: Partial<Card> = {
+      title: newCardTitle,
+      columnId: column._id,
+    };
+
+    await createNewCard?.(newCardData);
 
     toggleOpenNewCardForm();
     setNewCardTitle("");

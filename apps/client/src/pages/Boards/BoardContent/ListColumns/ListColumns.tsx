@@ -9,18 +9,32 @@ import TextField from "@mui/material/TextField";
 import CloseIcon from "@mui/icons-material/Close";
 import { toast } from "react-toastify";
 
-function ListColumns({ columns }: { columns: ColumnType[] }) {
+function ListColumns({
+  columns,
+  createNewColumn,
+  createNewCard,
+}: {
+  columns: ColumnType[];
+  createNewColumn: (newColumnData: Partial<ColumnType>) => Promise<void>;
+  createNewCard: (newCardData: Partial<ColumnType>) => Promise<void>;
+}) {
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false);
   const toggleOpenNewColumnForm = () => {
     setOpenNewColumnForm((prev) => !prev);
   };
   const [newColumnTitle, setNewColumnTitle] = useState("");
 
-  const addNewColumn = () => {
+  const addNewColumn = async () => {
     if (!newColumnTitle) {
       toast.error("Column title cannot be empty");
       return;
     }
+
+    const newColumnData = {
+      title: newColumnTitle,
+    };
+
+    await createNewColumn(newColumnData);
 
     toggleOpenNewColumnForm();
     setNewColumnTitle("");
@@ -41,7 +55,7 @@ function ListColumns({ columns }: { columns: ColumnType[] }) {
         }}
       >
         {columns?.map((column) => (
-          <Column key={column._id} column={column} />
+          <Column key={column._id} column={column} createNewCard={createNewCard} />
         ))}
         {!openNewColumnForm ? (
           <Box
