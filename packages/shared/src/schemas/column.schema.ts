@@ -16,4 +16,10 @@ export const COLUMN_COLLECTION_SCHEMA = z.object({
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });
 
+export const CREATE_NEW_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({
+  title: true,
+  boardId: true,
+});
+
 export type ColumnCollectionType = z.infer<typeof COLUMN_COLLECTION_SCHEMA>;
+export type CreateNewColumnType = z.infer<typeof CREATE_NEW_COLUMN_SCHEMA>;

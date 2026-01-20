@@ -15,4 +15,11 @@ export const CARD_COLLECTION_SCHEMA = z.object({
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });
 
+export const CREATE_NEW_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({
+  title: true,
+  boardId: true,
+  columnId: true,
+});
+
 export type CardCollectionType = z.infer<typeof CARD_COLLECTION_SCHEMA>;
+export type CreateNewCardType = z.infer<typeof CREATE_NEW_CARD_SCHEMA>;
