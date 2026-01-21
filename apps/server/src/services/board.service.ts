@@ -1,9 +1,15 @@
 import { cloneDeep } from "lodash";
-import { CreateNewBoardType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
+import {
+  CreateNewBoardType,
+  MoveCardToDifferentColumnType,
+  UpdateBoardType,
+} from "@workspace/shared/schemas/board.schema";
 import { StatusCodes } from "http-status-codes";
 import { boardModel } from "src/models/board.model";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
+import { columnModel } from "src/models/column.model";
+import { cardModel } from "src/models/card.model";
 
 const createNew = async (requestBody: CreateNewBoardType) => {
   const newBoard = {
@@ -34,8 +40,27 @@ const update = async (boardId: string, requestBody: UpdateBoardType) => {
   return updatedBoard;
 };
 
+const moveCardToDifferentColumn = async (requestBody: MoveCardToDifferentColumnType) => {
+  await columnModel.update(requestBody.prevColumnId, {
+    cardOrderIds: requestBody.prevCardOrderIds,
+    updatedAt: new Date(),
+  });
+
+  await columnModel.update(requestBody.nextColumnId, {
+    cardOrderIds: requestBody.nextCardOrderIds,
+    updatedAt: new Date(),
+  });
+
+  await cardModel.update(requestBody.currentCardId, {
+    columnId: requestBody.nextColumnId,
+  });
+
+  return { updateResult: "Successfully!" };
+};
+
 export const boardService = {
   createNew,
   getDetails,
   update,
+  moveCardToDifferentColumn,
 };

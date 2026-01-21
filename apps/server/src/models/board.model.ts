@@ -70,6 +70,9 @@ const update = async (boardId: string, updateData: UpdateBoardType) => {
       delete updateData[field];
     }
   }
+  if (updateData.columnOrderIds) {
+    updateData.columnOrderIds = updateData.columnOrderIds.map((_id) => new ObjectId(_id)) as unknown as string[];
+  }
   return await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
     .findOneAndUpdate({ _id: new ObjectId(boardId) }, { $set: updateData }, { returnDocument: "after" });

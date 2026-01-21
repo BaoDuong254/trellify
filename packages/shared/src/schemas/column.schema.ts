@@ -24,6 +24,7 @@ export const CREATE_NEW_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({
 export const UPDATE_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({
   title: true,
   cardOrderIds: true,
+  updatedAt: true,
 }).partial();
 
 export type ColumnCollectionType = z.infer<typeof COLUMN_COLLECTION_SCHEMA>;

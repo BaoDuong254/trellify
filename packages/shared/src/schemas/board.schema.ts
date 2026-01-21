@@ -36,6 +36,25 @@ export const UPDATE_BOARD_SCHEMA = BOARD_COLLECTION_SCHEMA.pick({
   columnOrderIds: true,
 }).partial();
 
+export const MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA = z.object({
+  currentCardId: z
+    .string({ error: "Error.CurrentCardIdMustBeString" })
+    .regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+  prevColumnId: z
+    .string({ error: "Error.PrevColumnIdMustBeString" })
+    .regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+  prevCardOrderIds: z
+    .array(z.string({ error: "Error.CardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
+    .default([]),
+  nextColumnId: z
+    .string({ error: "Error.NextColumnIdMustBeString" })
+    .regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+  nextCardOrderIds: z
+    .array(z.string({ error: "Error.CardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
+    .default([]),
+});
+
 export type BoardCollectionType = z.infer<typeof BOARD_COLLECTION_SCHEMA>;
 export type CreateNewBoardType = z.infer<typeof CREATE_NEW_BOARD_SCHEMA>;
 export type UpdateBoardType = z.infer<typeof UPDATE_BOARD_SCHEMA>;
+export type MoveCardToDifferentColumnType = z.infer<typeof MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA>;

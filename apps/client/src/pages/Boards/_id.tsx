@@ -7,6 +7,7 @@ import {
   createNewCardAPI,
   createNewColumnAPI,
   fetchBoardDetailsAPI,
+  moveCardToDifferentColumnAPI,
   updateBoardDetailsAPI,
   updateColumnDetailsAPI,
 } from "src/apis";
@@ -105,6 +106,31 @@ function Board() {
     await updateColumnDetailsAPI(columnId, { cardOrderIds: dndOrderedCardIds });
   };
 
+  const moveCardToDifferentColumn = (
+    currentCardId: string,
+    prevColumnId: string,
+    nextColumnId: string,
+    dndOrderedColumns: Column[]
+  ) => {
+    if (!board) return;
+    const dndOrderedColumnsIds = dndOrderedColumns.map((col) => col._id);
+    const newBoard = { ...board };
+    newBoard.columns = dndOrderedColumns;
+    newBoard.columnOrderIds = dndOrderedColumnsIds;
+    setBoard(newBoard);
+
+    let prevCardOrderIds = dndOrderedColumns.find((col) => col._id === prevColumnId)?.cardOrderIds || [];
+    if (prevCardOrderIds[0].includes("placeholder-card")) prevCardOrderIds = [];
+
+    moveCardToDifferentColumnAPI({
+      currentCardId,
+      prevColumnId,
+      prevCardOrderIds,
+      nextColumnId,
+      nextCardOrderIds: dndOrderedColumns.find((col) => col._id === nextColumnId)?.cardOrderIds || [],
+    });
+  };
+
   if (!board) {
     return (
       <Box
@@ -133,6 +159,7 @@ function Board() {
         createNewCard={createNewCard}
         moveColumns={moveColumns}
         moveCardInTheSameColumn={moveCardInTheSameColumn}
+        moveCardToDifferentColumn={moveCardToDifferentColumn}
       />
     </Container>
   );

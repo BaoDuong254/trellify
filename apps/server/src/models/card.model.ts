@@ -8,6 +8,8 @@ const validateBeforeCreate = async (data: unknown) => {
   return await CARD_COLLECTION_SCHEMA.parseAsync(data);
 };
 
+const INVALID_UPDATE_FIELDS = new Set(["_id", "createdAt", "boardId"]);
+
 const createNew = async (data: CreateNewCardType) => {
   const validData = await validateBeforeCreate(data);
   const newCardToAdd = {
@@ -24,8 +26,24 @@ const fineOneById = async (id: ObjectId) => {
   return card;
 };
 
+const update = async (cardId: string, updateData: { columnId: string }) => {
+  for (const field of Object.keys(updateData)) {
+    if (INVALID_UPDATE_FIELDS.has(field)) {
+      delete updateData[field];
+    }
+  }
+
+  if (updateData.columnId) updateData.columnId = new ObjectId(updateData.columnId) as unknown as string;
+
+  const result = await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .findOneAndUpdate({ _id: new ObjectId(cardId) }, { $set: updateData }, { returnDocument: "after" });
+  return result;
+};
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   createNew,
   fineOneById,
+  update,
 };
