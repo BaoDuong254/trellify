@@ -64,6 +64,17 @@ const pushColumnOrderIds = async (column) => {
     );
 };
 
+const pullColumnOrderIds = async (column) => {
+  const result = await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(column.boardId as string) },
+      { $pull: { columnOrderIds: new ObjectId(column._id as string) } } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+  return result;
+};
+
 const update = async (boardId: string, updateData: UpdateBoardType) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
@@ -85,4 +96,5 @@ export const boardModel = {
   getDetails,
   pushColumnOrderIds,
   update,
+  pullColumnOrderIds,
 };

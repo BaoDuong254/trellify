@@ -53,10 +53,18 @@ const update = async (columnId: string, updateData: UpdateColumnType) => {
     .findOneAndUpdate({ _id: new ObjectId(columnId) }, { $set: updateData }, { returnDocument: "after" });
 };
 
+const deleteOneById = async (columnId: string) => {
+  const result = await GET_DB()
+    .collection(COLUMN_COLLECTION_NAME)
+    .deleteOne({ _id: new ObjectId(columnId) });
+  return result;
+};
+
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   createNew,
   fineOneById,
   pushCardOrderIds,
   update,
+  deleteOneById,
 };

@@ -33,6 +33,7 @@
     "@workspace/ui": "workspace:*",
     "axios": "catalog:",
     "lodash": "catalog:",
+    "material-ui-confirm": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router-dom": "catalog:",

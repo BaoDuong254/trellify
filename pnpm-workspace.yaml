@@ -60,6 +60,7 @@ catalog:
   lefthook: 2.0.15
   lodash: 4.17.21
   lucide-react: 0.562.0
+  material-ui-confirm: 4.0.0
   mongodb: 7.0.0
   morgan: 1.10.1
   nodemon: 3.1.11

@@ -25,7 +25,19 @@ const update = async (request: ExpressRequest, _response: ExpressResponse, next:
   }
 };
 
+const deleteItem = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
+  try {
+    await UPDATE_COLUMN_SCHEMA.parseAsync(request.params);
+    next();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
+    next(customError);
+  }
+};
+
 export const columnValidation = {
   createNew,
   update,
+  deleteItem,
 };

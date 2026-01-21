@@ -13,10 +13,12 @@ function ListColumns({
   columns,
   createNewColumn,
   createNewCard,
+  deleteColumnDetails,
 }: {
   columns: ColumnType[];
   createNewColumn: (newColumnData: Partial<ColumnType>) => Promise<void>;
   createNewCard: (newCardData: Partial<ColumnType>) => Promise<void>;
+  deleteColumnDetails: (columnId: string) => void;
 }) {
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false);
   const toggleOpenNewColumnForm = () => {
@@ -55,7 +57,12 @@ function ListColumns({
         }}
       >
         {columns?.map((column) => (
-          <Column key={column._id} column={column} createNewCard={createNewCard} />
+          <Column
+            key={column._id}
+            column={column}
+            createNewCard={createNewCard}
+            deleteColumnDetails={deleteColumnDetails}
+          />
         ))}
         {!openNewColumnForm ? (
           <Box

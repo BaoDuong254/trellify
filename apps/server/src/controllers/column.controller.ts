@@ -30,7 +30,22 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
   }
 };
 
+const deleteItem = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const columnId = (request.params.id as string) ?? "";
+    const result = await columnService.deleteItem(columnId);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Column deleted successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const columnController = {
   createNew,
   update,
+  deleteItem,
 };
