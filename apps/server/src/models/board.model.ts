@@ -1,4 +1,4 @@
-import { BOARD_COLLECTION_SCHEMA, CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
+import { BOARD_COLLECTION_SCHEMA, CreateNewBoardType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 import { ObjectId, UpdateFilter, Document } from "mongodb";
 import { GET_DB } from "src/config/database";
 import { cardModel } from "src/models/card.model";
@@ -9,6 +9,8 @@ const BOARD_COLLECTION_NAME = "boards";
 const validateBeforeCreate = async (data: unknown) => {
   return await BOARD_COLLECTION_SCHEMA.parseAsync(data);
 };
+
+const INVALID_UPDATE_FIELDS = new Set(["_id", "createdAt"]);
 
 const createNew = async (data: CreateNewBoardType & { slug: string }) => {
   const validData = await validateBeforeCreate(data);
@@ -53,7 +55,7 @@ const getDetails = async (boardId: string) => {
 };
 
 const pushColumnOrderIds = async (column) => {
-  await GET_DB()
+  return await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
     .findOneAndUpdate(
       { _id: new ObjectId(column.boardId as string) },
@@ -62,10 +64,22 @@ const pushColumnOrderIds = async (column) => {
     );
 };
 
+const update = async (boardId: string, updateData: UpdateBoardType) => {
+  for (const field of Object.keys(updateData)) {
+    if (INVALID_UPDATE_FIELDS.has(field)) {
+      delete updateData[field];
+    }
+  }
+  return await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .findOneAndUpdate({ _id: new ObjectId(boardId) }, { $set: updateData }, { returnDocument: "after" });
+};
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
   fineOneById,
   getDetails,
   pushColumnOrderIds,
+  update,
 };

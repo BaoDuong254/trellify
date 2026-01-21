@@ -1,5 +1,5 @@
 import { cloneDeep } from "lodash";
-import { CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
+import { CreateNewBoardType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 import { StatusCodes } from "http-status-codes";
 import { boardModel } from "src/models/board.model";
 import ApiError from "src/utils/api-error";
@@ -28,7 +28,14 @@ const getDetails = async (boardId: string) => {
   return resultBoard;
 };
 
+const update = async (boardId: string, requestBody: UpdateBoardType) => {
+  const updateData = { ...requestBody, updatedAt: new Date() };
+  const updatedBoard = await boardModel.update(boardId, updateData);
+  return updatedBoard;
+};
+
 export const boardService = {
   createNew,
   getDetails,
+  update,
 };

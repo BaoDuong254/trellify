@@ -15,6 +15,6 @@ router
   })
   .post(boardValidation.createNew, boardController.createNew);
 
-router.route("/:id").get(boardController.getDetails);
+router.route("/:id").get(boardController.getDetails).put(boardValidation.update, boardController.update);
 
 export const boardRoute = router;

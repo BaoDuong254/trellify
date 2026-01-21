@@ -24,7 +24,7 @@ const fineOneById = async (id: ObjectId) => {
 };
 
 const pushCardOrderIds = async (card) => {
-  await GET_DB()
+  return await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
     .findOneAndUpdate(
       { _id: new ObjectId(card.columnId as string) },

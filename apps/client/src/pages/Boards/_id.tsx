@@ -3,7 +3,7 @@ import BoardBar from "src/pages/Boards/BoardBar/BoardBar";
 import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
 import Container from "@mui/material/Container";
 import { useEffect, useState } from "react";
-import { createNewCardAPI, createNewColumnAPI, fetchBoardDetailsAPI } from "src/apis";
+import { createNewCardAPI, createNewColumnAPI, fetchBoardDetailsAPI, updateBoardDetailsAPI } from "src/apis";
 import type { Board as BoardType, Card, Column } from "src/types/board.type";
 import { generatePlaceholderCard } from "src/utils/formatters";
 import { isEmpty } from "lodash";
@@ -70,11 +70,25 @@ function Board() {
     });
   };
 
+  const moveColumns = async (dndOrderedColumns: Column[]): Promise<void> => {
+    if (!board?._id) return;
+    const dndOrderedColumnsIds = dndOrderedColumns.map((col) => col._id);
+    const newBoard = { ...board, columns: dndOrderedColumns, columnOrderIds: dndOrderedColumnsIds };
+    setBoard(newBoard);
+
+    await updateBoardDetailsAPI(board._id, { columnOrderIds: dndOrderedColumnsIds });
+  };
+
   return (
     <Container sx={{ height: "100vh", backgroundColor: "primary.main" }} disableGutters maxWidth={false}>
       <AppBar />
       <BoardBar board={board} />
-      <BoardContent board={board} createNewColumn={createNewColumn} createNewCard={createNewCard} />
+      <BoardContent
+        board={board}
+        createNewColumn={createNewColumn}
+        createNewCard={createNewCard}
+        moveColumns={moveColumns}
+      />
     </Container>
   );
 }

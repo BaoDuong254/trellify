@@ -29,5 +29,13 @@ export const CREATE_NEW_BOARD_SCHEMA = BOARD_COLLECTION_SCHEMA.pick({
   type: true,
 });
 
+export const UPDATE_BOARD_SCHEMA = BOARD_COLLECTION_SCHEMA.pick({
+  title: true,
+  description: true,
+  type: true,
+  columnOrderIds: true,
+}).partial();
+
 export type BoardCollectionType = z.infer<typeof BOARD_COLLECTION_SCHEMA>;
 export type CreateNewBoardType = z.infer<typeof CREATE_NEW_BOARD_SCHEMA>;
+export type UpdateBoardType = z.infer<typeof UPDATE_BOARD_SCHEMA>;

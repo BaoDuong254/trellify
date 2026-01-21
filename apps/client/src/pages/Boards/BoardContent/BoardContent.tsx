@@ -37,10 +37,12 @@ function BoardContent({
   board,
   createNewColumn,
   createNewCard,
+  moveColumns,
 }: {
   board?: Board;
   createNewColumn: (newColumnData: Partial<Column>) => Promise<void>;
   createNewCard: (newCardData: Partial<Card>) => Promise<void>;
+  moveColumns: (newColumnOrderIds: Column[]) => Promise<void>;
 }) {
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -218,7 +220,7 @@ function BoardContent({
         const oldColumnIndex = orderedColumns.findIndex((col) => col._id === active.id);
         const newColumnIndex = orderedColumns.findIndex((col) => col._id === over.id);
         const dndOrderedColumns = arrayMove(orderedColumns, oldColumnIndex, newColumnIndex);
-        // const dndOrderedColumnIds = dndOrderedColumns.map((col) => col._id);
+        moveColumns(dndOrderedColumns);
         setOrderedColumns(dndOrderedColumns);
       }
     }

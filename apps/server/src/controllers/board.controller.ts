@@ -1,4 +1,4 @@
-import { CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
+import { CreateNewBoardType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { boardService } from "src/services/board.service";
@@ -30,7 +30,22 @@ const getDetails = async (request: ExpressRequest, response: ExpressResponse, ne
   }
 };
 
+const update = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const boardId = (request.params.id as string) ?? "";
+    const updatedBoard = await boardService.update(boardId, request.body as UpdateBoardType);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Board details fetched successfully",
+      data: updatedBoard,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const boardController = {
   createNew,
   getDetails,
+  update,
 };
