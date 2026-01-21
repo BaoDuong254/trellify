@@ -25,6 +25,7 @@
     "prepare": "lefthook install",
     "preinstall": "pnpm dlx only-allow pnpm",
     "start:dev": "turbo run start:dev --parallel",
+    "pkg:build": "turbo run pkg:build",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",

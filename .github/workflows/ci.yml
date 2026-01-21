@@ -60,7 +60,10 @@ jobs:
       - name: Run format check
         run: pnpm run format
 
-      - name: Run build
+      - name: Build packages
+        run: pnpm run pkg:build
+
+      - name: Build apps
         run: pnpm run build
         env:
           NODE_OPTIONS: --max-old-space-size=4096

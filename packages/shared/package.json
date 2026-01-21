@@ -7,7 +7,7 @@
   "packageManager": "pnpm@10.28.0",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm clean && tsc --project tsconfig.build.json && tsc-alias --project tsconfig.build.json",
+    "pkg:build": "pnpm clean && tsc --project tsconfig.build.json && tsc-alias --project tsconfig.build.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",

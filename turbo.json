@@ -12,6 +12,11 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", "build/**", ".next/**"]
     },
+    "pkg:build": {
+      "dependsOn": ["^pkg:build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", "build/**", ".next/**"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
