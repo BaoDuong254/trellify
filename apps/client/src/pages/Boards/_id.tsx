@@ -3,11 +3,20 @@ import BoardBar from "src/pages/Boards/BoardBar/BoardBar";
 import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
 import Container from "@mui/material/Container";
 import { useEffect, useState } from "react";
-import { createNewCardAPI, createNewColumnAPI, fetchBoardDetailsAPI, updateBoardDetailsAPI } from "src/apis";
+import {
+  createNewCardAPI,
+  createNewColumnAPI,
+  fetchBoardDetailsAPI,
+  updateBoardDetailsAPI,
+  updateColumnDetailsAPI,
+} from "src/apis";
 import type { Board as BoardType, Card, Column } from "src/types/board.type";
 import { generatePlaceholderCard } from "src/utils/formatters";
 import { isEmpty } from "lodash";
 import { mapOrder } from "src/utils/sort";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
 
 function Board() {
   const [board, setBoard] = useState<BoardType | undefined>(undefined);
@@ -79,6 +88,41 @@ function Board() {
     await updateBoardDetailsAPI(board._id, { columnOrderIds: dndOrderedColumnsIds });
   };
 
+  const moveCardInTheSameColumn = async (
+    dndOrderedCards: Card[],
+    dndOrderedCardIds: string[],
+    columnId: string
+  ): Promise<void> => {
+    if (!board) return;
+    const newBoard = { ...board };
+    const columnToUpdate = newBoard.columns.find((column) => column._id === columnId);
+    if (columnToUpdate) {
+      columnToUpdate.cards = dndOrderedCards;
+      columnToUpdate.cardOrderIds = dndOrderedCardIds;
+    }
+    setBoard(newBoard);
+
+    await updateColumnDetailsAPI(columnId, { cardOrderIds: dndOrderedCardIds });
+  };
+
+  if (!board) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 2,
+          width: "100vw",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+        <Typography>Loading Board...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Container sx={{ height: "100vh", backgroundColor: "primary.main" }} disableGutters maxWidth={false}>
       <AppBar />
@@ -88,6 +132,7 @@ function Board() {
         createNewColumn={createNewColumn}
         createNewCard={createNewCard}
         moveColumns={moveColumns}
+        moveCardInTheSameColumn={moveCardInTheSameColumn}
       />
     </Container>
   );

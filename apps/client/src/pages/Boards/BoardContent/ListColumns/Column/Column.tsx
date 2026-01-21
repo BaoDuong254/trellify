@@ -18,7 +18,6 @@ import DragHandleIcon from "@mui/icons-material/DragHandle";
 import Box from "@mui/material/Box";
 import ListCards from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
 import type { Card, Column as ColumnType } from "src/types/board.type";
-import { mapOrder } from "src/utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import CloseIcon from "@mui/icons-material/Close";
@@ -55,7 +54,7 @@ function Column({
     setAnchorEl(null);
   };
 
-  const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
+  const orderedCards = column.cards;
 
   const [openNewCardForm, setOpenNewCardForm] = useState(false);
   const toggleOpenNewCardForm = () => setOpenNewCardForm(!openNewCardForm);

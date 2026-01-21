@@ -1,6 +1,5 @@
 import ListColumns from "src/pages/Boards/BoardContent/ListColumns/ListColumns";
 import { type Card, type Board, type Column } from "src/types/board.type";
-import { mapOrder } from "src/utils/sort";
 import Box from "@mui/material/Box";
 import {
   DndContext,
@@ -38,11 +37,13 @@ function BoardContent({
   createNewColumn,
   createNewCard,
   moveColumns,
+  moveCardInTheSameColumn,
 }: {
   board?: Board;
   createNewColumn: (newColumnData: Partial<Column>) => Promise<void>;
   createNewCard: (newCardData: Partial<Card>) => Promise<void>;
   moveColumns: (newColumnOrderIds: Column[]) => Promise<void>;
+  moveCardInTheSameColumn: (dndOrderedCards: Card[], dndOrderedCardIds: string[], columnId: string) => Promise<void>;
 }) {
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -57,9 +58,7 @@ function BoardContent({
   });
 
   const sensors = useSensors(mouseSensor, touchSensor);
-  const [orderedColumns, setOrderedColumns] = useState<Column[]>(() =>
-    mapOrder(board?.columns, board?.columnOrderIds, "_id")
-  );
+  const [orderedColumns, setOrderedColumns] = useState<Column[]>([]);
 
   const [activeDragItemId, setActiveDragItemId] = useState<string | null>(null);
   const [activeDragItemType, setActiveDragItemType] = useState<string | null>(null);
@@ -70,8 +69,8 @@ function BoardContent({
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
-    setOrderedColumns(mapOrder(board?.columns, board?.columnOrderIds, "_id"));
-  }, [board?.columns, board?.columnOrderIds]);
+    setOrderedColumns(board?.columns ?? []);
+  }, [board]);
 
   const findColumnByCardId = (cardId: string) => {
     return orderedColumns.find((column) => column?.cards?.map((card) => card._id)?.includes(cardId));
@@ -203,15 +202,17 @@ function BoardContent({
         const oldCardIndex = oldColumnWhenDraggingCard?.cards?.findIndex((card) => card._id === activeDragItemId);
         const newCardIndex = overColumn?.cards?.findIndex((card) => card._id === overCardId);
         const dndOrderedCards = arrayMove(oldColumnWhenDraggingCard?.cards, oldCardIndex, newCardIndex);
+        const dndOrderedCardIds = dndOrderedCards.map((card) => card._id);
         setOrderedColumns((prevColumns) => {
           const nextColumns = cloneDeep(prevColumns);
           const targetColumn = nextColumns.find((col) => col._id === overColumn?._id);
           if (targetColumn) {
             targetColumn.cards = dndOrderedCards;
-            targetColumn.cardOrderIds = dndOrderedCards.map((card) => card._id);
+            targetColumn.cardOrderIds = dndOrderedCardIds;
           }
           return nextColumns;
         });
+        moveCardInTheSameColumn(dndOrderedCards, dndOrderedCardIds, oldColumnWhenDraggingCard._id);
       }
     }
 
@@ -220,8 +221,8 @@ function BoardContent({
         const oldColumnIndex = orderedColumns.findIndex((col) => col._id === active.id);
         const newColumnIndex = orderedColumns.findIndex((col) => col._id === over.id);
         const dndOrderedColumns = arrayMove(orderedColumns, oldColumnIndex, newColumnIndex);
-        moveColumns(dndOrderedColumns);
         setOrderedColumns(dndOrderedColumns);
+        moveColumns(dndOrderedColumns);
       }
     }
     setActiveDragItemId(null);

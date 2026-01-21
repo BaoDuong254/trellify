@@ -1,4 +1,5 @@
 import type { UpdateBoardType } from "@workspace/shared/schemas/board.schema";
+import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import axios from "axios";
 import envConfig from "src/config/env";
 import type { Board, Card, Column } from "src/types/board.type";
@@ -15,6 +16,11 @@ export const updateBoardDetailsAPI = async (boardId: string, updateData: UpdateB
 
 export const createNewColumnAPI = async (newColumnData: Partial<Column>): Promise<Column> => {
   const response = await axios.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/columns`, newColumnData);
+  return response.data.data;
+};
+
+export const updateColumnDetailsAPI = async (columnId: string, updateData: UpdateColumnType) => {
+  const response = await axios.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/columns/${columnId}`, updateData);
   return response.data.data;
 };
 

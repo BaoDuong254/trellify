@@ -1,4 +1,4 @@
-import { CreateNewColumnType } from "@workspace/shared/schemas/column.schema";
+import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import { boardModel } from "src/models/board.model";
 import { columnModel } from "src/models/column.model";
 
@@ -15,6 +15,13 @@ const createNew = async (requestBody: CreateNewColumnType) => {
   return getNewlyCreatedColumn;
 };
 
+const update = async (columnId: string, requestBody: UpdateColumnType) => {
+  const updateData = { ...requestBody, updatedAt: new Date() };
+  const updatedColumn = await columnModel.update(columnId, updateData);
+  return updatedColumn;
+};
+
 export const columnService = {
   createNew,
+  update,
 };
