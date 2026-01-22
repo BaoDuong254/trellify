@@ -8,6 +8,7 @@ import { ToastContainer } from "react-toastify";
 import { ConfirmProvider } from "material-ui-confirm";
 import { Provider } from "react-redux";
 import { store } from "src/redux/store.ts";
+import { BrowserRouter } from "react-router-dom";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -16,22 +17,24 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <ConfirmProvider
-          defaultOptions={{
-            allowClose: false,
-            dialogProps: { maxWidth: "xs" },
-            buttonOrder: ["confirm", "cancel"],
-            cancellationButtonProps: { color: "inherit" },
-            confirmationButtonProps: { color: "secondary", variant: "outlined" },
-          }}
-        >
-          <CssBaseline />
-          <App />
-          <ToastContainer position='bottom-left' theme='colored' />
-        </ConfirmProvider>
-      </ThemeProvider>
-    </Provider>
+    <BrowserRouter basename='/'>
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <ConfirmProvider
+            defaultOptions={{
+              allowClose: false,
+              dialogProps: { maxWidth: "xs" },
+              buttonOrder: ["confirm", "cancel"],
+              cancellationButtonProps: { color: "inherit" },
+              confirmationButtonProps: { color: "secondary", variant: "outlined" },
+            }}
+          >
+            <CssBaseline />
+            <App />
+            <ToastContainer position='bottom-left' theme='colored' />
+          </ConfirmProvider>
+        </ThemeProvider>
+      </Provider>
+    </BrowserRouter>
   </StrictMode>
 );

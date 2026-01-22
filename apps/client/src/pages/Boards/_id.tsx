@@ -16,16 +16,20 @@ import {
 } from "src/redux/activeBoard/activeBoardSlice";
 import type { AppDispatch } from "src/redux/store";
 import { cloneDeep } from "lodash";
+import { useParams } from "react-router-dom";
 
 function Board() {
   const dispatch = useDispatch<AppDispatch>();
 
   const board = useSelector(selectCurrentActiveBoard);
 
+  const { boardId } = useParams();
+
   useEffect(() => {
-    const boardId = "696cf8e1464f12fbc4ad6c37";
-    dispatch(fetchBoardDetailsAPI(boardId));
-  }, [dispatch]);
+    if (boardId) {
+      dispatch(fetchBoardDetailsAPI(boardId));
+    }
+  }, [dispatch, boardId]);
 
   const moveColumns = async (dndOrderedColumns: Column[]): Promise<void> => {
     if (!board?._id) return;
