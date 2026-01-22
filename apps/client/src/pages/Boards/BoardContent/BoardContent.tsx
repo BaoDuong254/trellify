@@ -34,16 +34,11 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 
 function BoardContent({
   board,
-  createNewColumn,
-  createNewCard,
   moveColumns,
   moveCardInTheSameColumn,
   moveCardToDifferentColumn,
-  deleteColumnDetails,
 }: {
   board?: Board;
-  createNewColumn: (newColumnData: Partial<Column>) => Promise<void>;
-  createNewCard: (newCardData: Partial<Card>) => Promise<void>;
   moveColumns: (newColumnOrderIds: Column[]) => Promise<void>;
   moveCardInTheSameColumn: (dndOrderedCards: Card[], dndOrderedCardIds: string[], columnId: string) => Promise<void>;
   moveCardToDifferentColumn: (
@@ -52,7 +47,6 @@ function BoardContent({
     nextColumnId: string,
     dndOrderedColumns: Column[]
   ) => void;
-  deleteColumnDetails: (columnId: string) => void;
 }) {
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -303,12 +297,7 @@ function BoardContent({
           p: "10px 0",
         }}
       >
-        <ListColumns
-          columns={orderedColumns}
-          createNewColumn={createNewColumn}
-          createNewCard={createNewCard}
-          deleteColumnDetails={deleteColumnDetails}
-        />
+        <ListColumns columns={orderedColumns} />
         <DragOverlay dropAnimation={dropAnimation}>
           {!activeDragItemType && null}
           {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && <ColumnC column={activeDragItemData as Column} />}

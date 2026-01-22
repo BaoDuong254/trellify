@@ -24,22 +24,21 @@ import CloseIcon from "@mui/icons-material/Close";
 import TextField from "@mui/material/TextField";
 import { toast } from "react-toastify";
 import { useConfirm } from "material-ui-confirm";
+import { cloneDeep } from "lodash";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch } from "src/redux/store";
+import { selectCurrentActiveBoard, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import { createNewCardAPI, deleteColumnDetailsAPI } from "src/apis";
 
-function Column({
-  column,
-  createNewCard,
-  deleteColumnDetails,
-}: {
-  column: ColumnType;
-  createNewCard?: (newCardData: Partial<Card>) => Promise<void>;
-  deleteColumnDetails?: (columnId: string) => void;
-}) {
+function Column({ column }: { column: ColumnType }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column._id,
     data: {
       ...column,
     },
   });
+  const board = useSelector(selectCurrentActiveBoard);
+  const dispatch = useDispatch<AppDispatch>();
 
   const dndKitColumnStyles = {
     transform: CSS.Translate.toString(transform),
@@ -77,7 +76,25 @@ function Column({
       columnId: column._id,
     };
 
-    await createNewCard?.(newCardData);
+    if (!board) return;
+    const createdCard = await createNewCardAPI({
+      ...newCardData,
+      boardId: board._id,
+    });
+
+    const newBoard = cloneDeep(board);
+    const columnToUpdate = newBoard.columns.find((col) => col._id === createdCard.columnId);
+    if (columnToUpdate) {
+      if (columnToUpdate.cards.some((card) => card.FE_PlaceholderCard)) {
+        columnToUpdate.cards = [createdCard];
+        columnToUpdate.cardOrderIds = [createdCard._id];
+      } else {
+        columnToUpdate.cards.push(createdCard);
+        columnToUpdate.cardOrderIds.push(createdCard._id);
+      }
+    }
+
+    dispatch(updateCurrentActiveBoard(newBoard));
 
     toggleOpenNewCardForm();
     setNewCardTitle("");
@@ -92,7 +109,15 @@ function Column({
       cancellationText: "Cancel",
     })
       .then(() => {
-        deleteColumnDetails?.(column._id);
+        if (!board) return;
+        const newBoard = { ...board };
+        newBoard.columns = newBoard.columns.filter((col) => col._id !== column._id);
+        newBoard.columnOrderIds = newBoard.columnOrderIds.filter((_id) => _id !== column._id);
+        dispatch(updateCurrentActiveBoard(newBoard));
+
+        deleteColumnDetailsAPI(column._id).then((res) => {
+          toast.success(res?.deleteResult);
+        });
       })
       .catch(() => {});
   };

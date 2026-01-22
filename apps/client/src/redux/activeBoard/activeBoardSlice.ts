@@ -15,7 +15,7 @@ const initialState: ActiveBoardState = {
 };
 
 export const fetchBoardDetailsAPI = createAsyncThunk("activeBoard/fetchBoardDetailsAPI", async (boardId: string) => {
-  const response = await axios.get(`${envConfig.VITE_API_ENDPOINT}/v1/boards/${boardId}`);
+  const response = await axios.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`);
   return response.data.data;
 });
 
