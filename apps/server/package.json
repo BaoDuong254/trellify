@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "private": true,
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.1",
   "license": "MIT",
   "scripts": {
     "copy-files": "copyfiles -u 1 \"src/openapi/**/*.yaml\" \"src/mailtrap/template/**\" dist/",
@@ -22,7 +22,7 @@
   },
   "engines": {
     "node": "24.12.0",
-    "pnpm": "10.28.0"
+    "pnpm": "10.28.1"
   },
   "dependencies": {
     "@workspace/shared": "workspace:*",
