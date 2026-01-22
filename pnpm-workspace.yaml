@@ -17,6 +17,7 @@ catalog:
   "@mui/icons-material": 7.3.7
   "@mui/material": 7.3.7
   "@radix-ui/react-slot": 1.2.4
+  "@reduxjs/toolkit": 2.11.2
   "@tailwindcss/vite": 4.1.18
   "@types/async-exit-hook": 2.0.2
   "@types/cors": 2.8.19
@@ -70,6 +71,7 @@ catalog:
   prettier-plugin-tailwindcss: 0.7.2
   react: 19.2.3
   react-dom: 19.2.3
+  react-redux: 9.2.0
   react-router-dom: 7.12.0
   rimraf: 6.1.2
   tailwind-merge: 3.4.0
