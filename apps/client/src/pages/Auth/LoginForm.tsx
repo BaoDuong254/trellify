@@ -122,7 +122,14 @@ function LoginForm() {
             </Box>
           </Box>
           <CardActions sx={{ padding: "0 1em 1em 1em" }}>
-            <Button type='submit' variant='contained' color='primary' size='large' fullWidth>
+            <Button
+              type='submit'
+              variant='contained'
+              color='primary'
+              size='large'
+              fullWidth
+              className='interceptor-loading'
+            >
               Login
             </Button>
           </CardActions>

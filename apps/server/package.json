@@ -27,6 +27,7 @@
   "dependencies": {
     "@workspace/shared": "workspace:*",
     "async-exit-hook": "catalog:",
+    "bcryptjs": "catalog:",
     "chalk": "catalog:",
     "cors": "catalog:",
     "cross-env": "catalog:",
@@ -36,6 +37,7 @@
     "lodash": "catalog:",
     "mongodb": "catalog:",
     "morgan": "catalog:",
+    "uuid": "catalog:",
     "winston": "catalog:",
     "zod": "catalog:"
   },

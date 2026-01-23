@@ -21,6 +21,193 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "get board details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/696cf8e1464f12fbc4ad6c37",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "696cf8e1464f12fbc4ad6c37"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create new board",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"First title\",\r\n    \"description\": \"Second description\",\r\n    \"type\": \"public\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/boards",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Moving card to different column",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"currentCardId\": \"1\",\r\n    \"prevColumnId\": \"2\",\r\n    \"prevCardOrderIds\": [],\r\n    \"nextColumnId\": \"3\",\r\n    \"nextCardOrderIds\": []\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/boards/supports/moving_card",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "supports", "moving_card"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "module columns",
+      "item": [
+        {
+          "name": "create new column",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"First title column\",\r\n    \"boardId\": \"696cf8e1464f12fbc4ad6c37\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/columns",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "columns"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update a column",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"First title column\",\r\n    \"cardOrderIds\": [],\r\n    \"updatedAt\": \r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/columns/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "columns", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "example",
+                  "description": "column id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete a column",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/columns/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "columns", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "example",
+                  "description": "column id"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "module cards",
+      "item": [
+        {
+          "name": "create new card",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"First title column\",\r\n    \"boardId\": \"696cf8e1464f12fbc4ad6c37\",\r\n    \"columnId\": \"696f91e673de4956025b8514\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/cards",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "module users",
+      "item": [
+        {
+          "name": "Register a new user",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"duonggiabao254s@gmail.com\",\r\n    \"password\": \"12345678a\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/users/register",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "register"]
+            }
+          },
+          "response": []
         }
       ]
     },

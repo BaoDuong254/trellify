@@ -1,3 +1,5 @@
+import { pick } from "lodash";
+
 /**
  * Converts a string into a URL-friendly slug.
  * @param value - The string to be slugify.
@@ -20,3 +22,18 @@ export default function slugify(value: string) {
     .replaceAll(/\s+/g, "-") // replace spaces with hyphens
     .replaceAll(/-+/g, "-"); // remove consecutive hyphens
 }
+
+export const pickUser = (user: unknown) => {
+  if (!user) return {};
+  return pick(user, [
+    "_id",
+    "email",
+    "username",
+    "displayName",
+    "avatar",
+    "role",
+    "isActive",
+    "createdAt",
+    "updatedAt",
+  ]);
+};

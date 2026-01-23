@@ -29,3 +29,25 @@ export const generatePlaceholderCard = (column: Column) => {
     FE_PlaceholderCard: true,
   };
 };
+
+/**
+ * Toggle loading state for elements with interceptor-loading class
+ * @param calling - whether API call is in progress
+ * @example
+ * ```ts
+ * interceptorLoadingElements(true) // Disable elements
+ * interceptorLoadingElements(false) // Enable elements
+ * ```
+ */
+export const interceptorLoadingElements = (calling: boolean): void => {
+  const elements = document.querySelectorAll<HTMLElement>(".interceptor-loading");
+  elements.forEach((element) => {
+    if (calling) {
+      element.style.opacity = "0.5";
+      element.style.pointerEvents = "none";
+    } else {
+      element.style.opacity = "initial";
+      element.style.pointerEvents = "initial";
+    }
+  });
+};
