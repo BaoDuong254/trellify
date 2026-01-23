@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import express from "express";
+import express, { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import morgan from "morgan";
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
@@ -9,11 +9,21 @@ import { APIs_V1 } from "src/routes/v1";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
 import cors from "cors";
 import { corsOptions } from "src/config/cors";
+import cookieParser from "cookie-parser";
 
 const START_SERVER = () => {
   // Create Express app
   const app = express();
   const port = environmentConfig.PORT;
+
+  // Disable caching
+  app.use((_request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+    response.set("Cache-Control", "no-store");
+    next();
+  });
+
+  // Setup cookie parser
+  app.use(cookieParser());
 
   // Setup CORS
   app.use(cors(corsOptions));

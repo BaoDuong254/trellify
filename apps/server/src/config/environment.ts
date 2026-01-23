@@ -30,6 +30,7 @@ const configSchema = z.object({
   ACCESS_TOKEN_LIFE: z.string().min(1, "ACCESS_TOKEN_LIFE is required"),
   REFRESH_TOKEN_SECRET_SIGNATURE: z.string().min(1, "REFRESH_TOKEN_SECRET_SIGNATURE is required"),
   REFRESH_TOKEN_LIFE: z.string().min(1, "REFRESH_TOKEN_LIFE is required"),
+  COOKIE_MAX_AGE: z.string().min(1, "COOKIE_MAX_AGE is required"),
 });
 
 const configServer = configSchema.safeParse(process.env);

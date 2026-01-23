@@ -26,7 +26,7 @@
     "preinstall": "pnpm dlx only-allow pnpm",
     "start:dev": "turbo run start:dev --parallel",
     "pkg:build": "turbo run pkg:build",
-    "build": "turbo run build",
+    "apps:build": "turbo run apps:build",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "format": "turbo run format",

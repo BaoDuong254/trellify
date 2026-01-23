@@ -8,7 +8,7 @@ import { pickUser } from "src/utils/formatters";
 import environmentConfig from "src/config/environment";
 import { BrevoProvider } from "src/providers/brevo.provider";
 import { JwtProvider } from "src/providers/jwt.provider";
-import { StringValue } from "ms";
+import ms, { StringValue } from "ms";
 
 const createNew = async (requestBody: UserRegistrationType) => {
   const existUser = await userModel.findOneByEmail(requestBody.email);
@@ -76,12 +76,12 @@ const login = async (requestBody: UserLoginType) => {
   const accessToken = await JwtProvider.generateToken(
     userInfo,
     environmentConfig.ACCESS_TOKEN_SECRET_SIGNATURE,
-    environmentConfig.ACCESS_TOKEN_LIFE as StringValue
+    ms(environmentConfig.ACCESS_TOKEN_LIFE as StringValue)
   );
   const refreshToken = await JwtProvider.generateToken(
     userInfo,
     environmentConfig.REFRESH_TOKEN_SECRET_SIGNATURE,
-    environmentConfig.REFRESH_TOKEN_LIFE as StringValue
+    ms(environmentConfig.REFRESH_TOKEN_LIFE as StringValue)
   );
   return {
     ...pickUser(existUser),

@@ -2,7 +2,6 @@ import logger from "@workspace/shared/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import JWT from "jsonwebtoken";
 import { ObjectId } from "mongodb";
-import { StringValue } from "ms";
 import ApiError from "src/utils/api-error";
 
 const generateToken = async (
@@ -11,7 +10,7 @@ const generateToken = async (
     email: string;
   },
   secretSignature: string,
-  tokenLife: StringValue
+  tokenLife: number
 ) => {
   try {
     return JWT.sign(userInfo, secretSignature, { algorithm: "HS256", expiresIn: tokenLife });

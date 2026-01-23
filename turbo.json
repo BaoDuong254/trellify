@@ -7,8 +7,8 @@
       "cache": false,
       "persistent": true
     },
-    "build": {
-      "dependsOn": ["^build"],
+    "apps:build": {
+      "dependsOn": ["^apps:build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", "build/**", ".next/**"]
     },

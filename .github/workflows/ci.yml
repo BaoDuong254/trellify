@@ -64,6 +64,6 @@ jobs:
         run: pnpm run pkg:build
 
       - name: Build apps
-        run: pnpm run build
+        run: pnpm run apps:build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
