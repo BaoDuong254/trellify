@@ -26,6 +26,10 @@ const configSchema = z.object({
   BREVO_API_KEY: z.string().min(1, "BREVO_API_KEY is required"),
   ADMIN_EMAIL_ADDRESS: z.email().min(1, "ADMIN_EMAIL_ADDRESS is required"),
   ADMIN_EMAIL_NAME: z.string().min(1, "ADMIN_EMAIL_NAME is required"),
+  ACCESS_TOKEN_SECRET_SIGNATURE: z.string().min(1, "ACCESS_TOKEN_SECRET_SIGNATURE is required"),
+  ACCESS_TOKEN_LIFE: z.string().min(1, "ACCESS_TOKEN_LIFE is required"),
+  REFRESH_TOKEN_SECRET_SIGNATURE: z.string().min(1, "REFRESH_TOKEN_SECRET_SIGNATURE is required"),
+  REFRESH_TOKEN_LIFE: z.string().min(1, "REFRESH_TOKEN_LIFE is required"),
 });
 
 const configServer = configSchema.safeParse(process.env);

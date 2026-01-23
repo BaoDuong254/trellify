@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { activeBoardReducer } from "src/redux/activeBoard/activeBoardSlice";
+import { userReducer } from "src/redux/user/userSlice";
 
 export const store = configureStore({
   reducer: {
     activeBoard: activeBoardReducer,
+    user: userReducer,
   },
 });
 

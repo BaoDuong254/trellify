@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Avatar from "@mui/material/Avatar";
@@ -19,18 +19,36 @@ import {
   PASSWORD_RULE_MESSAGE,
 } from "src/utils/validators";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "src/redux/store";
+import { toast } from "react-toastify";
+import { loginUserAPI } from "src/redux/user/userSlice";
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
 function LoginForm() {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm<LoginFormData>();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
   const registeredEmail = searchParams.get("registeredEmail");
   const verifiedEmail = searchParams.get("verifiedEmail");
 
-  const submitLogIn = () => {};
+  const submitLogIn = (data: LoginFormData) => {
+    const { email, password } = data;
+
+    toast.promise(dispatch(loginUserAPI({ email, password })), { pending: "Logging in..." }).then((res) => {
+      if (res.meta.requestStatus === "fulfilled") navigate("/");
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit(submitLogIn)}>

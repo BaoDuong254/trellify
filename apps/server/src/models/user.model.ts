@@ -1,4 +1,8 @@
-import { USER_COLLECTION_SCHEMA, UserRegistrationServiceType } from "@workspace/shared/schemas/user.schema";
+import {
+  USER_COLLECTION_SCHEMA,
+  UserRegistrationServiceType,
+  UserUpdateType,
+} from "@workspace/shared/schemas/user.schema";
 import { ObjectId } from "mongodb";
 import { GET_DB } from "src/config/database";
 
@@ -28,7 +32,7 @@ const findOneByEmail = async (emailValue: string) => {
   return result;
 };
 
-const update = async (userId: string, updateData) => {
+const update = async (userId: string, updateData: UserUpdateType) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
       delete updateData[field];

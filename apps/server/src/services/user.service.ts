@@ -1,4 +1,4 @@
-import { UserRegistrationType } from "@workspace/shared/schemas/user.schema";
+import { UserLoginType, UserRegistrationType, UserVerificationType } from "@workspace/shared/schemas/user.schema";
 import { StatusCodes } from "http-status-codes";
 import { userModel } from "src/models/user.model";
 import ApiError from "src/utils/api-error";
@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 import { pickUser } from "src/utils/formatters";
 import environmentConfig from "src/config/environment";
 import { BrevoProvider } from "src/providers/brevo.provider";
+import { JwtProvider } from "src/providers/jwt.provider";
+import { StringValue } from "ms";
 
 const createNew = async (requestBody: UserRegistrationType) => {
   const existUser = await userModel.findOneByEmail(requestBody.email);
@@ -36,6 +38,60 @@ const createNew = async (requestBody: UserRegistrationType) => {
   return pickUser(getNewlyCreatedUser);
 };
 
+const verifyAccount = async (requestBody: UserVerificationType) => {
+  const existUser = await userModel.findOneByEmail(requestBody.email);
+  if (!existUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  if (existUser!.isActive) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Account is already verified");
+  }
+  if (existUser!.verifyToken !== requestBody.token) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Invalid verification token");
+  }
+  const updatedUser = await userModel.update(existUser!._id.toString(), {
+    isActive: true,
+    verifyToken: null,
+    updatedAt: new Date(),
+  });
+  return pickUser(updatedUser);
+};
+
+const login = async (requestBody: UserLoginType) => {
+  const existUser = await userModel.findOneByEmail(requestBody.email);
+  if (!existUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  if (!existUser!.isActive) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Account is not active");
+  }
+  const isPasswordValid = bcryptjs.compareSync(requestBody.password, existUser!.password as string);
+  if (!isPasswordValid) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Your email or password is incorrect");
+  }
+  const userInfo = {
+    _id: existUser!._id,
+    email: existUser!.email as string,
+  };
+  const accessToken = await JwtProvider.generateToken(
+    userInfo,
+    environmentConfig.ACCESS_TOKEN_SECRET_SIGNATURE,
+    environmentConfig.ACCESS_TOKEN_LIFE as StringValue
+  );
+  const refreshToken = await JwtProvider.generateToken(
+    userInfo,
+    environmentConfig.REFRESH_TOKEN_SECRET_SIGNATURE,
+    environmentConfig.REFRESH_TOKEN_LIFE as StringValue
+  );
+  return {
+    ...pickUser(existUser),
+    accessToken,
+    refreshToken,
+  };
+};
+
 export const userService = {
   createNew,
+  verifyAccount,
+  login,
 };

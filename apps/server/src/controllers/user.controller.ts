@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { userService } from "src/services/user.service";
-import { UserRegistrationType } from "@workspace/shared/schemas/user.schema";
+import { UserLoginType, UserRegistrationType, UserVerificationType } from "@workspace/shared/schemas/user.schema";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
@@ -16,6 +16,34 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
   }
 };
 
+const verifyAccount = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const verifiedUser = await userService.verifyAccount(request.body as UserVerificationType);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "User account verified successfully",
+      data: verifiedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const login = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const loggedInUser = await userService.login(request.body as UserLoginType);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "User logged in successfully",
+      data: loggedInUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const userController = {
   createNew,
+  verifyAccount,
+  login,
 };

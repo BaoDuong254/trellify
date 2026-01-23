@@ -21,13 +21,14 @@ export const USER_COLLECTION_SCHEMA = z.object({
     .enum([USER_ROLES.CLIENT, USER_ROLES.ADMIN], { error: "Error.RoleMustBeClientOrAdmin" })
     .default(USER_ROLES.CLIENT),
   isActive: z.boolean({ error: "Error.IsActiveMustBeBoolean" }).default(false),
-  verifyToken: z.string({ error: "Error.VerifyTokenMustBeString" }),
+  verifyToken: z.string({ error: "Error.VerifyTokenMustBeString" }).nullable().default(null),
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });
 
 export const USER_REGISTRATION_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true, password: true });
+export const USER_LOGIN_SCHEMA = USER_REGISTRATION_SCHEMA;
 export const USER_REGISTRATION_SERVICE_SCHEMA = USER_COLLECTION_SCHEMA.pick({
   email: true,
   password: true,
@@ -35,7 +36,14 @@ export const USER_REGISTRATION_SERVICE_SCHEMA = USER_COLLECTION_SCHEMA.pick({
   displayName: true,
   verifyToken: true,
 });
+export const USER_VERIFICATION_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true }).extend({
+  token: z.string({ error: "Error.VerifyTokenMustBeString" }),
+});
+export const USER_UPDATE_SCHEMA = USER_COLLECTION_SCHEMA.partial();
 
 export type UserCollectionType = z.infer<typeof USER_COLLECTION_SCHEMA>;
 export type UserRegistrationType = z.infer<typeof USER_REGISTRATION_SCHEMA>;
 export type UserRegistrationServiceType = z.infer<typeof USER_REGISTRATION_SERVICE_SCHEMA>;
+export type UserLoginType = z.infer<typeof USER_LOGIN_SCHEMA>;
+export type UserVerificationType = z.infer<typeof USER_VERIFICATION_SCHEMA>;
+export type UserUpdateType = z.infer<typeof USER_UPDATE_SCHEMA>;
