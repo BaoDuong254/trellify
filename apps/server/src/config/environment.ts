@@ -20,8 +20,12 @@ const configSchema = z.object({
     .default("3000")
     .transform((value) => Number.parseInt(value, 10)),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  CLIENT_URL: z.string().min(1, "CLIENT_URL is required"),
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
   DATABASE_NAME: z.string().min(1, "DATABASE_NAME is required"),
+  BREVO_API_KEY: z.string().min(1, "BREVO_API_KEY is required"),
+  ADMIN_EMAIL_ADDRESS: z.email().min(1, "ADMIN_EMAIL_ADDRESS is required"),
+  ADMIN_EMAIL_NAME: z.string().min(1, "ADMIN_EMAIL_NAME is required"),
 });
 
 const configServer = configSchema.safeParse(process.env);

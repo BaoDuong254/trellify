@@ -1,5 +1,6 @@
 import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
+import { toast } from "react-toastify";
 import envConfig from "src/config/env";
 import type { Board, Card, Column } from "src/types/board.type";
 import http from "src/utils/http";
@@ -39,5 +40,22 @@ export const deleteColumnDetailsAPI = async (columnId: string) => {
 // Card APIs
 export const createNewCardAPI = async (newCardData: Partial<Card>): Promise<Card> => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards`, newCardData);
+  return response.data.data;
+};
+
+// User APIs
+export const registerUserAPI = async (data: { email: string; password: string }) => {
+  const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/register`, data);
+  toast.success("Account created successfully! Please check and verify your account before logging in!", {
+    theme: "colored",
+  });
+  return response.data.data;
+};
+
+export const verifyUserAPI = async (data: { email: string; token: string }) => {
+  const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/verify`, data);
+  toast.success("Account verified successfully! Now you can login to enjoy our services! Have a good day!", {
+    theme: "colored",
+  });
   return response.data.data;
 };

@@ -25,6 +25,7 @@
     "pnpm": "10.28.1"
   },
   "dependencies": {
+    "@getbrevo/brevo": "catalog:",
     "@workspace/shared": "workspace:*",
     "async-exit-hook": "catalog:",
     "bcryptjs": "catalog:",
