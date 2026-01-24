@@ -194,7 +194,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"duonggiabao254s@gmail.com\",\r\n    \"password\": \"12345678a\"\r\n}",
+              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"password\": \"12345678a\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -205,6 +205,76 @@
               "raw": "{{host}}/api/v1/users/register",
               "host": ["{{host}}"],
               "path": ["api", "v1", "users", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"password\": \"12345678a\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/users/login",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "verify account",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"token\": \"12345678a\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/users/verify",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "verify"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/users/logout",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "logout"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/users/refresh_token",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "refresh_token"]
             }
           },
           "response": []
