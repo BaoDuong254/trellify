@@ -16,6 +16,7 @@ catalog:
   "@eslint/js": 9.39.2
   "@getbrevo/brevo": 3.0.1
   "@mui/icons-material": 7.3.7
+  "@mui/lab": 7.0.1-beta.21
   "@mui/material": 7.3.7
   "@radix-ui/react-slot": 1.2.4
   "@reduxjs/toolkit": 2.11.2

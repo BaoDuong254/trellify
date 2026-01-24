@@ -1,7 +1,12 @@
 import { StatusCodes } from "http-status-codes";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { userService } from "src/services/user.service";
-import { UserLoginType, UserRegistrationType, UserVerificationType } from "@workspace/shared/schemas/user.schema";
+import {
+  UserLoginType,
+  UserRegistrationType,
+  UserUpdateType,
+  UserVerificationType,
+} from "@workspace/shared/schemas/user.schema";
 import ms, { StringValue } from "ms";
 import environmentConfig from "src/config/environment";
 import ApiError from "src/utils/api-error";
@@ -91,10 +96,25 @@ const refreshToken = async (request: ExpressRequest, response: ExpressResponse, 
   }
 };
 
+const update = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const updatedUser = await userService.update(userId!, request.body as UserUpdateType);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const userController = {
   createNew,
   verifyAccount,
   login,
   logout,
   refreshToken,
+  update,
 };

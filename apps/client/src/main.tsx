@@ -12,6 +12,7 @@ import { BrowserRouter } from "react-router-dom";
 import { persistStore } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
 import { injectStore } from "src/utils/http.ts";
+import GlobalStyles from "@mui/material/GlobalStyles";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -37,6 +38,7 @@ createRoot(rootElement).render(
                 confirmationButtonProps: { color: "secondary", variant: "outlined" },
               }}
             >
+              <GlobalStyles styles={{ a: { textDecoration: "none" } }} />
               <CssBaseline />
               <App />
               <ToastContainer position='bottom-left' theme='colored' />

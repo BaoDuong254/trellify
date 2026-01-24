@@ -4,6 +4,7 @@ import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } 
 import {
   USER_LOGIN_SCHEMA,
   USER_REGISTRATION_SCHEMA,
+  USER_UPDATE_SCHEMA,
   USER_VERIFICATION_SCHEMA,
 } from "@workspace/shared/schemas/user.schema";
 
@@ -40,8 +41,20 @@ const login = async (request: ExpressRequest, _response: ExpressResponse, next: 
   }
 };
 
+const update = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
+  try {
+    await USER_UPDATE_SCHEMA.parseAsync(request.body);
+    next();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
+    next(customError);
+  }
+};
+
 export const userValidation = {
   createNew,
   verifyAccount,
   login,
+  update,
 };

@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logoutUserAPI, selectCurrentUser } from "src/redux/user/userSlice";
 import { useConfirm } from "material-ui-confirm";
 import type { AppDispatch } from "src/redux/store";
+import { Link } from "react-router-dom";
 
 function Profiles() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -66,9 +67,11 @@ function Profiles() {
           },
         }}
       >
-        <MenuItem sx={{ "&:hover": { color: "success.light" } }}>
-          <Avatar sx={{ width: 28, height: 28, mr: 2 }} src={currentUser?.avatar ?? undefined} /> Profile
-        </MenuItem>
+        <Link to='/settings/account' style={{ color: "inherit" }}>
+          <MenuItem sx={{ "&:hover": { color: "success.light" } }}>
+            <Avatar sx={{ width: 28, height: 28, mr: 2 }} src={currentUser?.avatar ?? undefined} /> Profile
+          </MenuItem>
+        </Link>
         <Divider />
         <MenuItem>
           <ListItemIcon>

@@ -39,7 +39,14 @@ export const USER_REGISTRATION_SERVICE_SCHEMA = USER_COLLECTION_SCHEMA.pick({
 export const USER_VERIFICATION_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true }).extend({
   token: z.string({ error: "Error.VerifyTokenMustBeString" }),
 });
-export const USER_UPDATE_SCHEMA = USER_COLLECTION_SCHEMA.partial();
+export const USER_UPDATE_SCHEMA = USER_COLLECTION_SCHEMA.extend({
+  current_password: z
+    .string({ error: "Error.CurrentPasswordMustBeString" })
+    .regex(PASSWORD_RULE, { error: `current_password: ${PASSWORD_RULE_MESSAGE}` }),
+  new_password: z
+    .string({ error: "Error.NewPasswordMustBeString" })
+    .regex(PASSWORD_RULE, { error: `new_password: ${PASSWORD_RULE_MESSAGE}` }),
+}).partial();
 
 export type UserCollectionType = z.infer<typeof USER_COLLECTION_SCHEMA>;
 export type UserRegistrationType = z.infer<typeof USER_REGISTRATION_SCHEMA>;

@@ -278,6 +278,28 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update a user",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"current_password\": \"12345678a\",\r\n    \"new_password\": \"12345678a\"\r\n    // \"displayName\": \"BaoDuong254\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/users/update",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "update"]
+            }
+          },
+          "response": []
         }
       ]
     },

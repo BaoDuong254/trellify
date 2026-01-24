@@ -1,4 +1,9 @@
-import { UserLoginType, UserRegistrationType, UserVerificationType } from "@workspace/shared/schemas/user.schema";
+import {
+  UserLoginType,
+  UserRegistrationType,
+  UserUpdateType,
+  UserVerificationType,
+} from "@workspace/shared/schemas/user.schema";
 import { StatusCodes } from "http-status-codes";
 import { userModel } from "src/models/user.model";
 import ApiError from "src/utils/api-error";
@@ -108,9 +113,34 @@ const refreshToken = async (clientRefreshToken: string) => {
   return { accessToken };
 };
 
+const update = async (userId: string, requestBody: UserUpdateType) => {
+  const existUser = await userModel.findOneById(userId);
+  if (!existUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  if (!existUser!.isActive) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Account is not active");
+  }
+  let updatedUser = {};
+
+  if (requestBody.current_password && requestBody.new_password) {
+    if (!bcryptjs.compareSync(requestBody.current_password, existUser.password as string)) {
+      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Your Current Password is incorrect!");
+    }
+    updatedUser = (await userModel.update(existUser._id.toString(), {
+      password: bcryptjs.hashSync(requestBody.new_password, 10),
+    })) as unknown as UserUpdateType;
+  } else {
+    updatedUser = (await userModel.update(existUser._id.toString(), requestBody)) as unknown as UserUpdateType;
+  }
+
+  return pickUser(updatedUser);
+};
+
 export const userService = {
   createNew,
   verifyAccount,
   login,
   refreshToken,
+  update,
 };

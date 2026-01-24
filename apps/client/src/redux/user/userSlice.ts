@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { UserLoginType } from "@workspace/shared/schemas/user.schema";
+import type { UserLoginType, UserUpdateType } from "@workspace/shared/schemas/user.schema";
 import { toast } from "react-toastify";
 import envConfig from "src/config/env";
 import type { User } from "src/types/user.type";
@@ -26,6 +26,11 @@ export const logoutUserAPI = createAsyncThunk("user/logoutUserAPI", async (showS
   return response.data.data;
 });
 
+export const updateUserAPI = createAsyncThunk("user/updateUserAPI", async (data: UserUpdateType) => {
+  const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/update`, data);
+  return response.data.data;
+});
+
 export const userSlice = createSlice({
   name: "user",
   initialState,
@@ -37,6 +42,10 @@ export const userSlice = createSlice({
     });
     builder.addCase(logoutUserAPI.fulfilled, (state) => {
       state.currentUser = null;
+    });
+    builder.addCase(updateUserAPI.fulfilled, (state, action) => {
+      const user = action.payload;
+      state.currentUser = user;
     });
   },
 });
