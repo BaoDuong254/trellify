@@ -9,6 +9,7 @@ import environmentConfig from "src/config/environment";
 import { BrevoProvider } from "src/providers/brevo.provider";
 import { JwtProvider } from "src/providers/jwt.provider";
 import ms, { StringValue } from "ms";
+import { ObjectId } from "mongodb";
 
 const createNew = async (requestBody: UserRegistrationType) => {
   const existUser = await userModel.findOneByEmail(requestBody.email);
@@ -76,12 +77,12 @@ const login = async (requestBody: UserLoginType) => {
   const accessToken = await JwtProvider.generateToken(
     userInfo,
     environmentConfig.ACCESS_TOKEN_SECRET_SIGNATURE,
-    ms(environmentConfig.ACCESS_TOKEN_LIFE as StringValue)
+    ms(environmentConfig.ACCESS_TOKEN_LIFE as StringValue) / 1000
   );
   const refreshToken = await JwtProvider.generateToken(
     userInfo,
     environmentConfig.REFRESH_TOKEN_SECRET_SIGNATURE,
-    ms(environmentConfig.REFRESH_TOKEN_LIFE as StringValue)
+    ms(environmentConfig.REFRESH_TOKEN_LIFE as StringValue) / 1000
   );
   return {
     ...pickUser(existUser),
@@ -90,8 +91,26 @@ const login = async (requestBody: UserLoginType) => {
   };
 };
 
+const refreshToken = async (clientRefreshToken: string) => {
+  const refreshTokenDecoded = (await JwtProvider.verifyToken(
+    clientRefreshToken,
+    environmentConfig.REFRESH_TOKEN_SECRET_SIGNATURE
+  )) as { _id: ObjectId; email: string };
+
+  const userInfo = { _id: refreshTokenDecoded._id, email: refreshTokenDecoded.email };
+
+  const accessToken = await JwtProvider.generateToken(
+    userInfo,
+    environmentConfig.ACCESS_TOKEN_SECRET_SIGNATURE,
+    ms(environmentConfig.ACCESS_TOKEN_LIFE as StringValue) / 1000
+  );
+
+  return { accessToken };
+};
+
 export const userService = {
   createNew,
   verifyAccount,
   login,
+  refreshToken,
 };

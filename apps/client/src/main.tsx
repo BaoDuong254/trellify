@@ -11,6 +11,7 @@ import { store } from "src/redux/store.ts";
 import { BrowserRouter } from "react-router-dom";
 import { persistStore } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
+import { injectStore } from "src/utils/http.ts";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -18,6 +19,9 @@ if (!rootElement) {
 }
 
 const persistor = persistStore(store);
+
+injectStore(store);
+
 createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter basename='/'>

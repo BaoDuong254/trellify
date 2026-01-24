@@ -1,4 +1,3 @@
-import logger from "@workspace/shared/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import JWT from "jsonwebtoken";
 import { ObjectId } from "mongodb";
@@ -14,19 +13,13 @@ const generateToken = async (
 ) => {
   try {
     return JWT.sign(userInfo, secretSignature, { algorithm: "HS256", expiresIn: tokenLife });
-  } catch (error) {
-    logger.error("JWT Token Generation Error:", error);
+  } catch {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Could not generate token");
   }
 };
 
 const verifyToken = async (token: string, secretSignature: string) => {
-  try {
-    return JWT.verify(token, secretSignature);
-  } catch (error) {
-    logger.error("JWT Token Verification Error:", error);
-    throw new ApiError(StatusCodes.UNAUTHORIZED, "Token is invalid or has expired");
-  }
+  return JWT.verify(token, secretSignature);
 };
 
 export const JwtProvider = {

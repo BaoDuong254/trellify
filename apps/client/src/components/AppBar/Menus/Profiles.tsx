@@ -10,6 +10,10 @@ import IconButton from "@mui/material/IconButton";
 import PersonAdd from "@mui/icons-material/PersonAdd";
 import Settings from "@mui/icons-material/Settings";
 import Logout from "@mui/icons-material/Logout";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUserAPI, selectCurrentUser } from "src/redux/user/userSlice";
+import { useConfirm } from "material-ui-confirm";
+import type { AppDispatch } from "src/redux/store";
 
 function Profiles() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -19,6 +23,23 @@ function Profiles() {
   };
   const handleClose = () => {
     setAnchorEl(null);
+  };
+  const dispatch = useDispatch<AppDispatch>();
+  const currentUser = useSelector(selectCurrentUser);
+
+  const confirmLogout = useConfirm();
+  const handleLogout = () => {
+    confirmLogout({
+      title: "Log out of your account?",
+      confirmationText: "Confirm",
+      cancellationText: "Cancel",
+    })
+      .then(({ confirmed }) => {
+        if (confirmed) {
+          dispatch(logoutUserAPI(true));
+        }
+      })
+      .catch(() => {});
   };
   return (
     <Box>
@@ -31,7 +52,7 @@ function Profiles() {
           aria-haspopup='true'
           aria-expanded={open ? "true" : undefined}
         >
-          <Avatar sx={{ width: 36, height: 36 }} src='/trello.svg' alt='User avatar' />
+          <Avatar sx={{ width: 36, height: 36 }} src={currentUser?.avatar ?? undefined} alt='User avatar' />
         </IconButton>
       </Tooltip>
       <Menu
@@ -45,28 +66,33 @@ function Profiles() {
           },
         }}
       >
-        <MenuItem onClick={handleClose}>
-          <Avatar sx={{ width: 28, height: 28, mr: 2 }} /> Profile
-        </MenuItem>
-        <MenuItem onClick={handleClose}>
-          <Avatar sx={{ width: 28, height: 28, mr: 2 }} /> My account
+        <MenuItem sx={{ "&:hover": { color: "success.light" } }}>
+          <Avatar sx={{ width: 28, height: 28, mr: 2 }} src={currentUser?.avatar ?? undefined} /> Profile
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleClose}>
+        <MenuItem>
           <ListItemIcon>
             <PersonAdd fontSize='small' />
           </ListItemIcon>
           Add another account
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem>
           <ListItemIcon>
             <Settings fontSize='small' />
           </ListItemIcon>
           Settings
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem
+          onClick={handleLogout}
+          sx={{
+            "&:hover": {
+              color: "warning.dark",
+              "& .logout-icon": { color: "warning.dark" },
+            },
+          }}
+        >
           <ListItemIcon>
-            <Logout fontSize='small' />
+            <Logout className='logout-icon' fontSize='small' />
           </ListItemIcon>
           Logout
         </MenuItem>

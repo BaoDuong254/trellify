@@ -108,16 +108,18 @@ function Column({ column }: { column: ColumnType }) {
       confirmationText: "Confirm",
       cancellationText: "Cancel",
     })
-      .then(() => {
-        if (!board) return;
-        const newBoard = { ...board };
-        newBoard.columns = newBoard.columns.filter((col) => col._id !== column._id);
-        newBoard.columnOrderIds = newBoard.columnOrderIds.filter((_id) => _id !== column._id);
-        dispatch(updateCurrentActiveBoard(newBoard));
+      .then(({ confirmed }) => {
+        if (confirmed) {
+          if (!board) return;
+          const newBoard = { ...board };
+          newBoard.columns = newBoard.columns.filter((col) => col._id !== column._id);
+          newBoard.columnOrderIds = newBoard.columnOrderIds.filter((_id) => _id !== column._id);
+          dispatch(updateCurrentActiveBoard(newBoard));
 
-        deleteColumnDetailsAPI(column._id).then((res) => {
-          toast.success(res?.deleteResult);
-        });
+          deleteColumnDetailsAPI(column._id).then((res) => {
+            toast.success(res?.deleteResult);
+          });
+        }
       })
       .catch(() => {});
   };

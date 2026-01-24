@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { UserLoginType } from "@workspace/shared/schemas/user.schema";
+import { toast } from "react-toastify";
 import envConfig from "src/config/env";
 import type { User } from "src/types/user.type";
 import http from "src/utils/http";
@@ -17,6 +18,14 @@ export const loginUserAPI = createAsyncThunk("user/loginUserAPI", async (data: U
   return response.data.data;
 });
 
+export const logoutUserAPI = createAsyncThunk("user/logoutUserAPI", async (showSuccessMessage: boolean) => {
+  const response = await http.delete(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/logout`);
+  if (showSuccessMessage) {
+    toast.success("Logged out successfully!");
+  }
+  return response.data.data;
+});
+
 export const userSlice = createSlice({
   name: "user",
   initialState,
@@ -25,6 +34,9 @@ export const userSlice = createSlice({
     builder.addCase(loginUserAPI.fulfilled, (state, action) => {
       const user = action.payload;
       state.currentUser = user;
+    });
+    builder.addCase(logoutUserAPI.fulfilled, (state) => {
+      state.currentUser = null;
     });
   },
 });

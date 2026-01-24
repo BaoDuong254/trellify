@@ -18,7 +18,7 @@ const isAuthorized = async (request: ExpressRequest, _response: ExpressResponse,
     request.jwtDecoded = accessTokenDecoded;
     next();
   } catch (error) {
-    if (error instanceof Error && error.message.includes("jwt expired")) {
+    if (error instanceof Error && error.name === "TokenExpiredError") {
       next(new ApiError(StatusCodes.GONE, "Need to refresh token."));
       return;
     }

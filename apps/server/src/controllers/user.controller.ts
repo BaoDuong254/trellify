@@ -4,6 +4,7 @@ import { userService } from "src/services/user.service";
 import { UserLoginType, UserRegistrationType, UserVerificationType } from "@workspace/shared/schemas/user.schema";
 import ms, { StringValue } from "ms";
 import environmentConfig from "src/config/environment";
+import ApiError from "src/utils/api-error";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
@@ -56,8 +57,44 @@ const login = async (request: ExpressRequest, response: ExpressResponse, next: N
   }
 };
 
+const logout = async (_request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    response.clearCookie("accessToken");
+    response.clearCookie("refreshToken");
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "User logged out successfully",
+      data: {
+        loggedOut: true,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const refreshToken = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const result = await userService.refreshToken(request?.cookies?.refreshToken as string);
+    response.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: ms(environmentConfig.COOKIE_MAX_AGE as StringValue),
+    });
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Access token refreshed successfully",
+    });
+  } catch {
+    next(new ApiError(StatusCodes.FORBIDDEN, "Please login again."));
+  }
+};
+
 export const userController = {
   createNew,
   verifyAccount,
   login,
+  logout,
+  refreshToken,
 };

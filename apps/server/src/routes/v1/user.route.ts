@@ -10,4 +10,8 @@ router.route("/verify").put(userValidation.verifyAccount, userController.verifyA
 
 router.route("/login").post(userValidation.login, userController.login);
 
+router.route("/logout").delete(userController.logout);
+
+router.route("/refresh_token").get(userController.refreshToken);
+
 export const userRoute = router;

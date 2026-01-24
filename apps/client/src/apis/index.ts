@@ -59,3 +59,8 @@ export const verifyUserAPI = async (data: { email: string; token: string }) => {
   });
   return response.data.data;
 };
+
+export const refreshTokenAPI = async () => {
+  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/refresh_token`);
+  return response.data.data;
+};
