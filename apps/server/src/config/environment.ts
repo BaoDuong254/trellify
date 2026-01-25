@@ -31,6 +31,9 @@ const configSchema = z.object({
   REFRESH_TOKEN_SECRET_SIGNATURE: z.string().min(1, "REFRESH_TOKEN_SECRET_SIGNATURE is required"),
   REFRESH_TOKEN_LIFE: z.string().min(1, "REFRESH_TOKEN_LIFE is required"),
   COOKIE_MAX_AGE: z.string().min(1, "COOKIE_MAX_AGE is required"),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME is required"),
+  CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY is required"),
+  CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
 });
 
 const configServer = configSchema.safeParse(process.env);

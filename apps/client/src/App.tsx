@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { User } from "src/types/user.type";
 import Settings from "src/pages/Settings/Settings";
+import Boards from "src/pages/Boards";
 
 const ProtectedRoute = ({ user }: { user: User | null }) => {
   if (!user) return <Navigate to='/login' replace={true} />;
@@ -18,12 +19,13 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path='/' element={<Navigate to='/board/696cf8e1464f12fbc4ad6c37' replace />} />
+      <Route path='/' element={<Navigate to='/boards/696cf8e1464f12fbc4ad6c37' replace />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute user={currentUser} />}>
         {/* Board Details */}
-        <Route path='/board/:boardId' element={<Board />} />
+        <Route path='/boards/:boardId' element={<Board />} />
+        <Route path='/boards' element={<Boards />} />
 
         {/* User Settings */}
         <Route path='/settings/account' element={<Settings />} />

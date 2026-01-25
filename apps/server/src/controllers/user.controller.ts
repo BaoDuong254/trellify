@@ -99,7 +99,8 @@ const refreshToken = async (request: ExpressRequest, response: ExpressResponse, 
 const update = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
     const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
-    const updatedUser = await userService.update(userId!, request.body as UserUpdateType);
+    const userAvatarFile = request.file;
+    const updatedUser = await userService.update(userId!, request.body as UserUpdateType, userAvatarFile);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "User updated successfully",

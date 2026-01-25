@@ -13,7 +13,7 @@ import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { selectCurrentUser, updateUserAPI } from "src/redux/user/userSlice";
-import { FIELD_REQUIRED_MESSAGE } from "src/utils/validators";
+import { FIELD_REQUIRED_MESSAGE, singleFileValidator } from "src/utils/validators";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import type { AppDispatch } from "src/redux/store";
 import { toast } from "react-toastify";
@@ -60,16 +60,24 @@ function AccountTab() {
     });
   };
 
-  const uploadAvatar = () => {
-    // const error = singleFileValidator(e.target?.files[0]);
-    // if (error) {
-    //   toast.error(error);
-    //   return;
-    // }
-    // let reqData = new FormData();
-    // reqData.append("avatar", e.target?.files[0]);
-    // for (const value of reqData.values()) {
-    // }
+  const uploadAvatar = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const error = singleFileValidator(e.target?.files?.[0]);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    const reqData = new FormData();
+    reqData.append("avatar", e.target?.files?.[0] as File);
+    toast
+      .promise(dispatch(updateUserAPI(reqData as unknown as Parameters<typeof updateUserAPI>[0])), {
+        pending: "Updating...",
+      })
+      .then((res) => {
+        if (res.meta.requestStatus === "fulfilled") {
+          toast.success("User updated successfully!");
+        }
+        e.target.value = "";
+      });
   };
 
   return (

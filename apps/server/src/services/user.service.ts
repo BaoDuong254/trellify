@@ -15,6 +15,7 @@ import { BrevoProvider } from "src/providers/brevo.provider";
 import { JwtProvider } from "src/providers/jwt.provider";
 import ms, { StringValue } from "ms";
 import { ObjectId } from "mongodb";
+import { CloudinaryProvider } from "src/providers/cloudinary.provider";
 
 const createNew = async (requestBody: UserRegistrationType) => {
   const existUser = await userModel.findOneByEmail(requestBody.email);
@@ -113,7 +114,7 @@ const refreshToken = async (clientRefreshToken: string) => {
   return { accessToken };
 };
 
-const update = async (userId: string, requestBody: UserUpdateType) => {
+const update = async (userId: string, requestBody: UserUpdateType, userAvatarFile?: Express.Multer.File) => {
   const existUser = await userModel.findOneById(userId);
   if (!existUser) {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
@@ -130,6 +131,14 @@ const update = async (userId: string, requestBody: UserUpdateType) => {
     updatedUser = (await userModel.update(existUser._id.toString(), {
       password: bcryptjs.hashSync(requestBody.new_password, 10),
     })) as unknown as UserUpdateType;
+  } else if (userAvatarFile) {
+    const uploadResult = (await CloudinaryProvider.streamUpload(userAvatarFile.buffer, "trellify_users")) as {
+      secure_url: string;
+    };
+    const result = await userModel.update(existUser._id.toString(), {
+      avatar: uploadResult.secure_url,
+    });
+    updatedUser = result ?? {};
   } else {
     updatedUser = (await userModel.update(existUser._id.toString(), requestBody)) as unknown as UserUpdateType;
   }

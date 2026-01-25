@@ -42,11 +42,16 @@ function AppBar() {
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <AppsIcon
-          sx={{
-            color: "white",
-          }}
-        />
+        <Link to='/boards'>
+          <Tooltip title='Boards list'>
+            <AppsIcon
+              sx={{
+                color: "white",
+                verticalAlign: "middle",
+              }}
+            />
+          </Tooltip>
+        </Link>
         <Link to='/'>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <SvgIcon
