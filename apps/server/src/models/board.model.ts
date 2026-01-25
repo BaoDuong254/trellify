@@ -3,6 +3,7 @@ import { ObjectId, UpdateFilter, Document } from "mongodb";
 import { GET_DB } from "src/config/database";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
+import { pagingSkipValue } from "src/utils/paging";
 
 const BOARD_COLLECTION_NAME = "boards";
 
@@ -89,6 +90,36 @@ const update = async (boardId: string, updateData: UpdateBoardType) => {
     .findOneAndUpdate({ _id: new ObjectId(boardId) }, { $set: updateData }, { returnDocument: "after" });
 };
 
+const getBoards = async (userId: string, page: number, itemsPerPage: number) => {
+  const queryConditions = [
+    { _destroy: false },
+    { $or: [{ ownerIds: { $all: [new ObjectId(userId)] } }, { memberIds: { $all: [new ObjectId(userId)] } }] },
+  ];
+
+  const query = await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .aggregate(
+      [
+        { $match: { $and: queryConditions } },
+        { $sort: { title: 1 } },
+        {
+          $facet: {
+            queryBoards: [{ $skip: pagingSkipValue(page, itemsPerPage) }, { $limit: itemsPerPage }],
+            queryTotalBoards: [{ $count: "countedAllBoards" }],
+          },
+        },
+      ],
+      { collation: { locale: "en" } }
+    )
+    .toArray();
+
+  const result = query[0];
+  return {
+    boards: result?.queryBoards || [],
+    totalBoards: result?.queryTotalBoards[0]?.countedAllBoards || 0,
+  };
+};
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
@@ -97,4 +128,5 @@ export const boardModel = {
   pushColumnOrderIds,
   update,
   pullColumnOrderIds,
+  getBoards,
 };

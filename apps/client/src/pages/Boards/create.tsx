@@ -16,6 +16,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import { styled } from "@mui/material/styles";
 import { FIELD_REQUIRED_MESSAGE } from "src/utils/validators";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import { BOARD_TYPES } from "@workspace/shared/utils/constants";
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -33,11 +34,6 @@ const SidebarItem = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#e9f2ff",
   },
 }));
-
-const BOARD_TYPES = {
-  PUBLIC: "public",
-  PRIVATE: "private",
-};
 
 function SidebarCreateBoardModal() {
   const {

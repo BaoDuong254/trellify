@@ -21,6 +21,11 @@ export const moveCardToDifferentColumnAPI = async (updateData: MoveCardToDiffere
   return response.data.data;
 };
 
+export const fetchBoardsAPI = async (searchPath: string) => {
+  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards${searchPath}`);
+  return response.data.data;
+};
+
 // Column APIs
 export const createNewColumnAPI = async (newColumnData: Partial<Column>): Promise<Column> => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/columns`, newColumnData);

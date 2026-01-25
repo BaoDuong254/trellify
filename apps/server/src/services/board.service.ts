@@ -10,6 +10,7 @@ import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
 import { columnModel } from "src/models/column.model";
 import { cardModel } from "src/models/card.model";
+import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
 
 const createNew = async (requestBody: CreateNewBoardType) => {
   const newBoard = {
@@ -58,9 +59,18 @@ const moveCardToDifferentColumn = async (requestBody: MoveCardToDifferentColumnT
   return { updateResult: "Successfully!" };
 };
 
+const getBoards = async (userId: string, page?: string, itemsPerPage?: string) => {
+  if (!page) page = DEFAULT_PAGE.toString();
+  if (!itemsPerPage) itemsPerPage = DEFAULT_ITEMS_PER_PAGE.toString();
+
+  const boards = await boardModel.getBoards(userId, Number.parseInt(page, 10), Number.parseInt(itemsPerPage, 10));
+  return boards;
+};
+
 export const boardService = {
   createNew,
   getDetails,
   update,
   moveCardToDifferentColumn,
+  getBoards,
 };

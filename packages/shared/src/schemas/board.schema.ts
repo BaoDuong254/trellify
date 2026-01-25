@@ -18,6 +18,12 @@ export const BOARD_COLLECTION_SCHEMA = z.object({
   columnOrderIds: z
     .array(z.string({ error: "Error.ColumnIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
     .default([]),
+  ownerIds: z
+    .array(z.string({ error: "Error.OwnerIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
+    .default([]),
+  memberIds: z
+    .array(z.string({ error: "Error.MemberIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
+    .default([]),
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),

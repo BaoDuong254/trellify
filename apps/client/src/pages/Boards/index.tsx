@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 import { useState, useEffect } from "react";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
@@ -21,6 +19,13 @@ import AppBar from "src/components/AppBar/AppBar";
 import SidebarCreateBoardModal from "src/pages/Boards/create";
 import randomColor from "randomcolor";
 import type { Board } from "src/types/board.type";
+import { fetchBoardsAPI } from "src/apis";
+import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
+
+interface FetchBoardsResponse {
+  boards: Board[];
+  totalBoards: number;
+}
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -46,10 +51,14 @@ function Boards() {
   const query = new URLSearchParams(location.search);
   const page = parseInt(query.get("page") || "1", 10);
 
+  const updateStateData = (res: FetchBoardsResponse): void => {
+    setBoards(res.boards || []);
+    setTotalBoards(res.totalBoards || 0);
+  };
+
   useEffect(() => {
-    setBoards([...Array(16)].map((_, i) => i) as unknown as Board[]);
-    setTotalBoards(100);
-  }, []);
+    fetchBoardsAPI(location.search).then(updateStateData);
+  }, [location.search]);
 
   if (!boards) {
     return <PageLoadingSpinner caption='Loading Boards...' />;
@@ -101,19 +110,18 @@ function Boards() {
 
                       <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
                         <Typography gutterBottom variant='h6' component='div'>
-                          Board title
+                          {b.title}
                         </Typography>
                         <Typography
                           variant='body2'
                           color='text.secondary'
                           sx={{ overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}
                         >
-                          This impressive paella is a perfect party dish and a fun meal to cook together with your
-                          guests. Add 1 cup of frozen peas along with the mussels, if you like.
+                          {b.description || "No description provided for this board."}
                         </Typography>
                         <Box
                           component={Link}
-                          to={"/boards/6534e1b8a235025a66b644a5"}
+                          to={`/boards/${b._id}`}
                           sx={{
                             mt: 1,
                             display: "flex",
@@ -139,12 +147,12 @@ function Boards() {
                   color='secondary'
                   showFirstButton
                   showLastButton
-                  count={Math.ceil(totalBoards / 12)}
+                  count={Math.ceil(totalBoards / DEFAULT_ITEMS_PER_PAGE)}
                   page={page}
                   renderItem={(item) => (
                     <PaginationItem
                       component={Link}
-                      to={`/boards${item.page === 1 ? "" : `?page=${item.page}`}`}
+                      to={`/boards${item.page === DEFAULT_PAGE ? "" : `?page=${item.page}`}`}
                       {...item}
                     />
                   )}

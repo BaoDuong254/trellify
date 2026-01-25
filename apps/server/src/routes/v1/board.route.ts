@@ -1,5 +1,4 @@
 import express, { Router } from "express";
-import { StatusCodes } from "http-status-codes";
 import { boardController } from "src/controllers/board.controller";
 import { authMiddleware } from "src/middlewares/auth.middleware";
 import { boardValidation } from "src/validations/board.validation";
@@ -8,12 +7,7 @@ const router: Router = express.Router();
 
 router
   .route("/")
-  .get(authMiddleware.isAuthorized, (_request, response) => {
-    response.status(StatusCodes.OK).json({
-      message: "Board route is working",
-      status: StatusCodes.OK,
-    });
-  })
+  .get(authMiddleware.isAuthorized, boardController.getBoards)
   .post(authMiddleware.isAuthorized, boardValidation.createNew, boardController.createNew);
 
 router

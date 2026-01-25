@@ -19,7 +19,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path='/' element={<Navigate to='/boards/696cf8e1464f12fbc4ad6c37' replace />} />
+      <Route path='/' element={<Navigate to='/boards' replace />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute user={currentUser} />}>
