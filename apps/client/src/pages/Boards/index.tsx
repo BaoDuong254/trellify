@@ -60,6 +60,10 @@ function Boards() {
     fetchBoardsAPI(location.search).then(updateStateData);
   }, [location.search]);
 
+  const afterCreateNewBoard = () => {
+    fetchBoardsAPI(location.search).then(updateStateData);
+  };
+
   if (!boards) {
     return <PageLoadingSpinner caption='Loading Boards...' />;
   }
@@ -86,7 +90,7 @@ function Boards() {
             </Stack>
             <Divider sx={{ my: 1 }} />
             <Stack direction='column' spacing={1}>
-              <SidebarCreateBoardModal />
+              <SidebarCreateBoardModal afterCreateNewBoard={afterCreateNewBoard} />
             </Stack>
           </Box>
 

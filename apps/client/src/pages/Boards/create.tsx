@@ -17,6 +17,13 @@ import { styled } from "@mui/material/styles";
 import { FIELD_REQUIRED_MESSAGE } from "src/utils/validators";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import { BOARD_TYPES } from "@workspace/shared/utils/constants";
+import { createNewBoardAPI } from "src/apis";
+
+export interface CreateBoardFormData {
+  title: string;
+  description: string;
+  type: string;
+}
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -35,14 +42,14 @@ const SidebarItem = styled(Box)(({ theme }) => ({
   },
 }));
 
-function SidebarCreateBoardModal() {
+function SidebarCreateBoardModal({ afterCreateNewBoard }: { afterCreateNewBoard: () => void }) {
   const {
     control,
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm();
+  } = useForm<CreateBoardFormData>();
 
   const [isOpen, setIsOpen] = useState(false);
   const handleOpenModal = () => setIsOpen(true);
@@ -51,8 +58,11 @@ function SidebarCreateBoardModal() {
     reset();
   };
 
-  const submitCreateNewBoard = () => {
-    // const { title, description, type } = data;
+  const submitCreateNewBoard = (data: CreateBoardFormData) => {
+    createNewBoardAPI(data).then(() => {
+      handleCloseModal();
+      afterCreateNewBoard();
+    });
   };
 
   return (

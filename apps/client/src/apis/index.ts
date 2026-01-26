@@ -2,6 +2,7 @@ import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/
 import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import { toast } from "react-toastify";
 import envConfig from "src/config/env";
+import type { CreateBoardFormData } from "src/pages/Boards/create";
 import type { Board, Card, Column } from "src/types/board.type";
 import http from "src/utils/http";
 
@@ -23,6 +24,12 @@ export const moveCardToDifferentColumnAPI = async (updateData: MoveCardToDiffere
 
 export const fetchBoardsAPI = async (searchPath: string) => {
   const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards${searchPath}`);
+  return response.data.data;
+};
+
+export const createNewBoardAPI = async (data: CreateBoardFormData) => {
+  const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards`, data);
+  toast.success("Board created successfully");
   return response.data.data;
 };
 

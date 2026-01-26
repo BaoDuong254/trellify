@@ -12,18 +12,18 @@ import { columnModel } from "src/models/column.model";
 import { cardModel } from "src/models/card.model";
 import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
 
-const createNew = async (requestBody: CreateNewBoardType) => {
+const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
   const newBoard = {
     ...requestBody,
     slug: slugify(requestBody.title),
   };
-  const createdBoard = await boardModel.createNew(newBoard);
+  const createdBoard = await boardModel.createNew(userId, newBoard);
   const getNewlyCreatedBoard = await boardModel.fineOneById(createdBoard.insertedId);
   return getNewlyCreatedBoard;
 };
 
-const getDetails = async (boardId: string) => {
-  const boardDetails = await boardModel.getDetails(boardId);
+const getDetails = async (userId: string, boardId: string) => {
+  const boardDetails = await boardModel.getDetails(userId, boardId);
   if (!boardDetails) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
   }

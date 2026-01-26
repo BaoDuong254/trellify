@@ -9,7 +9,8 @@ import { boardService } from "src/services/board.service";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const createdBoard = await boardService.createNew(request.body as CreateNewBoardType);
+    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const createdBoard = await boardService.createNew(userId!, request.body as CreateNewBoardType);
     response.status(StatusCodes.CREATED).json({
       statusCode: StatusCodes.CREATED,
       message: "Board created successfully",
@@ -22,8 +23,9 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
 
 const getDetails = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
+    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
     const boardId = (request.params.id as string) ?? "";
-    const boardDetails = await boardService.getDetails(boardId);
+    const boardDetails = await boardService.getDetails(userId!, boardId);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Board details fetched successfully",

@@ -13,9 +13,13 @@ const validateBeforeCreate = async (data: unknown) => {
 
 const INVALID_UPDATE_FIELDS = new Set(["_id", "createdAt"]);
 
-const createNew = async (data: CreateNewBoardType & { slug: string }) => {
+const createNew = async (userId: string, data: CreateNewBoardType & { slug: string }) => {
   const validData = await validateBeforeCreate(data);
-  const createdBoard = await GET_DB().collection(BOARD_COLLECTION_NAME).insertOne(validData);
+  const newBoardToAdd = {
+    ...validData,
+    ownerIds: [new ObjectId(userId)],
+  };
+  const createdBoard = await GET_DB().collection(BOARD_COLLECTION_NAME).insertOne(newBoardToAdd);
   return createdBoard;
 };
 
@@ -24,16 +28,16 @@ const fineOneById = async (id: ObjectId) => {
   return board;
 };
 
-const getDetails = async (boardId: string) => {
+const getDetails = async (userId: string, boardId: string) => {
+  const queryConditions = [
+    { _id: new ObjectId(boardId) },
+    { _destroy: false },
+    { $or: [{ ownerIds: { $all: [new ObjectId(userId)] } }, { memberIds: { $all: [new ObjectId(userId)] } }] },
+  ];
   const board = await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
     .aggregate([
-      {
-        $match: {
-          _id: new ObjectId(boardId),
-          _destroy: false,
-        },
-      },
+      { $match: { $and: queryConditions } },
       {
         $lookup: {
           from: columnModel.COLUMN_COLLECTION_NAME,
