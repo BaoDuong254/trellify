@@ -1,5 +1,3 @@
-import type { Board } from "src/types/board.type";
-
 export const mockData = {
   board: {
     _id: "board-id-01",
@@ -204,5 +202,5 @@ export const mockData = {
         ],
       },
     ],
-  } satisfies Board,
+  },
 };

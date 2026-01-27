@@ -17,11 +17,11 @@ function CardActivitySection() {
       const target = event.target as HTMLInputElement;
       if (!target.value) return;
 
-      const commentToAdd = {
-        userAvatar: currentUser?.avatar,
-        userDisplayName: currentUser?.displayName,
-        content: target.value.trim(),
-      };
+      // const commentToAdd = {
+      //   userAvatar: currentUser?.avatar,
+      //   userDisplayName: currentUser?.displayName,
+      //   content: target.value.trim(),
+      // };
     }
   };
 
