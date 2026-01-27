@@ -10,8 +10,12 @@ import Button from "@mui/material/Button";
 import type { Card as CardType } from "src/types/board.type";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { AppDispatch } from "src/redux/store";
+import { useDispatch } from "react-redux";
+import { updateCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 
 function Card({ card }: { card: CardType }) {
+  const dispatch = useDispatch<AppDispatch>();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
     data: {
@@ -30,8 +34,13 @@ function Card({ card }: { card: CardType }) {
     return !!card?.memberIds?.length || !!card?.comments?.length || !!card?.attachments?.length;
   };
 
+  const setActiveCard = () => {
+    dispatch(updateCurrentActiveCard(card));
+  };
+
   return (
     <CardMui
+      onClick={setActiveCard}
       ref={setNodeRef}
       style={dndKitCardStyles}
       {...attributes}

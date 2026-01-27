@@ -1,4 +1,3 @@
-import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
@@ -17,19 +16,7 @@ import { FIELD_REQUIRED_MESSAGE, singleFileValidator } from "src/utils/validator
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import type { AppDispatch } from "src/redux/store";
 import { toast } from "react-toastify";
-
-const VisuallyHiddenInput = styled("input")({
-  clip: "rect(0 0 0 0)",
-  clipPath: "inset(50%)",
-  height: 1,
-  overflow: "hidden",
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  whiteSpace: "nowrap",
-  width: 1,
-});
-
+import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
 interface AccountTabFormData {
   displayName?: string;
 }

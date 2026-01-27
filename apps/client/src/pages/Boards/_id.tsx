@@ -15,11 +15,14 @@ import type { AppDispatch } from "src/redux/store";
 import { cloneDeep } from "lodash";
 import { useParams } from "react-router-dom";
 import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
+import ActiveCard from "src/components/Modal/ActiveCard/ActiveCard";
+import { selectCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 
 function Board() {
   const dispatch = useDispatch<AppDispatch>();
 
   const board = useSelector(selectCurrentActiveBoard);
+  const activeCard = useSelector(selectCurrentActiveCard);
 
   const { boardId } = useParams();
 
@@ -88,6 +91,7 @@ function Board() {
 
   return (
     <Container sx={{ height: "100vh", backgroundColor: "primary.main" }} disableGutters maxWidth={false}>
+      {activeCard && <ActiveCard />}
       <AppBar />
       <BoardBar board={board} />
       <BoardContent

@@ -1,4 +1,4 @@
-import { CARD_COLLECTION_SCHEMA, CreateNewCardType } from "@workspace/shared/schemas/card.schema";
+import { CARD_COLLECTION_SCHEMA, CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
 import { ObjectId } from "mongodb";
 import { GET_DB } from "src/config/database";
 
@@ -26,7 +26,12 @@ const fineOneById = async (id: ObjectId) => {
   return card;
 };
 
-const update = async (cardId: string, updateData: { columnId: string }) => {
+const update = async (
+  cardId: string,
+  updateData: UpdateCardType & {
+    columnId?: string;
+  }
+) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
       delete updateData[field];

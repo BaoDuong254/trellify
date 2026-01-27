@@ -1,4 +1,5 @@
 import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
+import type { UpdateCardType } from "@workspace/shared/schemas/card.schema";
 import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import { toast } from "react-toastify";
 import envConfig from "src/config/env";
@@ -52,6 +53,11 @@ export const deleteColumnDetailsAPI = async (columnId: string) => {
 // Card APIs
 export const createNewCardAPI = async (newCardData: Partial<Card>): Promise<Card> => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards`, newCardData);
+  return response.data.data;
+};
+
+export const updateCardDetailsAPI = async (cardId: string, updateData: UpdateCardType) => {
+  const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards/${cardId}`, updateData);
   return response.data.data;
 };
 
