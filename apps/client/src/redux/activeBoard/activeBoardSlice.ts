@@ -26,10 +26,23 @@ export const activeBoardSlice = createSlice({
     updateCurrentActiveBoard: (state, action) => {
       state.currentActiveBoard = action.payload;
     },
+    updateCardInBoard: (state, action) => {
+      const incomingCard = action.payload;
+      const column = state.currentActiveBoard?.columns.find((i) => i._id === incomingCard.columnId);
+      if (column) {
+        const card = column.cards.find((i) => i._id === incomingCard._id);
+        if (card) {
+          Object.entries(incomingCard).forEach(([key, value]) => {
+            (card as Record<string, unknown>)[key] = value;
+          });
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchBoardDetailsAPI.fulfilled, (state, action) => {
       const board = action.payload as Board;
+      board.FE_allUsers = board.owners?.concat(board.members);
       board.columns = mapOrder(board.columns, board.columnOrderIds, "_id");
 
       board.columns.forEach((column) => {
@@ -45,7 +58,7 @@ export const activeBoardSlice = createSlice({
   },
 });
 
-export const { updateCurrentActiveBoard } = activeBoardSlice.actions;
+export const { updateCurrentActiveBoard, updateCardInBoard } = activeBoardSlice.actions;
 
 export const selectCurrentActiveBoard = (state: { activeBoard: ActiveBoardState }) => {
   return state.activeBoard.currentActiveBoard;

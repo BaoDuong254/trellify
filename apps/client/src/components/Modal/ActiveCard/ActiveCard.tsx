@@ -38,6 +38,7 @@ import {
 } from "src/redux/activeCard/activeCardSlice";
 import { updateCardDetailsAPI } from "src/apis";
 import { singleFileValidator } from "src/utils/validators";
+import { updateCardInBoard } from "src/redux/activeBoard/activeBoardSlice";
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -66,14 +67,19 @@ function ActiveCard() {
     dispatch(clearAndHideCurrentActiveCard());
   };
 
-  const callApiUpdateCard = async (updatedCardData: { title?: string }) => {
+  const callApiUpdateCard = async (updatedCardData: { title?: string; description?: string }) => {
     const updatedCard = await updateCardDetailsAPI(activeCard?._id || "", updatedCardData);
     dispatch(updateCurrentActiveCard(updatedCard));
+    dispatch(updateCardInBoard(updatedCard));
     return updatedCard;
   };
 
   const onUpdateCardTitle = (newTitle: string) => {
     callApiUpdateCard({ title: newTitle.trim() });
+  };
+
+  const onUpdateCardDescription = (newDescription: string) => {
+    callApiUpdateCard({ description: newDescription });
   };
 
   const onUploadCardCover = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +94,12 @@ function ActiveCard() {
     }
     const reqData = new FormData();
     reqData.append("cardCover", files[0]);
+    toast.promise(
+      callApiUpdateCard(reqData as unknown as { title?: string; description?: string }).finally(() => {
+        event.target.value = "";
+      }),
+      { pending: "Uploading..." }
+    );
   };
 
   return (
@@ -122,8 +134,8 @@ function ActiveCard() {
           <Box sx={{ mb: 4 }}>
             <img
               style={{ width: "100%", height: "320px", borderRadius: "6px", objectFit: "cover" }}
-              src='https://user avatar.com/wp-content/uploads/2023/08/fit-banner-for-facebook-blog-user avatar-codetq.png'
-              alt='card-cover'
+              src={activeCard.cover}
+              alt='card cover'
             />
           </Box>
         )}
@@ -148,7 +160,10 @@ function ActiveCard() {
                   Description
                 </Typography>
               </Box>
-              <CardDescriptionMdEditor />
+              <CardDescriptionMdEditor
+                cardDescriptionProp={activeCard?.description || ""}
+                handleUpdateCardDescription={onUpdateCardDescription}
+              />
             </Box>
 
             <Box sx={{ mb: 3 }}>

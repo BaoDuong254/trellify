@@ -1,4 +1,5 @@
 import type { BoardCollectionType } from "@workspace/shared/schemas/board.schema";
+import type { User } from "src/types/user.type";
 
 export interface Card {
   _id: string;
@@ -27,6 +28,9 @@ export interface Board extends BoardCollectionType {
   ownerIds: string[];
   memberIds: string[];
   columns: Column[];
+  FE_allUsers: Omit<User, "password" | "verifyToken">[];
+  owners: Omit<User, "password" | "verifyToken">[];
+  members: Omit<User, "password" | "verifyToken">[];
 }
 
 export type BoardType = "public" | "private";

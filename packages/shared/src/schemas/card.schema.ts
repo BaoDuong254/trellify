@@ -44,10 +44,7 @@ export const CREATE_NEW_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({
   columnId: true,
 });
 
-export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.partial().pick({
-  title: true,
-  description: true,
-});
+export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.partial();
 
 export type CardCollectionType = z.infer<typeof CARD_COLLECTION_SCHEMA>;
 export type CreateNewCardType = z.infer<typeof CREATE_NEW_CARD_SCHEMA>;

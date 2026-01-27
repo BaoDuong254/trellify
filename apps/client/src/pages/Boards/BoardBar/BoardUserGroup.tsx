@@ -3,8 +3,15 @@ import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
 import Tooltip from "@mui/material/Tooltip";
 import Popover from "@mui/material/Popover";
+import type { User } from "src/types/user.type";
 
-function BoardUserGroup({ limit = 8 }) {
+function BoardUserGroup({
+  boardUsers,
+  limit = 8,
+}: {
+  boardUsers?: Omit<User, "password" | "verifyToken">[];
+  limit?: number;
+}) {
   const [anchorPopoverElement, setAnchorPopoverElement] = useState<HTMLElement | null>(null);
   const isOpenPopover = Boolean(anchorPopoverElement);
   const popoverId = isOpenPopover ? "board-all-users-popover" : undefined;
@@ -15,21 +22,21 @@ function BoardUserGroup({ limit = 8 }) {
 
   return (
     <Box sx={{ display: "flex", gap: "4px" }}>
-      {[...Array(16)].map((_, index) => {
+      {boardUsers?.map((user, index) => {
         if (index < limit) {
           return (
-            <Tooltip title='User avatar' key={index}>
+            <Tooltip title={user?.displayName} key={user?._id}>
               <Avatar
                 sx={{ width: 34, height: 34, cursor: "pointer" }}
-                alt='User avatar'
-                src='https://User avatar.com/wp-content/uploads/2019/06/User avatar-cat-avatar.png'
+                alt={user?.displayName}
+                src={user?.avatar ?? ""}
               />
             </Tooltip>
           );
         }
       })}
 
-      {[...Array(16)].length > limit && (
+      {(boardUsers?.length ?? 0) > limit && (
         <Tooltip title='Show more'>
           <Box
             aria-describedby={popoverId}
@@ -48,7 +55,7 @@ function BoardUserGroup({ limit = 8 }) {
               backgroundColor: "#a4b0be",
             }}
           >
-            +{[...Array(16)].length - limit}
+            +{(boardUsers?.length ?? 0) - limit}
           </Box>
         </Tooltip>
       )}
@@ -61,12 +68,12 @@ function BoardUserGroup({ limit = 8 }) {
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
         <Box sx={{ p: 2, maxWidth: "235px", display: "flex", flexWrap: "wrap", gap: 1 }}>
-          {[...Array(16)].map((_, index) => (
-            <Tooltip title='User avatar' key={index}>
+          {boardUsers?.map((user) => (
+            <Tooltip title={user?.displayName} key={user?._id}>
               <Avatar
                 sx={{ width: 34, height: 34, cursor: "pointer" }}
-                alt='User avatar'
-                src='https://User avatar.com/wp-content/uploads/2019/06/User avatar-cat-avatar.png'
+                alt={user?.displayName}
+                src={user?.avatar ?? ""}
               />
             </Tooltip>
           ))}

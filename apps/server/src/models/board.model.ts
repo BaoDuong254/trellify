@@ -3,6 +3,7 @@ import { ObjectId, UpdateFilter, Document } from "mongodb";
 import { GET_DB } from "src/config/database";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
+import { userModel } from "src/models/user.model";
 import { pagingSkipValue } from "src/utils/paging";
 
 const BOARD_COLLECTION_NAME = "boards";
@@ -52,6 +53,24 @@ const getDetails = async (userId: string, boardId: string) => {
           localField: "_id",
           foreignField: "boardId",
           as: "cards",
+        },
+      },
+      {
+        $lookup: {
+          from: userModel.USER_COLLECTION_NAME,
+          localField: "ownerIds",
+          foreignField: "_id",
+          as: "owners",
+          pipeline: [{ $project: { password: 0, verifyToken: 0 } }],
+        },
+      },
+      {
+        $lookup: {
+          from: userModel.USER_COLLECTION_NAME,
+          localField: "memberIds",
+          foreignField: "_id",
+          as: "members",
+          pipeline: [{ $project: { password: 0, verifyToken: 0 } }],
         },
       },
     ])

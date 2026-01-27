@@ -19,7 +19,8 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
 const update = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
     const cardId = request.params.id;
-    const updatedCard = await cardService.update(cardId as string, request.body as UpdateCardType);
+    const cardCoverFile = request.file;
+    const updatedCard = await cardService.update(cardId as string, request.body as UpdateCardType, cardCoverFile);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Card updated successfully",

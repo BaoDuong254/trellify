@@ -6,21 +6,20 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 
-const markdownValueExample = `
-  *\`Markdown Content Example:\`*
-  \`\`\`javascript
-  import React from "react"
-  import ReactDOM from "react-dom"
-  import MDEditor from '@uiw/react-md-editor'
-  \`\`\`
-`;
-function CardDescriptionMdEditor() {
+function CardDescriptionMdEditor({
+  cardDescriptionProp,
+  handleUpdateCardDescription,
+}: {
+  cardDescriptionProp: string;
+  handleUpdateCardDescription: (newDescription: string) => void;
+}) {
   const { mode } = useColorScheme();
   const [markdownEditMode, setMarkdownEditMode] = useState(false);
-  const [cardDescription, setCardDescription] = useState(markdownValueExample);
+  const [cardDescription, setCardDescription] = useState(cardDescriptionProp);
 
   const updateCardDescription = () => {
     setMarkdownEditMode(false);
+    handleUpdateCardDescription(cardDescription);
   };
 
   return (
