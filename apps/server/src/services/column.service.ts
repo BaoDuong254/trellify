@@ -11,7 +11,7 @@ const createNew = async (requestBody: CreateNewColumnType) => {
     ...requestBody,
   };
   const createdColumn = await columnModel.createNew(newColumn);
-  const getNewlyCreatedColumn = await columnModel.fineOneById(createdColumn.insertedId);
+  const getNewlyCreatedColumn = await columnModel.findOneById(createdColumn.insertedId);
   if (getNewlyCreatedColumn) {
     getNewlyCreatedColumn.cards = [];
     await boardModel.pushColumnOrderIds(getNewlyCreatedColumn);
@@ -26,7 +26,7 @@ const update = async (columnId: string, requestBody: UpdateColumnType) => {
 };
 
 const deleteItem = async (columnId: string) => {
-  const targetColumn = await columnModel.fineOneById(new ObjectId(columnId));
+  const targetColumn = await columnModel.findOneById(new ObjectId(columnId));
 
   if (!targetColumn) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Column not found!");

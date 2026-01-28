@@ -44,8 +44,26 @@ export const CREATE_NEW_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({
   columnId: true,
 });
 
-export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.partial();
+export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.partial().extend({
+  commentToAdd: z
+    .object({
+      userAvatar: z.url({ message: "Error.UserAvatarMustBeURL" }).nullable().default(null),
+      userDisplayName: z.string({ error: "Error.UserDisplayNameMustBeString" }),
+      content: z.string({ error: "Error.CommentContentMustBeString" }),
+    })
+    .optional(),
+});
+
+export const CARD_COMMENT_SCHEMA = z.object({
+  userId: z.string({ error: "Error.UserIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+  userEmail: z.email().regex(EMAIL_RULE, { error: EMAIL_RULE_MESSAGE }),
+  userAvatar: z.url({ message: "Error.UserAvatarMustBeURL" }).nullable().default(null),
+  userDisplayName: z.string({ error: "Error.UserDisplayNameMustBeString" }),
+  content: z.string({ error: "Error.CommentContentMustBeString" }),
+  commentedAt: z.date({ error: "Error.CommentedAtMustBeDate" }),
+});
 
 export type CardCollectionType = z.infer<typeof CARD_COLLECTION_SCHEMA>;
 export type CreateNewCardType = z.infer<typeof CREATE_NEW_CARD_SCHEMA>;
 export type UpdateCardType = z.infer<typeof UPDATE_CARD_SCHEMA>;
+export type CardCommentType = z.infer<typeof CARD_COMMENT_SCHEMA>;

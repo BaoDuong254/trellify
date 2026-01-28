@@ -24,7 +24,7 @@ const createNew = async (userId: string, data: CreateNewBoardType & { slug: stri
   return createdBoard;
 };
 
-const fineOneById = async (id: ObjectId) => {
+const findOneById = async (id: ObjectId) => {
   const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ _id: id });
   return board;
 };
@@ -146,7 +146,7 @@ const getBoards = async (userId: string, page: number, itemsPerPage: number) => 
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
-  fineOneById,
+  findOneById,
   getDetails,
   pushColumnOrderIds,
   update,

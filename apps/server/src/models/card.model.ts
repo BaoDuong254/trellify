@@ -1,5 +1,10 @@
-import { CARD_COLLECTION_SCHEMA, CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
-import { ObjectId } from "mongodb";
+import {
+  CARD_COLLECTION_SCHEMA,
+  CardCommentType,
+  CreateNewCardType,
+  UpdateCardType,
+} from "@workspace/shared/schemas/card.schema";
+import { Document, ObjectId, UpdateFilter } from "mongodb";
 import { GET_DB } from "src/config/database";
 
 const CARD_COLLECTION_NAME = "cards";
@@ -21,7 +26,7 @@ const createNew = async (data: CreateNewCardType) => {
   return createdCard;
 };
 
-const fineOneById = async (id: ObjectId) => {
+const findOneById = async (id: ObjectId) => {
   const card = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ _id: id });
   return card;
 };
@@ -53,10 +58,22 @@ const deleteManyByColumnId = async (columnId: string) => {
   return result;
 };
 
+const unshiftNewComment = async (cardId: string, commentData: CardCommentType) => {
+  const result = await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(cardId) },
+      { $push: { comments: { $each: [commentData], $position: 0 } } } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+  return result;
+};
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   createNew,
-  fineOneById,
+  findOneById,
   update,
   deleteManyByColumnId,
+  unshiftNewComment,
 };

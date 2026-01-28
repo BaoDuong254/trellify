@@ -34,11 +34,13 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   clearAndHideCurrentActiveCard,
   selectCurrentActiveCard,
+  selectIsShowModalActiveCard,
   updateCurrentActiveCard,
 } from "src/redux/activeCard/activeCardSlice";
 import { updateCardDetailsAPI } from "src/apis";
 import { singleFileValidator } from "src/utils/validators";
 import { updateCardInBoard } from "src/redux/activeBoard/activeBoardSlice";
+import type { UpdateCardType } from "@workspace/shared/schemas/card.schema";
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -63,11 +65,12 @@ const SidebarItem = styled(Box)(({ theme }) => ({
 function ActiveCard() {
   const dispatch = useDispatch<AppDispatch>();
   const activeCard = useSelector(selectCurrentActiveCard);
+  const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard);
   const handleCloseModal = () => {
     dispatch(clearAndHideCurrentActiveCard());
   };
 
-  const callApiUpdateCard = async (updatedCardData: { title?: string; description?: string }) => {
+  const callApiUpdateCard = async (updatedCardData: UpdateCardType) => {
     const updatedCard = await updateCardDetailsAPI(activeCard?._id || "", updatedCardData);
     dispatch(updateCurrentActiveCard(updatedCard));
     dispatch(updateCardInBoard(updatedCard));
@@ -102,8 +105,14 @@ function ActiveCard() {
     );
   };
 
+  const onAddCardComment = async (commentToAdd: { userAvatar: string; userDisplayName: string; content: string }) => {
+    await callApiUpdateCard({
+      commentToAdd,
+    });
+  };
+
   return (
-    <Modal disableScrollLock open={true} onClose={handleCloseModal} sx={{ overflowY: "auto" }}>
+    <Modal disableScrollLock open={isShowModalActiveCard} onClose={handleCloseModal} sx={{ overflowY: "auto" }}>
       <Box
         sx={{
           position: "relative",
@@ -173,7 +182,7 @@ function ActiveCard() {
                   Activity
                 </Typography>
               </Box>
-              <CardActivitySection />
+              <CardActivitySection cardComments={activeCard?.comments} onAddCardComment={onAddCardComment} />
             </Box>
           </Box>
 

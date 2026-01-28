@@ -18,7 +18,7 @@ const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
     slug: slugify(requestBody.title),
   };
   const createdBoard = await boardModel.createNew(userId, newBoard);
-  const getNewlyCreatedBoard = await boardModel.fineOneById(createdBoard.insertedId);
+  const getNewlyCreatedBoard = await boardModel.findOneById(createdBoard.insertedId);
   return getNewlyCreatedBoard;
 };
 

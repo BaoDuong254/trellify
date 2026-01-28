@@ -1,6 +1,7 @@
 import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 import type { UpdateCardType } from "@workspace/shared/schemas/card.schema";
 import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
+import type { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
 import { toast } from "react-toastify";
 import envConfig from "src/config/env";
 import type { CreateBoardFormData } from "src/pages/Boards/create";
@@ -80,5 +81,11 @@ export const verifyUserAPI = async (data: { email: string; token: string }) => {
 
 export const refreshTokenAPI = async () => {
   const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/refresh_token`);
+  return response.data.data;
+};
+
+export const inviteUserToBoardAPI = async (data: InvitationCreateType) => {
+  const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/invitations/board`, data);
+  toast.success("User invited to board successfully!");
   return response.data.data;
 };

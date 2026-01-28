@@ -24,7 +24,7 @@ const createNew = async (data: CreateNewColumnType) => {
   return createdColumn;
 };
 
-const fineOneById = async (id: ObjectId) => {
+const findOneById = async (id: ObjectId) => {
   const column = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ _id: id });
   return column;
 };
@@ -63,7 +63,7 @@ const deleteOneById = async (columnId: string) => {
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   createNew,
-  fineOneById,
+  findOneById,
   pushCardOrderIds,
   update,
   deleteOneById,
