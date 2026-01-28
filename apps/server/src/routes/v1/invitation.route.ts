@@ -13,4 +13,6 @@ router
     invitationController.createNewBoardInvitation
   );
 
+router.route("/").get(authMiddleware.isAuthorized, invitationController.getInvitations);
+
 export const invitationRoute = router;

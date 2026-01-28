@@ -21,6 +21,21 @@ const createNewBoardInvitation = async (request: ExpressRequest, response: Expre
   }
 };
 
+const getInvitations = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const resultInvitations = await invitationService.getInvitations(userId!);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Get invitations successfully",
+      data: resultInvitations,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const invitationController = {
   createNewBoardInvitation,
+  getInvitations,
 };

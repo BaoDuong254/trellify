@@ -39,6 +39,19 @@ const createNewBoardInvitation = async (requestBody: InvitationCreateType, invit
   return resultInvitation;
 };
 
+const getInvitations = async (userId: string) => {
+  const getInvitations = await invitationModel.findByUser(userId);
+  const resultInvitations = getInvitations.map((invite) => ({
+    ...invite,
+    inviter: invite.inviter[0] || {},
+    invitee: invite.invitee[0] || {},
+    board: invite.board[0] || {},
+  }));
+
+  return resultInvitations;
+};
+
 export const invitationService = {
   createNewBoardInvitation,
+  getInvitations,
 };
