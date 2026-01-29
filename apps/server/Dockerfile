@@ -45,22 +45,25 @@ RUN pnpm run apps:build
 # Production stage
 FROM node:24-alpine
 
-WORKDIR /app
-
 # Install wget for healthcheck
 RUN apk add --no-cache wget
 
-# Copy package.json to set up proper module resolution
-COPY --from=builder /workspace/apps/server/package.json ./package.json
+# Set workdir to match workspace structure for proper module resolution
+WORKDIR /workspace/apps/server
 
 # Copy built application from builder stage
 COPY --from=builder /workspace/apps/server/dist ./dist
+COPY --from=builder /workspace/apps/server/package.json ./package.json
 
-# Copy all node_modules from workspace (includes shared packages)
-COPY --from=builder /workspace/node_modules ./node_modules
+# Copy node_modules from workspace root (includes all dependencies and @workspace packages)
+COPY --from=builder /workspace/node_modules /workspace/node_modules
+
+# Copy shared package if it has a dist folder
+COPY --from=builder /workspace/packages/shared /workspace/packages/shared
 
 # Expose port 3000 for Express server
 EXPOSE 3000
 
-# Start the server
+# Start the server with NODE_PATH to ensure module resolution
+ENV NODE_PATH=/workspace/node_modules
 CMD ["node", "dist/index.js"]
