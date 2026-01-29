@@ -2,8 +2,10 @@ import {
   CARD_COLLECTION_SCHEMA,
   CardCommentType,
   CreateNewCardType,
+  IncomingCardMemberInfoType,
   UpdateCardType,
 } from "@workspace/shared/schemas/card.schema";
+import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 import { Document, ObjectId, UpdateFilter } from "mongodb";
 import { GET_DB } from "src/config/database";
 
@@ -69,6 +71,22 @@ const unshiftNewComment = async (cardId: string, commentData: CardCommentType) =
   return result;
 };
 
+const updateMembers = async (cardId: string, incomingMemberInfo: IncomingCardMemberInfoType) => {
+  let updateCondition = {};
+  if (incomingMemberInfo.action === CARD_MEMBER_ACTIONS.ADD) {
+    updateCondition = { $push: { memberIds: new ObjectId(incomingMemberInfo.userId) } };
+  }
+
+  if (incomingMemberInfo.action === CARD_MEMBER_ACTIONS.REMOVE) {
+    updateCondition = { $pull: { memberIds: new ObjectId(incomingMemberInfo.userId) } };
+  }
+
+  const result = await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .findOneAndUpdate({ _id: new ObjectId(cardId) }, updateCondition, { returnDocument: "after" });
+  return result;
+};
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   createNew,
@@ -76,4 +94,5 @@ export const cardModel = {
   update,
   deleteManyByColumnId,
   unshiftNewComment,
+  updateMembers,
 };

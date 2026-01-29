@@ -44,6 +44,11 @@ export const CREATE_NEW_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({
   columnId: true,
 });
 
+export const INCOMING_CARD_MEMBER_INFO_SCHEMA = z.object({
+  userId: z.string({ error: "Error.UserIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+  action: z.enum(["ADD", "REMOVE"], { error: "Error.ActionMustBeEitherAddOrRemove" }),
+});
+
 export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.partial().extend({
   commentToAdd: z
     .object({
@@ -52,6 +57,7 @@ export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.partial().extend({
       content: z.string({ error: "Error.CommentContentMustBeString" }),
     })
     .optional(),
+  incomingMemberInfo: INCOMING_CARD_MEMBER_INFO_SCHEMA.optional(),
 });
 
 export const CARD_COMMENT_SCHEMA = z.object({
@@ -67,3 +73,4 @@ export type CardCollectionType = z.infer<typeof CARD_COLLECTION_SCHEMA>;
 export type CreateNewCardType = z.infer<typeof CREATE_NEW_CARD_SCHEMA>;
 export type UpdateCardType = z.infer<typeof UPDATE_CARD_SCHEMA>;
 export type CardCommentType = z.infer<typeof CARD_COMMENT_SCHEMA>;
+export type IncomingCardMemberInfoType = z.infer<typeof INCOMING_CARD_MEMBER_INFO_SCHEMA>;

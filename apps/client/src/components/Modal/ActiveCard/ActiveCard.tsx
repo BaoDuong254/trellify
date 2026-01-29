@@ -40,7 +40,11 @@ import {
 import { updateCardDetailsAPI } from "src/apis";
 import { singleFileValidator } from "src/utils/validators";
 import { updateCardInBoard } from "src/redux/activeBoard/activeBoardSlice";
-import type { UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import type { IncomingCardMemberInfoType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import { selectCurrentUser } from "src/redux/user/userSlice";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -66,6 +70,7 @@ function ActiveCard() {
   const dispatch = useDispatch<AppDispatch>();
   const activeCard = useSelector(selectCurrentActiveCard);
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard);
+  const currentUser = useSelector(selectCurrentUser);
   const handleCloseModal = () => {
     dispatch(clearAndHideCurrentActiveCard());
   };
@@ -108,6 +113,12 @@ function ActiveCard() {
   const onAddCardComment = async (commentToAdd: { userAvatar: string; userDisplayName: string; content: string }) => {
     await callApiUpdateCard({
       commentToAdd,
+    });
+  };
+
+  const onUpdateCardMembers = async (incomingMemberInfo: IncomingCardMemberInfoType) => {
+    await callApiUpdateCard({
+      incomingMemberInfo,
     });
   };
 
@@ -159,7 +170,7 @@ function ActiveCard() {
           <Box sx={{ width: { xs: "100%", sm: "75%" } }}>
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: "600", color: "primary.main", mb: 1 }}>Members</Typography>
-              <CardUserGroup />
+              <CardUserGroup cardMemberIds={activeCard?.memberIds || []} onUpdateCardMembers={onUpdateCardMembers} />
             </Box>
 
             <Box sx={{ mb: 3 }}>
@@ -190,10 +201,40 @@ function ActiveCard() {
           <Box sx={{ width: { xs: "100%", sm: "25%" } }}>
             <Typography sx={{ fontWeight: "600", color: "primary.main", mb: 1 }}>Add To Card</Typography>
             <Stack direction='column' spacing={1}>
-              <SidebarItem className='active'>
-                <PersonOutlineOutlinedIcon fontSize='small' />
-                Join
-              </SidebarItem>
+              {currentUser && activeCard?.memberIds?.includes(currentUser._id) ? (
+                <SidebarItem
+                  sx={{ color: "error.light", "&:hover": { color: "error.light" } }}
+                  onClick={() =>
+                    onUpdateCardMembers({
+                      userId: currentUser?._id as string,
+                      action: CARD_MEMBER_ACTIONS.REMOVE,
+                    })
+                  }
+                >
+                  <ExitToAppIcon fontSize='small' />
+                  Leave
+                </SidebarItem>
+              ) : (
+                <SidebarItem
+                  className='active'
+                  onClick={() =>
+                    onUpdateCardMembers({
+                      userId: currentUser?._id as string,
+                      action: CARD_MEMBER_ACTIONS.ADD,
+                    })
+                  }
+                >
+                  <Box sx={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <PersonOutlineOutlinedIcon fontSize='small' />
+                      <span>Join</span>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <CheckCircleIcon fontSize='small' sx={{ color: "#27ae60" }} />
+                    </Box>
+                  </Box>
+                </SidebarItem>
+              )}
               <SidebarItem className='active' as='label'>
                 <ImageOutlinedIcon fontSize='small' />
                 Cover

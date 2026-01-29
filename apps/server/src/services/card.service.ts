@@ -41,6 +41,8 @@ const update = async (
       userEmail: userInfo?.email,
     } as CardCommentType;
     updatedCard = (await cardModel.unshiftNewComment(cardId, commentData)) as unknown as UpdateCardType;
+  } else if (updatedData.incomingMemberInfo) {
+    updatedCard = (await cardModel.updateMembers(cardId, updatedData.incomingMemberInfo)) as unknown as UpdateCardType;
   } else {
     updatedCard = (await cardModel.update(cardId, updatedData)) as unknown as UpdateCardType;
   }
