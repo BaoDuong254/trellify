@@ -425,6 +425,9 @@ importers:
       axios:
         specifier: 'catalog:'
         version: 1.13.2
+      cross-env:
+        specifier: 'catalog:'
+        version: 10.1.0
       lodash:
         specifier: 'catalog:'
         version: 4.17.21

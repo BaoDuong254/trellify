@@ -13,6 +13,7 @@ import { persistStore } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
 import { injectStore } from "src/utils/http.ts";
 import GlobalStyles from "@mui/material/GlobalStyles";
+import ErrorBoundary from "src/components/ErrorBoundary/ErrorBoundary.tsx";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -29,20 +30,22 @@ createRoot(rootElement).render(
       <PersistGate persistor={persistor}>
         <BrowserRouter basename='/'>
           <ThemeProvider theme={theme}>
-            <ConfirmProvider
-              defaultOptions={{
-                allowClose: false,
-                dialogProps: { maxWidth: "xs" },
-                buttonOrder: ["confirm", "cancel"],
-                cancellationButtonProps: { color: "inherit" },
-                confirmationButtonProps: { color: "secondary", variant: "outlined" },
-              }}
-            >
-              <GlobalStyles styles={{ a: { textDecoration: "none" } }} />
-              <CssBaseline />
-              <App />
-              <ToastContainer position='bottom-left' theme='colored' />
-            </ConfirmProvider>
+            <ErrorBoundary>
+              <ConfirmProvider
+                defaultOptions={{
+                  allowClose: false,
+                  dialogProps: { maxWidth: "xs" },
+                  buttonOrder: ["confirm", "cancel"],
+                  cancellationButtonProps: { color: "inherit" },
+                  confirmationButtonProps: { color: "secondary", variant: "outlined" },
+                }}
+              >
+                <GlobalStyles styles={{ a: { textDecoration: "none" } }} />
+                <CssBaseline />
+                <App />
+                <ToastContainer position='bottom-left' theme='colored' />
+              </ConfirmProvider>
+            </ErrorBoundary>
           </ThemeProvider>
         </BrowserRouter>
       </PersistGate>
