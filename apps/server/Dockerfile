@@ -53,10 +53,9 @@ RUN apk add --no-cache wget && \
 # Set workdir to monorepo root for proper workspace resolution
 WORKDIR /workspace
 
-# Copy workspace configuration files
-COPY --from=builder /workspace/pnpm-workspace.yaml ./
-COPY --from=builder /workspace/package.json ./
-COPY --from=builder /workspace/pnpm-lock.yaml ./
+# Copy workspace configuration files (including catalog definitions)
+COPY pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
 
 # Copy all package.json files for workspace resolution
 COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/
