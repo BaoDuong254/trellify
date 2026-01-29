@@ -5,6 +5,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import SvgIcon from "@mui/material/SvgIcon";
 import PlanetSvg from "src/assets/404/planet.svg?react";
 import AstronautSvg from "src/assets/404/astronaut.svg?react";
+import particlesImg from "src/assets/404/particles.png";
 import { Link } from "react-router-dom";
 
 function NotFound() {
@@ -26,7 +27,7 @@ function NotFound() {
           animation: "stars 12s linear infinite alternate",
           width: "100%",
           height: "100%",
-          backgroundImage: 'url("src/assets/404/particles.png")',
+          backgroundImage: `url(${particlesImg})`,
           backgroundSize: "contain",
           backgroundRepeat: "repeat",
           backgroundPosition: "center",
