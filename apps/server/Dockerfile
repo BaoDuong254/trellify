@@ -49,21 +49,14 @@ WORKDIR /app
 # Install wget for healthcheck
 RUN apk add --no-cache wget
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
-
-# Copy package.json for production dependencies
-COPY apps/server/package.json ./
-
-# Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+# Copy package.json to set up proper module resolution
+COPY --from=builder /workspace/apps/server/package.json ./package.json
 
 # Copy built application from builder stage
 COPY --from=builder /workspace/apps/server/dist ./dist
 
-# Copy shared package if needed at runtime (usually bundled in dist)
-# If @workspace/shared is external dependency, copy from builder:
-COPY --from=builder /workspace/packages/shared/dist ./node_modules/@workspace/shared
+# Copy all node_modules from workspace (includes shared packages)
+COPY --from=builder /workspace/node_modules ./node_modules
 
 # Expose port 3000 for Express server
 EXPOSE 3000
