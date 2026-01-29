@@ -10,11 +10,7 @@ export const corsOptions: CorsOptions = {
       return callback(null, true);
     }
 
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    if (WHITELIST_DOMAINS.includes(origin)) {
+    if (origin && WHITELIST_DOMAINS.includes(origin)) {
       return callback(null, true);
     }
 
