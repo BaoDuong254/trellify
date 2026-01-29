@@ -8,14 +8,6 @@ import { invitationRoute } from "src/routes/v1/invitation.route";
 
 const router: Router = express.Router();
 
-// Health check route
-router.get("/status", (_request, response) => {
-  response.status(StatusCodes.OK).json({
-    message: "API v1 is running",
-    status: StatusCodes.OK,
-  });
-});
-
 // Board routes
 router.use("/boards", boardRoute);
 

@@ -25,6 +25,14 @@ const START_SERVER = () => {
     next();
   });
 
+  // Healthcheck endpoint (before CORS middleware)
+  app.get("/api/v1/status", (_request: ExpressRequest, response: ExpressResponse) => {
+    response.status(200).json({
+      message: "API v1 is running",
+      status: 200,
+    });
+  });
+
   // Setup cookie parser
   app.use(cookieParser());
 
