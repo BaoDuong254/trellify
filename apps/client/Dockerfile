@@ -22,7 +22,8 @@ COPY apps/client/package.json ./apps/client/
 COPY packages/typescript ./packages/typescript
 
 # Install dependencies for entire workspace
-RUN pnpm install --frozen-lockfile
+# Use --ignore-scripts to skip prepare hooks (lefthook needs git)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy shared packages source code
 COPY packages/shared ./packages/shared
