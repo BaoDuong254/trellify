@@ -1,33 +1,42 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from "@mui/icons-material/Search";
 import { createSearchParams, useNavigate } from "react-router-dom";
+import { fetchBoardsAPI } from "src/apis";
+import { useDebounceFn } from "src/hooks/useDebounceFn";
+import type { Board } from "src/types/board.type";
 
 function AutoCompleteSearchBoard() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [boards, setBoards] = useState(null);
+  const [boards, setBoards] = useState<Board[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!open) {
-      setBoards(null);
-    }
-  }, [open]);
-
-  const handleInputSearchChange = (event) => {
-    const searchValue = event.target?.value;
+  const handleInputSearchChange = (event: React.SyntheticEvent) => {
+    const searchValue = (event.target as HTMLInputElement)?.value;
     if (!searchValue) return;
 
     const searchPath = `?${createSearchParams({ "q[title]": searchValue })}`;
+    setLoading(true);
+    fetchBoardsAPI(searchPath)
+      .then((res) => {
+        setBoards(res.boards || []);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
-  const handleSelectedBoard = (event, selectedBoard) => {};
+  const debounceSearchBoard = useDebounceFn(handleInputSearchChange, 1000);
+
+  const handleSelectedBoard = (_event: React.SyntheticEvent, selectedBoard: Board | null) => {
+    if (selectedBoard) {
+      navigate(`/boards/${selectedBoard._id}`);
+    }
+  };
 
   return (
     <Autocomplete
@@ -40,12 +49,13 @@ function AutoCompleteSearchBoard() {
       }}
       onClose={() => {
         setOpen(false);
+        setBoards(null);
       }}
       getOptionLabel={(board) => board.title}
       options={boards || []}
       isOptionEqualToValue={(option, value) => option._id === value._id}
       loading={loading}
-      onInputChange={handleInputSearchChange}
+      onInputChange={debounceSearchBoard}
       onChange={handleSelectedBoard}
       renderInput={(params) => (
         <TextField

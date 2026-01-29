@@ -67,10 +67,13 @@ const getBoards = async (request: ExpressRequest, response: ExpressResponse, nex
   try {
     const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
     const { page, itemsPerPage } = request.query;
+    const titleSearch = request.query["q[title]"] as string | undefined;
+    const queryFilters = titleSearch ? { title: titleSearch } : undefined;
     const boards = await boardService.getBoards(
       userId!,
       page as string | undefined,
-      itemsPerPage as string | undefined
+      itemsPerPage as string | undefined,
+      queryFilters
     );
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,

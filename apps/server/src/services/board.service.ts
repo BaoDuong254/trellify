@@ -59,11 +59,21 @@ const moveCardToDifferentColumn = async (requestBody: MoveCardToDifferentColumnT
   return { updateResult: "Successfully!" };
 };
 
-const getBoards = async (userId: string, page?: string, itemsPerPage?: string) => {
+const getBoards = async (
+  userId: string,
+  page?: string,
+  itemsPerPage?: string,
+  queryFilters?: Record<string, string>
+) => {
   if (!page) page = DEFAULT_PAGE.toString();
   if (!itemsPerPage) itemsPerPage = DEFAULT_ITEMS_PER_PAGE.toString();
 
-  const boards = await boardModel.getBoards(userId, Number.parseInt(page, 10), Number.parseInt(itemsPerPage, 10));
+  const boards = await boardModel.getBoards(
+    userId,
+    Number.parseInt(page, 10),
+    Number.parseInt(itemsPerPage, 10),
+    queryFilters
+  );
   return boards;
 };
 

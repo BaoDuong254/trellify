@@ -113,11 +113,21 @@ const update = async (boardId: string, updateData: UpdateBoardType) => {
     .findOneAndUpdate({ _id: new ObjectId(boardId) }, { $set: updateData }, { returnDocument: "after" });
 };
 
-const getBoards = async (userId: string, page: number, itemsPerPage: number) => {
-  const queryConditions = [
+const getBoards = async (userId: string, page: number, itemsPerPage: number, queryFilters?: Record<string, string>) => {
+  const queryConditions: Array<Record<string, unknown>> = [
     { _destroy: false },
     { $or: [{ ownerIds: { $all: [new ObjectId(userId)] } }, { memberIds: { $all: [new ObjectId(userId)] } }] },
   ];
+
+  if (queryFilters) {
+    for (const key of Object.keys(queryFilters)) {
+      const filterValue = queryFilters[key];
+      if (filterValue) {
+        // eslint-disable-next-line security/detect-non-literal-regexp
+        queryConditions.push({ [key]: { $regex: new RegExp(filterValue, "i") } });
+      }
+    }
+  }
 
   const query = await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
