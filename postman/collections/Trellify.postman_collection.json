@@ -181,6 +181,28 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update card",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"update second cards\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/cards/6974597eb558015ef9c46665",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "6974597eb558015ef9c46665"]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -216,7 +238,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"password\": \"12345678a\"\r\n}",
+              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"password\": \"123456789a\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -297,6 +319,75 @@
               "raw": "{{host}}/api/v1/users/update",
               "host": ["{{host}}"],
               "path": ["api", "v1", "users", "update"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "module invitation",
+      "item": [
+        {
+          "name": "Create new board invitation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"inviteeEmail\": \"duonggiabao254@gmail.com\",\r\n    \"boardId\": \"696cf8e1464f12fbc4ad6c37\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/invitations/board",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "invitations", "board"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get invitations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/invitations",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "invitations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update invitation",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\": \"ACCEPTED\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/v1/invitations/board/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "invitations", "board", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "123",
+                  "description": "Invitation id"
+                }
+              ]
             }
           },
           "response": []
