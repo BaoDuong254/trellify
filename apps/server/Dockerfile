@@ -45,25 +45,39 @@ RUN pnpm run apps:build
 # Production stage
 FROM node:24-alpine
 
-# Install wget for healthcheck
-RUN apk add --no-cache wget
+# Install wget for healthcheck and pnpm
+RUN apk add --no-cache wget && \
+    corepack enable && \
+    corepack prepare pnpm@10.28.2 --activate
 
-# Set workdir to match workspace structure for proper module resolution
+# Set workdir to monorepo root for proper workspace resolution
+WORKDIR /workspace
+
+# Copy workspace configuration files
+COPY --from=builder /workspace/pnpm-workspace.yaml ./
+COPY --from=builder /workspace/package.json ./
+COPY --from=builder /workspace/pnpm-lock.yaml ./
+
+# Copy all package.json files for workspace resolution
+COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/
+COPY --from=builder /workspace/packages/eslint/package.json ./packages/eslint/
+COPY --from=builder /workspace/packages/typescript/package.json ./packages/typescript/
+COPY --from=builder /workspace/apps/server/package.json ./apps/server/
+
+# Copy built shared packages
+COPY --from=builder /workspace/packages/shared ./packages/shared
+
+# Copy built server application
+COPY --from=builder /workspace/apps/server/dist ./apps/server/dist
+
+# Install production dependencies only
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+
+# Set working directory to server app
 WORKDIR /workspace/apps/server
-
-# Copy built application from builder stage
-COPY --from=builder /workspace/apps/server/dist ./dist
-COPY --from=builder /workspace/apps/server/package.json ./package.json
-
-# Copy node_modules from workspace root (includes all dependencies and @workspace packages)
-COPY --from=builder /workspace/node_modules /workspace/node_modules
-
-# Copy shared package if it has a dist folder
-COPY --from=builder /workspace/packages/shared /workspace/packages/shared
 
 # Expose port 3000 for Express server
 EXPOSE 3000
 
-# Start the server with NODE_PATH to ensure module resolution
-ENV NODE_PATH=/workspace/node_modules
+# Start the server
 CMD ["node", "dist/index.js"]
