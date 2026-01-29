@@ -13,6 +13,7 @@ export const corsOptions: CorsOptions = {
 
     if (origin && WHITELIST_DOMAINS.includes(origin)) {
       logger.info(`CORS origin allowed: ${origin}`);
+      logger.info(`Whitelisted domains: ${WHITELIST_DOMAINS.join(", ")}`);
       return callback(null, true);
     }
 
