@@ -16,30 +16,52 @@ import NotInterestedIcon from "@mui/icons-material/NotInterested";
 import { BOARD_INVITATION_STATUS } from "@workspace/shared/utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addNotification,
   fetchInvitationsAPI,
   selectCurrentNotifications,
   updateBoardInvitationAPI,
 } from "src/redux/notifications/notificationsSlice";
 import type { AppDispatch } from "src/redux/store";
+import { socketIoInstance } from "src/socketClient";
+import { selectCurrentUser } from "src/redux/user/userSlice";
+import type { Notifications as NotificationType } from "src/types/invitation.type";
+import { useNavigate } from "react-router-dom";
 
 function Notifications() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClickNotificationIcon = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
+    setNewNotification(false);
   };
   const handleClose = () => {
     setAnchorEl(null);
   };
-
+  const navigate = useNavigate();
+  const [newNotification, setNewNotification] = useState(false);
+  const currentUser = useSelector(selectCurrentUser);
   const notifications = useSelector(selectCurrentNotifications);
   const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
     dispatch(fetchInvitationsAPI());
-  }, [dispatch]);
+    const onReceiveNewInvitation = (invitation: NotificationType) => {
+      if (invitation.inviteeId === currentUser?._id) {
+        dispatch(addNotification(invitation));
+        setNewNotification(true);
+      }
+    };
+    socketIoInstance.on("BE_USER_INVITED_TO_BOARD", onReceiveNewInvitation);
+    return () => {
+      socketIoInstance.off("BE_USER_INVITED_TO_BOARD", onReceiveNewInvitation);
+    };
+  }, [dispatch, currentUser?._id]);
 
   const updateBoardInvitation = (status: string, invitationId: string) => {
-    dispatch(updateBoardInvitationAPI({ status, invitationId })).then(() => {});
+    dispatch(updateBoardInvitationAPI({ status, invitationId })).then((res) => {
+      if (res.payload.boardInvitation.status === BOARD_INVITATION_STATUS.ACCEPTED) {
+        navigate(`/boards/${res.payload.boardInvitation.boardId}`);
+      }
+    });
   };
 
   return (
@@ -48,6 +70,7 @@ function Notifications() {
         <Badge
           color='warning'
           variant='dot'
+          invisible={!newNotification}
           sx={{ cursor: "pointer" }}
           id='basic-button-open-notification'
           aria-controls={open ? "basic-notification-drop-down" : undefined}
@@ -57,7 +80,7 @@ function Notifications() {
         >
           <NotificationsNoneIcon
             sx={{
-              color: "yellow",
+              color: newNotification ? "yellow" : "white",
             }}
           />
         </Badge>

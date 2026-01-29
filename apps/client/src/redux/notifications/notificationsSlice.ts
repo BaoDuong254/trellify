@@ -19,7 +19,7 @@ export const fetchInvitationsAPI = createAsyncThunk("notifications/fetchInvitati
 export const updateBoardInvitationAPI = createAsyncThunk(
   "notifications/updateBoardInvitationAPI",
   async ({ status, invitationId }: { status: string; invitationId: string }) => {
-    const response = await http.put(`$${envConfig.VITE_API_ENDPOINT}/api/v1/invitations/board/${invitationId}`, {
+    const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/invitations/board/${invitationId}`, {
       status,
     });
     return response.data.data;

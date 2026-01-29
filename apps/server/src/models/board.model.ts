@@ -143,6 +143,17 @@ const getBoards = async (userId: string, page: number, itemsPerPage: number) => 
   };
 };
 
+const pushMemberIds = async (boardId: string, userId: string) => {
+  const result = await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(boardId) },
+      { $push: { memberIds: new ObjectId(userId) } } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+  return result;
+};
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
@@ -152,4 +163,5 @@ export const boardModel = {
   update,
   pullColumnOrderIds,
   getBoards,
+  pushMemberIds,
 };

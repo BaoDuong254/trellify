@@ -43,6 +43,7 @@
     "morgan": "catalog:",
     "ms": "catalog:",
     "multer": "catalog:",
+    "socket.io": "catalog:",
     "streamifier": "catalog:",
     "uuid": "catalog:",
     "winston": "catalog:",

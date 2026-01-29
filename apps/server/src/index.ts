@@ -10,6 +10,9 @@ import { errorHandlingMiddleware } from "src/middlewares/error-handling.middlewa
 import cors from "cors";
 import { corsOptions } from "src/config/cors";
 import cookieParser from "cookie-parser";
+import http from "node:http";
+import { Server } from "socket.io";
+import { inviteUserToBoardSocket } from "src/sockets/invitation.socket";
 
 const START_SERVER = () => {
   // Create Express app
@@ -46,8 +49,21 @@ const START_SERVER = () => {
   // Error handling middleware
   app.use(errorHandlingMiddleware);
 
+  // Create HTTP server and setup Socket.io
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: corsOptions,
+  });
+  io.on("connection", (socket) => {
+    logger.info(chalk.greenBright(`New client connected: ${socket.id}`));
+    inviteUserToBoardSocket(socket);
+  });
+  io.on("disconnect", (socket) => {
+    logger.info(chalk.yellowBright(`Client disconnected: ${socket.id}`));
+  });
+
   // Start the server
-  app.listen(port, () => {
+  server.listen(port, () => {
     logger.info(chalk.bgBlueBright(`Server is running at http://localhost:${port}`));
   });
 

@@ -17,6 +17,10 @@ const createNewBoardInvitation = async (requestBody: InvitationCreateType, invit
     throw new ApiError(StatusCodes.NOT_FOUND, "Inviter, Invitee or Board not found!");
   }
 
+  if (invitee._id.toString() === inviter._id.toString()) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You cannot invite yourself to the board.");
+  }
+
   const newInvitationData = {
     inviterId,
     inviteeId: invitee._id.toString(),
@@ -51,7 +55,37 @@ const getInvitations = async (userId: string) => {
   return resultInvitations;
 };
 
+const updateBoardInvitation = async (invitationId: string, status: string, userId: string) => {
+  const getInvitation = await invitationModel.findOneById(invitationId);
+  if (!getInvitation) throw new ApiError(StatusCodes.NOT_FOUND, "Invitation not found!");
+
+  const boardId = getInvitation.boardInvitation.boardId.toString() as string;
+  const getBoard = await boardModel.findOneById(new ObjectId(boardId));
+  if (!getBoard) throw new ApiError(StatusCodes.NOT_FOUND, "Board not found!");
+
+  const boardOwnerAndMemberIds = [...getBoard.ownerIds, ...getBoard.memberIds].toString();
+  if (status === BOARD_INVITATION_STATUS.ACCEPTED && boardOwnerAndMemberIds.includes(userId)) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You are already a member of this board.");
+  }
+
+  const updateData = {
+    boardInvitation: {
+      ...getInvitation.boardInvitation,
+      status: status,
+    },
+  };
+
+  const updatedInvitation = await invitationModel.update(invitationId, updateData);
+
+  if (updatedInvitation?.boardInvitation.status === BOARD_INVITATION_STATUS.ACCEPTED) {
+    await boardModel.pushMemberIds(boardId, userId);
+  }
+
+  return updatedInvitation;
+};
+
 export const invitationService = {
   createNewBoardInvitation,
   getInvitations,
+  updateBoardInvitation,
 };

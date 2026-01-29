@@ -35,7 +35,24 @@ const getInvitations = async (request: ExpressRequest, response: ExpressResponse
   }
 };
 
+const updateBoardInvitation = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const { invitationId } = request.params;
+    const { status } = request.body as { status: string };
+    const updatedInvitation = await invitationService.updateBoardInvitation(invitationId as string, status, userId!);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Invitation updated successfully",
+      data: updatedInvitation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const invitationController = {
   createNewBoardInvitation,
   getInvitations,
+  updateBoardInvitation,
 };

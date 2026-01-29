@@ -25,9 +25,9 @@ injectStore(store);
 
 createRoot(rootElement).render(
   <StrictMode>
-    <BrowserRouter basename='/'>
-      <Provider store={store}>
-        <PersistGate persistor={persistor}>
+    <Provider store={store}>
+      <PersistGate persistor={persistor}>
+        <BrowserRouter basename='/'>
           <ThemeProvider theme={theme}>
             <ConfirmProvider
               defaultOptions={{
@@ -44,8 +44,8 @@ createRoot(rootElement).render(
               <ToastContainer position='bottom-left' theme='colored' />
             </ConfirmProvider>
           </ThemeProvider>
-        </PersistGate>
-      </Provider>
-    </BrowserRouter>
+        </BrowserRouter>
+      </PersistGate>
+    </Provider>
   </StrictMode>
 );
