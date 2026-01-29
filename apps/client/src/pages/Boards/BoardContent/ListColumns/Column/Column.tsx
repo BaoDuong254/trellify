@@ -287,6 +287,11 @@ function Column({ column }: { column: ColumnType }) {
                 data-no-dnd='true'
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    addNewCard();
+                  }
+                }}
                 sx={{
                   "& label": { color: "text.primary" },
                   "& input": {

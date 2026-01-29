@@ -122,6 +122,11 @@ function ListColumns({ columns }: { columns: ColumnType[] }) {
               autoFocus
               value={newColumnTitle}
               onChange={(e) => setNewColumnTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addNewColumn();
+                }
+              }}
               sx={{
                 "& label": { color: "white" },
                 "& input": { color: "white" },
