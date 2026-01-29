@@ -39,6 +39,9 @@ const START_SERVER = () => {
   // Setup CORS
   app.use(cors(corsOptions));
 
+  // Disable 'X-Powered-By' header for security
+  app.disable("x-powered-by");
+
   // Setup morgan with winston for logging
   app.use(
     morgan("combined", {

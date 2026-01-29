@@ -1,4 +1,3 @@
-import logger from "@workspace/shared/utils/logger";
 import { CorsOptions } from "cors";
 import { StatusCodes } from "http-status-codes";
 import environmentConfig from "src/config/environment";
@@ -11,9 +10,11 @@ export const corsOptions: CorsOptions = {
       return callback(null, true);
     }
 
-    if (origin && WHITELIST_DOMAINS.includes(origin)) {
-      logger.info(`CORS origin allowed: ${origin}`);
-      logger.info(`Whitelisted domains: ${WHITELIST_DOMAINS.join(", ")}`);
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (WHITELIST_DOMAINS.includes(origin)) {
       return callback(null, true);
     }
 
