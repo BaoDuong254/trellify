@@ -39,14 +39,14 @@ const verifyAccount = async (request: ExpressRequest, response: ExpressResponse,
 
 const login = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const loggedInUser = await userService.login(request.body as UserLoginType);
-    response.cookie("accessToken", loggedInUser.accessToken, {
+    const result = await userService.login(request.body as UserLoginType);
+    response.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
       maxAge: ms(environmentConfig.COOKIE_MAX_AGE as StringValue),
     });
-    response.cookie("refreshToken", loggedInUser.refreshToken, {
+    response.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
@@ -55,7 +55,7 @@ const login = async (request: ExpressRequest, response: ExpressResponse, next: N
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "User logged in successfully",
-      data: loggedInUser,
+      data: result.user,
     });
   } catch (error) {
     next(error);

@@ -91,7 +91,7 @@ const login = async (requestBody: UserLoginType) => {
     ms(environmentConfig.REFRESH_TOKEN_LIFE as StringValue) / 1000
   );
   return {
-    ...pickUser(existUser),
+    user: pickUser(existUser),
     accessToken,
     refreshToken,
   };
