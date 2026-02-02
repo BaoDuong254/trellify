@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get list of staged JS/TS files
 staged_files="$@"

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 # Script to clean project directories recursively
 # How to use:
 # chmod +x scripts/clean.sh
