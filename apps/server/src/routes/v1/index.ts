@@ -1,5 +1,4 @@
 import express, { Router } from "express";
-import { StatusCodes } from "http-status-codes";
 import { boardRoute } from "src/routes/v1/board.route";
 import { columnRoute } from "src/routes/v1/column.route";
 import { cardRoute } from "src/routes/v1/card.route";
