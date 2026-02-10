@@ -5,7 +5,7 @@ FROM node:24-alpine AS builder
 WORKDIR /workspace
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN corepack enable && corepack prepare pnpm@10.29.2 --activate
 
 # Copy workspace configuration files
 COPY pnpm-workspace.yaml ./
@@ -48,7 +48,7 @@ FROM node:24-alpine
 # Install wget for healthcheck and pnpm
 RUN apk add --no-cache wget && \
     corepack enable && \
-    corepack prepare pnpm@10.28.2 --activate
+    corepack prepare pnpm@10.29.2 --activate
 
 # Set workdir to monorepo root for proper workspace resolution
 WORKDIR /workspace
