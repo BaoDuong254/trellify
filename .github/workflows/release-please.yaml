@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
 
           PR_TITLE="chore: sync main into develop"
-          PR_BODY="Auto-generated PR to sync changes from `main` into `develop`."
+          PR_BODY='Auto-generated PR to sync changes from `main` into `develop`.'
 
           OPEN_PR_NUMBER=$(gh pr list \
             --repo "$REPO" \
@@ -71,7 +71,7 @@ jobs:
             --base develop \
             --head main \
             --json number \
-            --jq '.[0].number')
+            --jq '.[0].number // empty')
 
           if [ -n "$OPEN_PR_NUMBER" ]; then
             echo "Updating existing PR #$OPEN_PR_NUMBER"
