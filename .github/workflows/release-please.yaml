@@ -56,12 +56,39 @@ jobs:
 
       - name: Sync main into develop
         if: steps.check_version_pr.outputs.has_open_version_pr != 'true'
-        uses: repo-sync/pull-request@v2
-        with:
-          github_token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
-          source_branch: main
-          destination_branch: develop
-          pr_title: "chore: sync main into develop"
-          pr_body: |
-            Auto-generated PR to sync changes from `main` into `develop`.
-          pr_label: chore
+        env:
+          GH_TOKEN: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          PR_TITLE="chore: sync main into develop"
+          PR_BODY="Auto-generated PR to sync changes from `main` into `develop`."
+
+          OPEN_PR_NUMBER=$(gh pr list \
+            --repo "$REPO" \
+            --state open \
+            --base develop \
+            --head main \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -n "$OPEN_PR_NUMBER" ]; then
+            echo "Updating existing PR #$OPEN_PR_NUMBER"
+            gh pr edit "$OPEN_PR_NUMBER" \
+              --repo "$REPO" \
+              --title "$PR_TITLE" \
+              --body "$PR_BODY"
+            gh pr edit "$OPEN_PR_NUMBER" \
+              --repo "$REPO" \
+              --add-label "chore"
+          else
+            echo "Creating new PR from main to develop"
+            gh pr create \
+              --repo "$REPO" \
+              --base develop \
+              --head main \
+              --title "$PR_TITLE" \
+              --body "$PR_BODY" \
+              --label "chore"
+          fi
