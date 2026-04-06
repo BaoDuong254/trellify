@@ -79,9 +79,6 @@ jobs:
               --repo "$REPO" \
               --title "$PR_TITLE" \
               --body "$PR_BODY"
-            gh pr edit "$OPEN_PR_NUMBER" \
-              --repo "$REPO" \
-              --add-label "chore"
           else
             echo "Creating new PR from main to develop"
             gh pr create \
@@ -89,6 +86,5 @@ jobs:
               --base develop \
               --head main \
               --title "$PR_TITLE" \
-              --body "$PR_BODY" \
-              --label "chore"
+              --body "$PR_BODY"
           fi
