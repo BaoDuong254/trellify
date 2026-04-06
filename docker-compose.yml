@@ -1,10 +1,9 @@
 services:
   server:
     image: ${DOCKERHUB_USERNAME}/trellify-server:latest
-    container_name: trellify-server
     restart: unless-stopped
-    ports:
-      - "4015:3000"
+    expose:
+      - "3000"
     env_file:
       - ./apps/server/.env
     healthcheck:

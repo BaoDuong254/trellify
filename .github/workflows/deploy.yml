@@ -133,8 +133,15 @@ jobs:
             # Pull latest images
             docker compose pull
 
-            # Start containers with new images
-            docker compose up -d
+            # Start containers with 3 server replicas
+            docker compose up -d --scale server=3 --remove-orphans
+
+            # Verify server replicas
+            SERVER_REPLICAS=$(docker compose ps -q server | wc -l)
+            if [ "$SERVER_REPLICAS" -ne 3 ]; then
+              echo "Expected 3 server replicas, but found $SERVER_REPLICAS"
+              exit 1
+            fi
 
             # Clean up unused images
             docker image prune -af
@@ -153,7 +160,7 @@ jobs:
             👤 ${{ github.event.workflow_run.actor.login }} created commit:
             🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
             📦 Repository: ${{ github.repository }}
-            🚀 Application is now running on LXC
+            🚀 Application is now running on LXC with 3 server replicas
             👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
 
       - name: Send telegram message after deploy failure
