@@ -4,6 +4,7 @@ import { columnRoute } from "src/routes/v1/column.route";
 import { cardRoute } from "src/routes/v1/card.route";
 import { userRoute } from "src/routes/v1/user.route";
 import { invitationRoute } from "src/routes/v1/invitation.route";
+import { systemRoute } from "src/routes/v1/system.route";
 
 const router: Router = express.Router();
 
@@ -21,5 +22,8 @@ router.use("/users", userRoute);
 
 // Invitations routes
 router.use("/invitations", invitationRoute);
+
+// System routes
+router.use("/system", systemRoute);
 
 export const APIs_V1 = router;
