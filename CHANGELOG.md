@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/BaoDuong254/trellify/compare/v1.0.0...v1.1.0) (2026-04-06)
+
+
+### Features
+
+* update sync process from main to develop with PR handling ([9d3163c](https://github.com/BaoDuong254/trellify/commit/9d3163c919c470cc1e0c6868e574dd55d7713139))
+
+
+### Bug Fixes
+
+* correct PR_BODY string syntax and handle empty PR number case ([6b4b952](https://github.com/BaoDuong254/trellify/commit/6b4b952fae9af59bad4ee847cc35893d5fb7cc98))
+* remove label addition from PR creation process in release workflow ([b277a69](https://github.com/BaoDuong254/trellify/commit/b277a690296922fd0546de7e654e3f052387b676))
+
 ## 1.0.0 (2026-04-06)
 
 
