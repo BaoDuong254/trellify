@@ -1,5 +1,6 @@
 {
   "name": "trellify",
+  "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@10.29.2",
   "license": "MIT",

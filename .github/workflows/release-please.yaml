@@ -1,0 +1,67 @@
+on:
+  workflow_run:
+    workflows: ["Deploy Production"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+name: release-please
+
+jobs:
+  release-please:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+          release-type: node
+
+      - name: Check for open package version pull request
+        id: check_version_pr
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: pulls } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              base: 'main',
+              per_page: 100,
+            });
+
+            const hasOpenVersionPR = pulls.some(
+              (pr) =>
+                pr.title.startsWith('chore: update package version to') ||
+                pr.title.startsWith('chore: update api version to')
+            );
+
+            core.info(`Open package version PR found: ${hasOpenVersionPR}`);
+            core.setOutput('has_open_version_pr', hasOpenVersionPR ? 'true' : 'false');
+
+      - name: Checkout repository for sync
+        if: steps.check_version_pr.outputs.has_open_version_pr != 'true'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+
+      - name: Sync main into develop
+        if: steps.check_version_pr.outputs.has_open_version_pr != 'true'
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+          source_branch: main
+          destination_branch: develop
+          pr_title: "chore: sync main into develop"
+          pr_body: |
+            Auto-generated PR to sync changes from `main` into `develop`.
+          pr_label: chore
