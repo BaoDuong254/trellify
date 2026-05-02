@@ -2,7 +2,7 @@
   "name": "trellify",
   "version": "1.1.0",
   "private": true,
-  "packageManager": "pnpm@10.29.2",
+  "packageManager": "pnpm@10.33.2",
   "license": "MIT",
   "devDependencies": {
     "@commitlint/cli": "catalog:",
@@ -50,6 +50,6 @@
   },
   "engines": {
     "node": "24.12.0",
-    "pnpm": "10.29.2"
+    "pnpm": "10.33.2"
   }
 }
