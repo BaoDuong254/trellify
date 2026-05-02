@@ -122,7 +122,7 @@ const update = async (userId: string, requestBody: UserUpdateType, userAvatarFil
   if (!existUser!.isActive) {
     throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Account is not active");
   }
-  let updatedUser = {};
+  let updatedUser: unknown;
 
   if (requestBody.current_password && requestBody.new_password) {
     if (!bcryptjs.compareSync(requestBody.current_password, existUser.password as string)) {

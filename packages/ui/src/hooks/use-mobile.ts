@@ -1,4 +1,3 @@
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 import * as React from "react";
 
 const DEFAULT_MOBILE_BREAKPOINT = 768;
@@ -13,6 +12,7 @@ export function useIsMobile({ breakpoint = DEFAULT_MOBILE_BREAKPOINT }: UseIsMob
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${String(breakpoint - 1)}px)`);
     const onChange = () => {
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setIsMobile(window.innerWidth < breakpoint);
     };
     mql.addEventListener("change", onChange);

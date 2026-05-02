@@ -2,7 +2,7 @@ import { Component, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined";
 import HomeIcon from "@mui/icons-material/Home";
 import { Link } from "react-router-dom";
 

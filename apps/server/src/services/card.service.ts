@@ -25,7 +25,7 @@ const update = async (
     ...requestBody,
     updatedAt: new Date(),
   };
-  let updatedCard = {};
+  let updatedCard: UpdateCardType;
   if (cardCoverFile) {
     const uploadResult = (await CloudinaryProvider.streamUpload(cardCoverFile.buffer, "trellify_card-covers")) as {
       secure_url: string;

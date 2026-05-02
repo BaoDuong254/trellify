@@ -94,6 +94,6 @@ void (async () => {
     logger.info("3. Starting Express server...");
     START_SERVER();
   } catch (error) {
-    throw new Error(`Failed to start server: ${(error as Error).message}`);
+    throw new Error(`Failed to start server: ${(error as Error).message}`, { cause: error });
   }
 })();

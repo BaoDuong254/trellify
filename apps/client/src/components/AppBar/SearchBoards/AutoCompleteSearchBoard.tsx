@@ -63,8 +63,9 @@ function AutoCompleteSearchBoard() {
           label='Type to search...'
           size='small'
           slotProps={{
+            ...params.slotProps,
             input: {
-              ...params.InputProps,
+              ...params.slotProps.input,
               startAdornment: (
                 <InputAdornment position='start'>
                   <SearchIcon sx={{ color: "white" }} />
@@ -73,7 +74,7 @@ function AutoCompleteSearchBoard() {
               endAdornment: (
                 <>
                   {loading ? <CircularProgress sx={{ color: "white" }} size={20} /> : null}
-                  {params.InputProps.endAdornment}
+                  {params.slotProps.input.endAdornment}
                 </>
               ),
             },

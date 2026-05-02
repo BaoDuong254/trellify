@@ -71,7 +71,7 @@ function BoardContent({
   const lastOverIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect, @eslint-react/set-state-in-effect
     setOrderedColumns(board?.columns ?? []);
   }, [board]);
 

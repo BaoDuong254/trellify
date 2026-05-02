@@ -10,7 +10,7 @@ import Starred from "src/components/AppBar/Menus/Starred";
 import Templates from "src/components/AppBar/Menus/Templates";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutlined";
 import Profiles from "src/components/AppBar/Menus/Profiles";
 import LibraryAddIcon from "@mui/icons-material/LibraryAdd";
 import { Link } from "react-router-dom";
