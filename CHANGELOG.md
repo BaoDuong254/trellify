@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/BaoDuong254/trellify/compare/v1.1.0...v1.2.0) (2026-05-02)
+
+
+### Features
+
+* add best practices for React and server-side development ([3047c6c](https://github.com/BaoDuong254/trellify/commit/3047c6cf3f9a2a8ea7609a6517c4bebc8a6ce14c))
+
+
+### Bug Fixes
+
+* **deps:** update all minor updates ([2feae11](https://github.com/BaoDuong254/trellify/commit/2feae118b454c7f877694fe3b685191c7bacf1da))
+* **deps:** update all minor updates ([7a0d4ad](https://github.com/BaoDuong254/trellify/commit/7a0d4adb981ccb179b1593ce0c0a95f48b4386e6))
+
 ## [1.1.0](https://github.com/BaoDuong254/trellify/compare/v1.0.0...v1.1.0) (2026-04-06)
 
 
