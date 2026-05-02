@@ -45,7 +45,7 @@
     "react-hook-form": "catalog:",
     "react-redux": "catalog:",
     "react-router-dom": "catalog:",
-    "react-toastify": "11.0.5",
+    "react-toastify": "11.1.0",
     "redux-persist": "catalog:",
     "rehype-sanitize": "catalog:",
     "socket.io-client": "catalog:",
