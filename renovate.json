@@ -2,9 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "timezone": "Asia/Ho_Chi_Minh",
-  "schedule": [
-    "* * * * 0,6"
-  ],
+  "schedule": ["* * * * 0,6"],
+  "ignoreDeps": ["node"],
   "packageRules": [
     {
       "matchUpdateTypes": ["patch"],
