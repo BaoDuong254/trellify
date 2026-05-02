@@ -12,12 +12,12 @@ catalog:
   "@emotion/react": 11.14.0
   "@emotion/styled": 11.14.1
   "@eslint-react/eslint-plugin": 2.5.7
-  "@eslint/eslintrc": 3.3.3
-  "@eslint/js": 9.39.2
-  "@getbrevo/brevo": 3.0.1
-  "@mui/icons-material": 7.3.7
-  "@mui/lab": 7.0.1-beta.21
-  "@mui/material": 7.3.7
+  "@eslint/eslintrc": 3.3.5
+  "@eslint/js": 9.39.4
+  "@getbrevo/brevo": 3.0.4
+  "@mui/icons-material": 7.3.10
+  "@mui/lab": 7.0.1-beta.24
+  "@mui/material": 7.3.10
   "@radix-ui/react-slot": 1.2.4
   "@reduxjs/toolkit": 2.11.2
   "@tailwindcss/vite": 4.1.18
@@ -26,13 +26,13 @@ catalog:
   "@types/cors": 2.8.19
   "@types/express": 5.0.6
   "@types/jsonwebtoken": 9.0.10
-  "@types/lodash": 4.17.23
+  "@types/lodash": 4.17.24
   "@types/morgan": 1.9.10
   "@types/ms": 2.1.0
   "@types/multer": 2.0.0
   "@types/node": 25.6.0
   "@types/randomcolor": 0.5.9
-  "@types/react": 19.2.8
+  "@types/react": 19.2.14
   "@types/react-dom": 19.2.3
   "@types/streamifier": 0.1.2
   "@uiw/react-md-editor": 4.0.11
@@ -47,25 +47,25 @@ catalog:
   commitizen: 4.3.1
   cookie-parser: 1.4.7
   copyfiles: 2.4.1
-  cors: 2.8.5
+  cors: 2.8.6
   cross-env: 10.1.0
   cz-git: 1.13.0
   dotenv: 17.2.3
-  eslint: 10.3.0
+  eslint: 9.39.4
   eslint-config-prettier: 10.1.8
   eslint-import-resolver-typescript: 4.4.4
-  eslint-plugin-eslint-plugin: 7.3.0
+  eslint-plugin-eslint-plugin: 7.3.2
   eslint-plugin-import: 2.32.0
   eslint-plugin-jest: 29.12.1
   eslint-plugin-jsx-a11y: 6.10.2
   eslint-plugin-n: 17.23.2
-  eslint-plugin-prettier: 5.5.4
+  eslint-plugin-prettier: 5.5.5
   eslint-plugin-promise: 7.2.1
   eslint-plugin-react: 7.37.5
   eslint-plugin-react-hooks: 7.0.1
   eslint-plugin-react-refresh: 0.4.26
   eslint-plugin-security: 3.0.1
-  eslint-plugin-tsdoc: 0.5.0
+  eslint-plugin-tsdoc: 0.5.2
   eslint-plugin-unicorn: 62.0.0
   express: 5.2.1
   globals: 17.0.0
@@ -79,33 +79,33 @@ catalog:
   morgan: 1.10.1
   ms: 2.1.3
   multer: 2.0.2
-  nodemon: 3.1.11
+  nodemon: 3.1.14
   prettier: 3.8.3
   prettier-package-json: 2.8.0
   prettier-plugin-prisma: 5.0.0
   prettier-plugin-tailwindcss: 0.8.0
   randomcolor: 0.6.2
-  react: 19.2.3
-  react-dom: 19.2.3
+  react: 19.2.5
+  react-dom: 19.2.5
   react-hook-form: 7.71.1
   react-redux: 9.2.0
   react-router-dom: 7.12.0
   redux-persist: 6.0.0
   rehype-sanitize: 6.0.0
-  rimraf: 6.1.2
+  rimraf: 6.1.3
   socket.io: 4.8.3
   socket.io-client: 4.8.3
   streamifier: 0.1.1
   tailwind-merge: 3.4.0
   tailwindcss: 4.1.18
-  tsc-alias: 1.8.16
+  tsc-alias: 1.8.17
   tsx: 4.21.0
   turbo: 2.9.7
   tw-animate-css: 1.4.0
   typescript: 6.0.3
   typescript-eslint: 8.53.0
-  uuid: 13.0.0
-  vite: 7.3.1
+  uuid: 13.0.1
+  vite: 7.3.2
   vite-plugin-svgr: 4.5.0
   vite-tsconfig-paths: 6.0.4
   winston: 3.19.0
