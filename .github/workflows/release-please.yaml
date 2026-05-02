@@ -18,14 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: release
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
           release-type: node
 
       - name: Check for open package version pull request
         id: check_version_pr
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
           script: |
