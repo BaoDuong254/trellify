@@ -23,7 +23,7 @@
     "typescript": "catalog:"
   },
   "scripts": {
-    "prepare": "lefthook install",
+    "prepare": "node -e \"const cp=require('child_process');try{cp.execSync('git rev-parse --git-dir',{stdio:'ignore'});cp.execSync('lefthook install',{stdio:'inherit'})}catch(e){}\"",
     "preinstall": "pnpm dlx only-allow pnpm",
     "start:dev": "turbo run start:dev --parallel",
     "pkg:build": "turbo run pkg:build",
