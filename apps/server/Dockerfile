@@ -1,11 +1,11 @@
 # Build stage
-FROM node:24-alpine AS builder
+FROM node:24.12.0-alpine AS builder
 
 # Set workdir to monorepo root
 WORKDIR /workspace
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+RUN corepack enable
+ENV LEFTHOOK=0
 
 # Copy workspace configuration files
 COPY pnpm-workspace.yaml ./
@@ -21,7 +21,6 @@ COPY apps/server/package.json ./apps/server/
 COPY packages/typescript ./packages/typescript
 
 # Install dependencies for entire workspace
-# Use --ignore-scripts to skip prepare hooks (lefthook needs git)
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy shared packages source code
@@ -43,12 +42,10 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm run apps:build
 
 # Production stage
-FROM node:24-alpine
+FROM node:24.12.0-alpine
 
 # Install wget for healthcheck and pnpm
-RUN apk add --no-cache wget && \
-    corepack enable && \
-    corepack prepare pnpm@10.33.2 --activate
+RUN apk add --no-cache wget && corepack enable
 
 # Set workdir to monorepo root for proper workspace resolution
 WORKDIR /workspace
