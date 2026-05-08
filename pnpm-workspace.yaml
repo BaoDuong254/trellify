@@ -2,6 +2,12 @@ packages:
   - apps/*
   - packages/*
 
+allowBuilds:
+  "@swc/core": true
+  esbuild: true
+  lefthook: true
+  unrs-resolver: true
+
 catalog:
   "@commitlint/cli": 20.5.3
   "@commitlint/config-conventional": 20.5.3
