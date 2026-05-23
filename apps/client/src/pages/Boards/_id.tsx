@@ -26,6 +26,7 @@ function Board() {
 
   useEffect(() => {
     if (boardId) {
+      dispatch(updateCurrentActiveBoard(null));
       dispatch(fetchBoardDetailsAPI(boardId));
     }
   }, [dispatch, boardId]);
