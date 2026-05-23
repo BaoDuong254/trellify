@@ -3,6 +3,7 @@
   "extends": ["config:recommended"],
   "timezone": "Asia/Ho_Chi_Minh",
   "schedule": ["* * * * 0,6"],
+  "minimumReleaseAge": "3 days",
   "ignoreDeps": ["node"],
   "packageRules": [
     {
