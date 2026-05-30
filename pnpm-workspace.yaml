@@ -17,7 +17,7 @@ catalog:
   "@dnd-kit/utilities": 3.2.2
   "@emotion/react": 11.14.0
   "@emotion/styled": 11.14.1
-  "@eslint-react/eslint-plugin": 5.8.5
+  "@eslint-react/eslint-plugin": 5.8.6
   "@eslint/eslintrc": 3.3.5
   "@eslint/js": 10.0.1
   "@getbrevo/brevo": 5.0.4
