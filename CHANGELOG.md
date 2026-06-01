@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/BaoDuong254/trellify/compare/v1.2.0...v1.3.0) (2026-06-01)
+
+
+### Features
+
+* integrate BullMQ for user queue management and add Redis configuration ([7f734a5](https://github.com/BaoDuong254/trellify/commit/7f734a5446631a17f6a49b4951a288d5fbcc2447))
+
 ## [1.2.0](https://github.com/BaoDuong254/trellify/compare/v1.1.0...v1.2.0) (2026-05-02)
 
 
