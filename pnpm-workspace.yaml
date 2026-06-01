@@ -6,6 +6,7 @@ allowBuilds:
   "@swc/core": true
   esbuild: true
   lefthook: true
+  msgpackr-extract: true
   unrs-resolver: true
 
 catalog:
@@ -116,6 +117,7 @@ catalog:
   vite-tsconfig-paths: 6.1.1
   winston: 3.19.0
   zod: 4.4.3
+  bullmq: 5.77.6
 
 cleanupUnusedCatalogs: true
 

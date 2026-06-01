@@ -32,6 +32,7 @@ function Profiles() {
   const handleLogout = () => {
     confirmLogout({
       title: "Log out of your account?",
+      description: "Are you sure you want to log out? You can always log back in later.",
       confirmationText: "Confirm",
       cancellationText: "Cancel",
     })

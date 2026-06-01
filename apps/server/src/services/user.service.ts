@@ -16,6 +16,7 @@ import { JwtProvider } from "src/providers/jwt.provider";
 import ms, { StringValue } from "ms";
 import { ObjectId } from "mongodb";
 import { CloudinaryProvider } from "src/providers/cloudinary.provider";
+import { userQueue, QUEUE_NAMES } from "src/queues/user.queue";
 
 const createNew = async (requestBody: UserRegistrationType) => {
   const existUser = await userModel.findOneByEmail(requestBody.email);
@@ -32,6 +33,17 @@ const createNew = async (requestBody: UserRegistrationType) => {
   };
   const createdUser = await userModel.createNew(newUserData);
   const getNewlyCreatedUser = await userModel.findOneById(createdUser.insertedId.toString());
+
+  await userQueue.add(
+    QUEUE_NAMES.DELETE_UNVERIFIED_USER,
+    { userId: createdUser.insertedId.toString() },
+    {
+      delay: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+      removeOnComplete: true,
+      removeOnFail: false,
+    }
+  );
+
   const verificationLink = `${environmentConfig.CLIENT_URL}/account/verification?email=${getNewlyCreatedUser?.email}&token=${getNewlyCreatedUser?.verifyToken}`;
   const subject = "Trellify - Verify your email address";
   const htmlContent = `

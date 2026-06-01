@@ -13,6 +13,7 @@ import cookieParser from "cookie-parser";
 import http from "node:http";
 import { Server } from "socket.io";
 import { inviteUserToBoardSocket } from "src/sockets/invitation.socket";
+import { userQueue, userWorker } from "src/queues/user.queue";
 
 const START_SERVER = () => {
   // Create Express app
@@ -79,10 +80,16 @@ const START_SERVER = () => {
   });
 
   // Handle graceful shutdown
-  exitHook(() => {
-    logger.info("4. Closing MongoDB Cloud Atlas connection...");
-    void CLOSE_DB();
-    logger.info(chalk.bgBlueBright("Shutting down server..."));
+  exitHook((done) => {
+    void (async () => {
+      logger.info("4. Closing BullMQ worker and queue...");
+      await userWorker.close();
+      await userQueue.close();
+      logger.info("5. Closing MongoDB Cloud Atlas connection...");
+      await CLOSE_DB();
+      logger.info(chalk.bgBlueBright("Shutting down server..."));
+      done();
+    })();
   });
 };
 

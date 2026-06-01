@@ -11,7 +11,8 @@ A full-stack project management platform with real-time collaboration, drag-and-
   - [🚀 Project Installation](#-project-installation)
     - [1. Clone repository](#1-clone-repository)
     - [2. Install dependencies](#2-install-dependencies)
-    - [3. Environment Configuration](#3-environment-configuration)
+    - [3. Adding packages](#3-adding-packages)
+    - [4. Environment Configuration](#4-environment-configuration)
   - [🏃‍♂️ Running the Project](#️-running-the-project)
     - [Development mode](#development-mode)
     - [Production build](#production-build)
@@ -64,7 +65,50 @@ pnpm install
 
 This will install all dependencies for root, apps (client & server), and packages automatically.
 
-### 3. Environment Configuration
+### 3. Adding packages
+
+This project uses **pnpm catalog** to manage all dependency versions centrally in `pnpm-workspace.yaml`. Individual `package.json` files reference packages with `"catalog:"` instead of a version number - never pin versions directly in `package.json`.
+
+**Step 1 - Register the version in `pnpm-workspace.yaml`:**
+
+```yaml
+catalog:
+  # ... existing entries ...
+  <package-name>: <version> # e.g. dayjs: 1.11.13
+```
+
+**Step 2 - Add the dependency to the target workspace's `package.json`:**
+
+```json
+{
+  "dependencies": {
+    "<package-name>": "catalog:"
+  }
+}
+```
+
+Use `"devDependencies"` instead for build-time / tooling packages.
+
+**Step 3 - Sync the lockfile from the root:**
+
+```bash
+pnpm install
+```
+
+**Adding an internal workspace package** (e.g. `@workspace/shared`, `@workspace/ui`) — these are resolved locally, so they do not need a catalog entry. Just reference them directly in `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@workspace/shared": "workspace:*",
+    "@workspace/ui": "workspace:*"
+  }
+}
+```
+
+Then run `pnpm install` from the root.
+
+### 4. Environment Configuration
 
 Create `.env` files for both client and server:
 
@@ -102,6 +146,9 @@ COOKIE_MAX_AGE=your_cookie_max_age
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Redis cloud configuration
+REDIS_URL=your_redis_url
 ```
 
 **Client (.env in `apps/client/`):**

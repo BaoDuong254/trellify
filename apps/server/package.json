@@ -47,7 +47,8 @@
     "streamifier": "catalog:",
     "uuid": "catalog:",
     "winston": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "bullmq": "catalog:"
   },
   "devDependencies": {
     "@types/async-exit-hook": "catalog:",

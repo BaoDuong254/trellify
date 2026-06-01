@@ -32,6 +32,12 @@ const findOneByEmail = async (emailValue: string) => {
   return result;
 };
 
+const hardDeleteById = async (userId: string): Promise<void> => {
+  await GET_DB()
+    .collection(USER_COLLECTION_NAME)
+    .deleteOne({ _id: new ObjectId(userId) });
+};
+
 const update = async (userId: string, updateData: UserUpdateType) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
@@ -50,5 +56,6 @@ export const userModel = {
   createNew,
   findOneById,
   findOneByEmail,
+  hardDeleteById,
   update,
 };
