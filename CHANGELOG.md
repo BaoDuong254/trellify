@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/BaoDuong254/trellify/compare/v1.3.0...v1.4.0) (2026-06-02)
+
+
+### Features
+
+* implement password reset functionality and add Redis rate limiter ([60a1068](https://github.com/BaoDuong254/trellify/commit/60a10689caa47bca4c22cc754fad61ba0ab4981d))
+
+
+### Bug Fixes
+
+* add CHANGELOG.md to .prettierignore ([1fa6dce](https://github.com/BaoDuong254/trellify/commit/1fa6dceedc4a59cfa3f03b0a25af31f74c67b656))
+
 ## [1.3.0](https://github.com/BaoDuong254/trellify/compare/v1.2.0...v1.3.0) (2026-06-01)
 
 ### Features
