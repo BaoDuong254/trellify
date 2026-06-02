@@ -2,8 +2,33 @@
   "name": "trellify",
   "version": "1.3.0",
   "private": true,
-  "packageManager": "pnpm@11.4.0",
   "license": "MIT",
+  "scripts": {
+    "apps:build": "turbo run apps:build",
+    "be": "pnpm --filter=server",
+    "clean": "turbo run clean",
+    "cz": "cz",
+    "eslint": "pnpm --filter=eslint",
+    "fe": "pnpm --filter=client",
+    "format": "prettier --check --ignore-unknown .",
+    "format:fix": "prettier --write --ignore-unknown .",
+    "preinstall": "pnpm dlx only-allow pnpm",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "ncu": "pnpm update --latest --workspace-root",
+    "pkg:build": "turbo run pkg:build",
+    "prepare": "node -e \"const cp=require('child_process');try{cp.execSync('git rev-parse --git-dir',{stdio:'ignore'});cp.execSync('lefthook install',{stdio:'inherit'})}catch(e){}\"",
+    "shared": "pnpm --filter=shared",
+    "start:dev": "turbo run start:dev --parallel",
+    "start:prod": "turbo run start:prod --parallel",
+    "typecheck": "turbo run typecheck",
+    "ui": "pnpm --filter=ui"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-git"
+    }
+  },
   "devDependencies": {
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
@@ -15,39 +40,14 @@
     "eslint": "catalog:",
     "lefthook": "catalog:",
     "prettier": "catalog:",
-    "prettier-package-json": "catalog:",
+    "prettier-plugin-packagejson": "catalog:",
     "prettier-plugin-prisma": "catalog:",
     "prettier-plugin-tailwindcss": "catalog:",
     "tsx": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:"
   },
-  "scripts": {
-    "prepare": "node -e \"const cp=require('child_process');try{cp.execSync('git rev-parse --git-dir',{stdio:'ignore'});cp.execSync('lefthook install',{stdio:'inherit'})}catch(e){}\"",
-    "preinstall": "pnpm dlx only-allow pnpm",
-    "start:dev": "turbo run start:dev --parallel",
-    "pkg:build": "turbo run pkg:build",
-    "apps:build": "turbo run apps:build",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint:fix",
-    "format": "turbo run format",
-    "format:fix": "turbo run format:fix",
-    "start:prod": "turbo run start:prod --parallel",
-    "clean": "turbo run clean",
-    "typecheck": "turbo run typecheck",
-    "cz": "cz",
-    "ncu": "pnpm update --latest --workspace-root",
-    "fe": "pnpm --filter=client",
-    "be": "pnpm --filter=server",
-    "eslint": "pnpm --filter=eslint",
-    "shared": "pnpm --filter=shared",
-    "ui": "pnpm --filter=ui"
-  },
-  "config": {
-    "commitizen": {
-      "path": "node_modules/cz-git"
-    }
-  },
+  "packageManager": "pnpm@11.4.0",
   "engines": {
     "node": "24.12.0",
     "pnpm": "11.4.0"

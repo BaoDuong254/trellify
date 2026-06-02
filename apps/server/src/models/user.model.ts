@@ -32,6 +32,15 @@ const findOneByEmail = async (emailValue: string) => {
   return result;
 };
 
+const findOneByVerifyToken = async (hashedToken: string) => {
+  return await GET_DB()
+    .collection(USER_COLLECTION_NAME)
+    .findOne({
+      verifyToken: hashedToken,
+      verifyTokenExpiry: { $gt: new Date() },
+    });
+};
+
 const hardDeleteById = async (userId: string): Promise<void> => {
   await GET_DB()
     .collection(USER_COLLECTION_NAME)
@@ -56,6 +65,7 @@ export const userModel = {
   createNew,
   findOneById,
   findOneByEmail,
+  findOneByVerifyToken,
   hardDeleteById,
   update,
 };

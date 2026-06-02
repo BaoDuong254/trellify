@@ -145,6 +145,13 @@ function LoginForm() {
               />
               <FieldErrorAlert errors={errors} fieldName={"password"} />
             </Box>
+            <Box sx={{ textAlign: "right", mt: "0.5em" }}>
+              <Link to='/forgot-password' style={{ textDecoration: "none" }}>
+                <Typography variant='body2' sx={{ color: "primary.main", "&:hover": { color: "#ffbb39" } }}>
+                  Forgot password?
+                </Typography>
+              </Link>
+            </Box>
           </Box>
           <CardActions sx={{ padding: "0 1em 1em 1em" }}>
             <Button

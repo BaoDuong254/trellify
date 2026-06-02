@@ -2,8 +2,10 @@ import { StatusCodes } from "http-status-codes";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { userService } from "src/services/user.service";
 import {
+  UserForgotPasswordType,
   UserLoginType,
   UserRegistrationType,
+  UserResetPasswordType,
   UserUpdateType,
   UserVerificationType,
 } from "@workspace/shared/schemas/user.schema";
@@ -111,6 +113,31 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
   }
 };
 
+const forgotPassword = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const clientIp = (request.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? request.ip ?? "unknown";
+    await userService.forgotPassword(request.body as UserForgotPasswordType, clientIp);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "If this email is registered, a password reset link has been sent.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    await userService.resetPassword(request.body as UserResetPasswordType);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Password has been reset successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const userController = {
   createNew,
   verifyAccount,
@@ -118,4 +145,6 @@ export const userController = {
   logout,
   refreshToken,
   update,
+  forgotPassword,
+  resetPassword,
 };

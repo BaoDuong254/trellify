@@ -12,6 +12,7 @@ const Auth = lazy(() => import("src/pages/Auth/Auth"));
 const AccountVerification = lazy(() => import("src/pages/Auth/AccountVerification"));
 const Settings = lazy(() => import("src/pages/Settings/Settings"));
 const Boards = lazy(() => import("src/pages/Boards"));
+const ResetPasswordForm = lazy(() => import("src/pages/Auth/ResetPasswordForm"));
 
 const ProtectedRoute = ({ user }: { user: User | null }) => {
   if (!user) return <Navigate to='/login' replace={true} />;
@@ -40,6 +41,8 @@ export default function App() {
         {/* Authentication */}
         <Route path='/login' element={<Auth />} />
         <Route path='/register' element={<Auth />} />
+        <Route path='/forgot-password' element={<Auth />} />
+        <Route path='/reset-password' element={<ResetPasswordForm />} />
         <Route path='/account/verification' element={<AccountVerification />} />
 
         {/* 404 not found page */}

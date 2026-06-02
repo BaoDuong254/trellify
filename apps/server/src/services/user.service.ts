@@ -1,9 +1,13 @@
 import {
+  UserForgotPasswordType,
   UserLoginType,
   UserRegistrationType,
+  UserResetPasswordType,
   UserUpdateType,
   UserVerificationType,
 } from "@workspace/shared/schemas/user.schema";
+import { createHash } from "node:crypto";
+import { checkRateLimit } from "src/utils/rate-limiter";
 import { StatusCodes } from "http-status-codes";
 import { userModel } from "src/models/user.model";
 import ApiError from "src/utils/api-error";
@@ -158,10 +162,62 @@ const update = async (userId: string, requestBody: UserUpdateType, userAvatarFil
   return pickUser(updatedUser);
 };
 
+const forgotPassword = async (requestBody: UserForgotPasswordType, clientIp: string): Promise<void> => {
+  const { email } = requestBody;
+
+  const WINDOW_SEC = 15 * 60; // 15 minutes in seconds
+  await checkRateLimit(`rl:fp:email:${email}`, 3, WINDOW_SEC);
+  await checkRateLimit(`rl:fp:ip_email:${clientIp}:${email}`, 5, WINDOW_SEC);
+
+  const existUser = await userModel.findOneByEmail(email);
+  if (!existUser || !existUser.isActive) return;
+
+  const rawToken = uuidv4();
+  const hashedToken = createHash("sha256").update(rawToken).digest("hex");
+  const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+
+  await userModel.update(existUser._id.toString(), {
+    verifyToken: hashedToken,
+    verifyTokenExpiry: tokenExpiry,
+    updatedAt: new Date(),
+  });
+
+  const resetLink = `${environmentConfig.CLIENT_URL}/reset-password?token=${rawToken}`;
+  const subject = "Trellify - Reset your password";
+  const htmlContent = `
+    <h1>Trellify - Password Reset</h1>
+    <p>We received a request to reset your Trellify account password.</p>
+    <p>Click the link below to set a new password (expires in 15 minutes):</p>
+    <a href="${resetLink}">Reset Password</a>
+    <p>If you did not request a password reset, please ignore this email.</p>
+    <p>Best regards,<br/>The Trellify Team</p>
+  `;
+  await BrevoProvider.sendEmail(email, subject, htmlContent);
+};
+
+const resetPassword = async (requestBody: UserResetPasswordType): Promise<void> => {
+  const { token, password } = requestBody;
+
+  const hashedToken = createHash("sha256").update(token).digest("hex");
+  const existUser = await userModel.findOneByVerifyToken(hashedToken);
+  if (!existUser) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired reset token.");
+  }
+
+  await userModel.update(existUser._id.toString(), {
+    password: bcryptjs.hashSync(password, 10),
+    verifyToken: null,
+    verifyTokenExpiry: null,
+    updatedAt: new Date(),
+  });
+};
+
 export const userService = {
   createNew,
   verifyAccount,
   login,
   refreshToken,
   update,
+  forgotPassword,
+  resetPassword,
 };

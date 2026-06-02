@@ -8,3 +8,6 @@ coverage/
 .turbo/
 .next/
 pnpm-lock.yaml
+.agents/
+.idea/
+.claude/

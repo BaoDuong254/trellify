@@ -89,3 +89,13 @@ export const inviteUserToBoardAPI = async (data: InvitationCreateType) => {
   toast.success("User invited to board successfully!");
   return response.data.data;
 };
+
+export const forgotPasswordAPI = async (data: { email: string }) => {
+  const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/forgot-password`, data);
+  return response.data;
+};
+
+export const resetPasswordAPI = async (data: { token: string; password: string }) => {
+  const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/reset-password`, data);
+  return response.data;
+};

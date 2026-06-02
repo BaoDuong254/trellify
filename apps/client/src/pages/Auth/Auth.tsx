@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
+import ForgotPasswordForm from "src/pages/Auth/ForgotPasswordForm";
 import LoginForm from "src/pages/Auth/LoginForm";
 import RegisterForm from "src/pages/Auth/RegisterForm";
 import { useSelector } from "react-redux";
@@ -10,6 +11,7 @@ function Auth() {
   const location = useLocation();
   const isLogin = location.pathname === "/login";
   const isRegister = location.pathname === "/register";
+  const isForgotPassword = location.pathname === "/forgot-password";
 
   const currentUser = useSelector(selectCurrentUser);
   if (currentUser) {
@@ -33,6 +35,7 @@ function Auth() {
     >
       {isLogin && <LoginForm />}
       {isRegister && <RegisterForm />}
+      {isForgotPassword && <ForgotPasswordForm />}
     </Box>
   );
 }

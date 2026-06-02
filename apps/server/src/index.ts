@@ -14,6 +14,7 @@ import http from "node:http";
 import { Server } from "socket.io";
 import { inviteUserToBoardSocket } from "src/sockets/invitation.socket";
 import { userQueue, userWorker } from "src/queues/user.queue";
+import { closeRedisClient } from "src/providers/redis.provider";
 
 const START_SERVER = () => {
   // Create Express app
@@ -85,7 +86,9 @@ const START_SERVER = () => {
       logger.info("4. Closing BullMQ worker and queue...");
       await userWorker.close();
       await userQueue.close();
-      logger.info("5. Closing MongoDB Cloud Atlas connection...");
+      logger.info("5. Closing Redis client...");
+      await closeRedisClient();
+      logger.info("6. Closing MongoDB Cloud Atlas connection...");
       await CLOSE_DB();
       logger.info(chalk.bgBlueBright("Shutting down server..."));
       done();

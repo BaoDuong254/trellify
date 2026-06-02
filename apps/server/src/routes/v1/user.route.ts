@@ -10,6 +10,10 @@ router.route("/register").post(userValidation.createNew, userController.createNe
 
 router.route("/verify").put(userValidation.verifyAccount, userController.verifyAccount);
 
+router.route("/forgot-password").post(userValidation.forgotPassword, userController.forgotPassword);
+
+router.route("/reset-password").put(userValidation.resetPassword, userController.resetPassword);
+
 router.route("/login").post(userValidation.login, userController.login);
 
 router.route("/logout").delete(userController.logout);

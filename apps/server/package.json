@@ -1,34 +1,30 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
-  "author": "",
   "private": true,
-  "packageManager": "pnpm@11.4.0",
+  "description": "",
   "license": "MIT",
+  "author": "",
   "scripts": {
-    "copy-files": "copyfiles -u 1 \"src/openapi/**/*.yaml\" \"src/mailtrap/template/**\" dist/",
     "apps:build": "pnpm clean && tsc --project tsconfig.build.json && tsc-alias --project tsconfig.build.json",
-    "start:dev": "cross-env NODE_ENV=development pnpm exec nodemon",
-    "start:debug": "nodemon --inspect=9229 -e ts,tsx --exec tsx ./src/index.ts",
-    "start:prod": "cross-env NODE_ENV=production node dist/index",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "clean": "rimraf dist/",
+    "copy-files": "copyfiles -u 1 \"src/openapi/**/*.yaml\" \"src/mailtrap/template/**\" dist/",
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
     "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
     "preinstall": "pnpm dlx only-allow pnpm",
-    "clean": "rimraf dist/",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "start:debug": "nodemon --inspect=9229 -e ts,tsx --exec tsx ./src/index.ts",
+    "start:dev": "cross-env NODE_ENV=development pnpm exec nodemon",
+    "start:prod": "cross-env NODE_ENV=production node dist/index",
     "typecheck": "tsc --noEmit"
-  },
-  "engines": {
-    "node": "24.12.0",
-    "pnpm": "11.4.0"
   },
   "dependencies": {
     "@getbrevo/brevo": "catalog:",
     "@workspace/shared": "workspace:*",
     "async-exit-hook": "catalog:",
     "bcryptjs": "catalog:",
+    "bullmq": "catalog:",
     "chalk": "catalog:",
     "cloudinary": "catalog:",
     "cookie-parser": "catalog:",
@@ -37,6 +33,7 @@
     "dotenv": "catalog:",
     "express": "catalog:",
     "http-status-codes": "catalog:",
+    "ioredis": "catalog:",
     "jsonwebtoken": "9.0.3",
     "lodash": "catalog:",
     "mongodb": "catalog:",
@@ -47,8 +44,7 @@
     "streamifier": "catalog:",
     "uuid": "catalog:",
     "winston": "catalog:",
-    "zod": "catalog:",
-    "bullmq": "catalog:"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/async-exit-hook": "catalog:",
@@ -71,5 +67,10 @@
     "tsc-alias": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.4.0",
+  "engines": {
+    "node": "24.12.0",
+    "pnpm": "11.4.0"
   }
 }

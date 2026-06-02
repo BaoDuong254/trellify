@@ -3,12 +3,12 @@ pre-commit:
   commands:
     format:
       glob: "*"
-      run: pnpm exec prettier --write --ignore-unknown {staged_files}
+      run: pnpm format:fix
       stage_fixed: true
 
     lint:
-      glob: "**/*.{js,ts,jsx,tsx}"
-      run: bash scripts/lint-staged.sh {staged_files}
+      glob: "*"
+      run: pnpm lint:fix
       stage_fixed: true
 
     check-lockfile:

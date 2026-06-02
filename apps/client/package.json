@@ -1,24 +1,19 @@
 {
   "name": "client",
-  "private": true,
   "version": "1.0.0",
-  "packageManager": "pnpm@11.4.0",
+  "private": true,
   "license": "MIT",
   "scripts": {
-    "start:dev": "cross-env NODE_ENV=development vite --host",
     "apps:build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "start:prod": "cross-env NODE_ENV=production vite preview --host",
+    "clean": "rimraf dist/",
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
     "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
     "preinstall": "pnpm dlx only-allow pnpm",
-    "clean": "rimraf dist/",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "start:dev": "cross-env NODE_ENV=development vite --host",
+    "start:prod": "cross-env NODE_ENV=production vite preview --host",
     "typecheck": "tsc --noEmit"
-  },
-  "engines": {
-    "node": "24.12.0",
-    "pnpm": "11.4.0"
   },
   "dependencies": {
     "@dnd-kit/core": "catalog:",
@@ -66,5 +61,10 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-svgr": "catalog:"
+  },
+  "packageManager": "pnpm@11.4.0",
+  "engines": {
+    "node": "24.12.0",
+    "pnpm": "11.4.0"
   }
 }

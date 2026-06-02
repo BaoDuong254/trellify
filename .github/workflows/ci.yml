@@ -58,7 +58,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Run format check
-        run: pnpm run format
+        run: pnpm exec prettier --check --ignore-unknown .
 
       - name: Build packages
         run: pnpm run pkg:build

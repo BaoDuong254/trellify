@@ -1,20 +1,32 @@
 {
   "name": "@workspace/ui",
-  "private": true,
   "version": "1.0.0",
-  "packageManager": "pnpm@11.4.0",
+  "private": true,
   "license": "MIT",
+  "exports": {
+    "./lib/*": "./src/lib/*.ts",
+    "./components/ui/*": "./src/components/ui/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./globals.css": "./src/styles/globals.css"
+  },
   "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
     "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
     "preinstall": "pnpm dlx only-allow pnpm",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit"
   },
-  "engines": {
-    "node": "24.12.0",
-    "pnpm": "11.4.0"
+  "dependencies": {
+    "@radix-ui/react-slot": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tailwindcss": "catalog:",
+    "vite-tsconfig-paths": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -28,21 +40,9 @@
     "typescript": "catalog:",
     "vite": "catalog:"
   },
-  "dependencies": {
-    "@radix-ui/react-slot": "catalog:",
-    "@tailwindcss/vite": "catalog:",
-    "class-variance-authority": "catalog:",
-    "clsx": "catalog:",
-    "lucide-react": "catalog:",
-    "tailwind-merge": "catalog:",
-    "tailwindcss": "catalog:",
-    "vite-tsconfig-paths": "catalog:",
-    "react": "catalog:"
-  },
-  "exports": {
-    "./lib/*": "./src/lib/*.ts",
-    "./components/ui/*": "./src/components/ui/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts",
-    "./globals.css": "./src/styles/globals.css"
+  "packageManager": "pnpm@11.4.0",
+  "engines": {
+    "node": "24.12.0",
+    "pnpm": "11.4.0"
   }
 }

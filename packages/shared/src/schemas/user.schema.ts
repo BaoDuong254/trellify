@@ -22,6 +22,7 @@ export const USER_COLLECTION_SCHEMA = z.object({
     .default(USER_ROLES.CLIENT),
   isActive: z.boolean({ error: "Error.IsActiveMustBeBoolean" }).default(false),
   verifyToken: z.string({ error: "Error.VerifyTokenMustBeString" }).nullable().default(null),
+  verifyTokenExpiry: z.date({ error: "Error.VerifyTokenExpiryMustBeDate" }).nullable().default(null),
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
@@ -48,9 +49,20 @@ export const USER_UPDATE_SCHEMA = USER_COLLECTION_SCHEMA.extend({
     .regex(PASSWORD_RULE, { error: `new_password: ${PASSWORD_RULE_MESSAGE}` }),
 }).partial();
 
+export const USER_FORGOT_PASSWORD_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true });
+
+export const USER_RESET_PASSWORD_SCHEMA = z.object({
+  token: z.string({ error: "Error.VerifyTokenMustBeString" }).min(1),
+  password: z
+    .string({ error: "Error.PasswordMustBeString" })
+    .regex(PASSWORD_RULE, { error: `new_password: ${PASSWORD_RULE_MESSAGE}` }),
+});
+
 export type UserCollectionType = z.infer<typeof USER_COLLECTION_SCHEMA>;
 export type UserRegistrationType = z.infer<typeof USER_REGISTRATION_SCHEMA>;
 export type UserRegistrationServiceType = z.infer<typeof USER_REGISTRATION_SERVICE_SCHEMA>;
 export type UserLoginType = z.infer<typeof USER_LOGIN_SCHEMA>;
 export type UserVerificationType = z.infer<typeof USER_VERIFICATION_SCHEMA>;
 export type UserUpdateType = z.infer<typeof USER_UPDATE_SCHEMA>;
+export type UserForgotPasswordType = z.infer<typeof USER_FORGOT_PASSWORD_SCHEMA>;
+export type UserResetPasswordType = z.infer<typeof USER_RESET_PASSWORD_SCHEMA>;
