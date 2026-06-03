@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/BaoDuong254/trellify/compare/v1.5.0...v1.6.0) (2026-06-03)
+
+
+### Features
+
+* add loading skeleton to TurnstileField component ([877affd](https://github.com/BaoDuong254/trellify/commit/877affd47d749ffc4faae110f3881ecebb96fe3b))
+
 ## [1.5.0](https://github.com/BaoDuong254/trellify/compare/v1.4.0...v1.5.0) (2026-06-03)
 
 
