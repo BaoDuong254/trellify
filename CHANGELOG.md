@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/BaoDuong254/trellify/compare/v1.4.0...v1.5.0) (2026-06-03)
+
+
+### Features
+
+* integrate Turnstile verification for authentication feature ([d5c2197](https://github.com/BaoDuong254/trellify/commit/d5c219787634a9f83d4a8181e2f77e48e5ba8ce0))
+
 ## [1.4.0](https://github.com/BaoDuong254/trellify/compare/v1.3.0...v1.4.0) (2026-06-02)
 
 
