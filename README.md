@@ -149,6 +149,9 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
 # Redis cloud configuration
 REDIS_URL=your_redis_url
+
+# Turnstile configuration, use 1x0000000000000000000000000000000AA for dev mode
+TURNSTILE_SECRET_KEY=your_turnstile_secret_key
 ```
 
 **Client (.env in `apps/client/`):**
@@ -156,6 +159,9 @@ REDIS_URL=your_redis_url
 ```env
 # API Configuration
 VITE_API_URL=http://localhost:5000/api/v1
+
+# Turnstile Site Key, use 1x00000000000000000000AA for dev mode
+VITE_TURNSTILE_SITE_KEY=your-turnstile-site-key
 ```
 
 ## 🏃‍♂️ Running the Project

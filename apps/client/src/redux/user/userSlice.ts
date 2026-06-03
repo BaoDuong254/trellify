@@ -13,10 +13,13 @@ const initialState: UserState = {
   currentUser: null,
 };
 
-export const loginUserAPI = createAsyncThunk("user/loginUserAPI", async (data: UserLoginType) => {
-  const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/login`, data);
-  return response.data.data;
-});
+export const loginUserAPI = createAsyncThunk(
+  "user/loginUserAPI",
+  async (data: UserLoginType & { turnstileToken: string }) => {
+    const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/login`, data);
+    return response.data.data;
+  }
+);
 
 export const logoutUserAPI = createAsyncThunk("user/logoutUserAPI", async (showSuccessMessage: boolean) => {
   const response = await http.delete(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/logout`);

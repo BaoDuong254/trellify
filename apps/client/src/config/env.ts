@@ -2,6 +2,7 @@ import z from "zod";
 
 const configSchema = z.object({
   VITE_API_ENDPOINT: z.string().default(""),
+  VITE_TURNSTILE_SITE_KEY: z.string().min(1, "VITE_TURNSTILE_SITE_KEY is required"),
 });
 
 const configServer = configSchema.safeParse(import.meta.env);

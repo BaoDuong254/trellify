@@ -115,8 +115,7 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
 
 const forgotPassword = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const clientIp = (request.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? request.ip ?? "unknown";
-    await userService.forgotPassword(request.body as UserForgotPasswordType, clientIp);
+    await userService.forgotPassword(request.body as UserForgotPasswordType);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "If this email is registered, a password reset link has been sent.",

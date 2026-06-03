@@ -22,6 +22,7 @@
     "@dnd-kit/utilities": "catalog:",
     "@emotion/react": "catalog:",
     "@emotion/styled": "catalog:",
+    "@marsidev/react-turnstile": "catalog:",
     "@mui/icons-material": "catalog:",
     "@mui/lab": "catalog:",
     "@mui/material": "catalog:",

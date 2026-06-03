@@ -63,7 +63,7 @@ export const updateCardDetailsAPI = async (cardId: string, updateData: UpdateCar
 };
 
 // User APIs
-export const registerUserAPI = async (data: { email: string; password: string }) => {
+export const registerUserAPI = async (data: { email: string; password: string; turnstileToken: string }) => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/register`, data);
   toast.success("Account created successfully! Please check and verify your account before logging in!", {
     theme: "colored",
@@ -90,7 +90,7 @@ export const inviteUserToBoardAPI = async (data: InvitationCreateType) => {
   return response.data.data;
 };
 
-export const forgotPasswordAPI = async (data: { email: string }) => {
+export const forgotPasswordAPI = async (data: { email: string; turnstileToken: string }) => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/forgot-password`, data);
   return response.data;
 };

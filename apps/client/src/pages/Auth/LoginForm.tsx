@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -19,6 +20,7 @@ import {
   PASSWORD_RULE_MESSAGE,
 } from "src/utils/validators";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import TurnstileField from "src/components/Form/TurnstileField";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "src/redux/store";
 import { toast } from "react-toastify";
@@ -42,12 +44,28 @@ function LoginForm() {
   const registeredEmail = searchParams.get("registeredEmail");
   const verifiedEmail = searchParams.get("verifiedEmail");
 
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const resetTurnstile = () => {
+    setTurnstileKey((k) => k + 1);
+    setTurnstileToken(null);
+  };
+
   const submitLogIn = (data: LoginFormData) => {
     const { email, password } = data;
 
-    toast.promise(dispatch(loginUserAPI({ email, password })), { pending: "Logging in..." }).then((res) => {
-      if (res.meta.requestStatus === "fulfilled") navigate("/");
-    });
+    toast
+      .promise(dispatch(loginUserAPI({ email, password, turnstileToken: turnstileToken! })), {
+        pending: "Logging in...",
+      })
+      .then((res) => {
+        if (res.meta.requestStatus === "fulfilled") {
+          navigate("/");
+        } else {
+          resetTurnstile();
+        }
+      });
   };
 
   return (
@@ -153,6 +171,12 @@ function LoginForm() {
               </Link>
             </Box>
           </Box>
+          <TurnstileField
+            key={turnstileKey}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+          />
           <CardActions sx={{ padding: "0 1em 1em 1em" }}>
             <Button
               type='submit'
@@ -161,6 +185,7 @@ function LoginForm() {
               size='large'
               fullWidth
               className='interceptor-loading'
+              disabled={!turnstileToken}
             >
               Login
             </Button>

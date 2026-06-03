@@ -2,19 +2,22 @@ import express, { Router } from "express";
 import { userController } from "src/controllers/user.controller";
 import { authMiddleware } from "src/middlewares/auth.middleware";
 import { multerMiddleware } from "src/middlewares/multer.middleware";
+import { turnstileMiddleware } from "src/middlewares/turnstile.middleware";
 import { userValidation } from "src/validations/user.validation";
 
 const router: Router = express.Router();
 
-router.route("/register").post(userValidation.createNew, userController.createNew);
+router.route("/register").post(turnstileMiddleware.verify, userValidation.createNew, userController.createNew);
 
 router.route("/verify").put(userValidation.verifyAccount, userController.verifyAccount);
 
-router.route("/forgot-password").post(userValidation.forgotPassword, userController.forgotPassword);
+router
+  .route("/forgot-password")
+  .post(turnstileMiddleware.verify, userValidation.forgotPassword, userController.forgotPassword);
 
 router.route("/reset-password").put(userValidation.resetPassword, userController.resetPassword);
 
-router.route("/login").post(userValidation.login, userController.login);
+router.route("/login").post(turnstileMiddleware.verify, userValidation.login, userController.login);
 
 router.route("/logout").delete(userController.logout);
 

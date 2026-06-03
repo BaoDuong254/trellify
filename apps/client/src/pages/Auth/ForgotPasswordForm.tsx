@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -12,6 +13,7 @@ import Zoom from "@mui/material/Zoom";
 import { useForm } from "react-hook-form";
 import { EMAIL_RULE, EMAIL_RULE_MESSAGE, FIELD_REQUIRED_MESSAGE } from "src/utils/validators";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import TurnstileField from "src/components/Form/TurnstileField";
 import { toast } from "react-toastify";
 import { forgotPasswordAPI } from "src/apis";
 
@@ -26,12 +28,24 @@ function ForgotPasswordForm() {
     formState: { errors },
   } = useForm<ForgotPasswordFormData>();
 
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const resetTurnstile = () => {
+    setTurnstileKey((k) => k + 1);
+    setTurnstileToken(null);
+  };
+
   const submitForgotPassword = (data: ForgotPasswordFormData) => {
-    toast.promise(forgotPasswordAPI({ email: data.email }), {
-      pending: "Sending reset link...",
-      success:
-        "If the email is registered, a password reset link has been sent. Please check your inbox and spam folder.",
-    });
+    toast
+      .promise(forgotPasswordAPI({ email: data.email, turnstileToken: turnstileToken! }), {
+        pending: "Sending reset link...",
+        success:
+          "If the email is registered, a password reset link has been sent. Please check your inbox and spam folder.",
+      })
+      .catch(() => {
+        resetTurnstile();
+      });
   };
 
   return (
@@ -84,6 +98,12 @@ function ForgotPasswordForm() {
               <FieldErrorAlert errors={errors} fieldName='email' />
             </Box>
           </Box>
+          <TurnstileField
+            key={turnstileKey}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+          />
           <CardActions sx={{ padding: "0 1em 1em 1em" }}>
             <Button
               type='submit'
@@ -92,6 +112,7 @@ function ForgotPasswordForm() {
               size='large'
               fullWidth
               className='interceptor-loading'
+              disabled={!turnstileToken}
             >
               Send Password Reset Link
             </Button>

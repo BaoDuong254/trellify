@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -18,6 +19,7 @@ import {
   PASSWORD_RULE_MESSAGE,
 } from "src/utils/validators";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import TurnstileField from "src/components/Form/TurnstileField";
 import { toast } from "react-toastify";
 import { registerUserAPI } from "src/apis";
 
@@ -37,14 +39,25 @@ function RegisterForm() {
 
   const navigate = useNavigate();
 
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const resetTurnstile = () => {
+    setTurnstileKey((k) => k + 1);
+    setTurnstileToken(null);
+  };
+
   const submitRegister = (data: RegisterFormData) => {
     const { email, password } = data;
     toast
-      .promise(registerUserAPI({ email, password }), {
+      .promise(registerUserAPI({ email, password, turnstileToken: turnstileToken! }), {
         pending: "Registering is in progress...",
       })
       .then((user) => {
         navigate(`/login?registeredEmail=${user.email}`);
+      })
+      .catch(() => {
+        resetTurnstile();
       });
   };
 
@@ -131,6 +144,12 @@ function RegisterForm() {
               <FieldErrorAlert errors={errors} fieldName={"passwordConfirmation"} />
             </Box>
           </Box>
+          <TurnstileField
+            key={turnstileKey}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+          />
           <CardActions sx={{ padding: "0 1em 1em 1em" }}>
             <Button
               type='submit'
@@ -139,6 +158,7 @@ function RegisterForm() {
               size='large'
               fullWidth
               className='interceptor-loading'
+              disabled={!turnstileToken}
             >
               Register
             </Button>
