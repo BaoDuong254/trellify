@@ -20,14 +20,8 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
-    "format": {
-      "dependsOn": ["^format"]
-    },
     "lint:fix": {
       "dependsOn": ["^lint:fix"]
-    },
-    "format:fix": {
-      "dependsOn": ["^format:fix"]
     },
     "start:prod": {
       "dependsOn": ["^start:prod"],
