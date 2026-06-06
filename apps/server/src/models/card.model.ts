@@ -55,6 +55,13 @@ const update = async (
   return result;
 };
 
+const deleteOneById = async (cardId: string) => {
+  const result = await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .deleteOne({ _id: new ObjectId(cardId) });
+  return result;
+};
+
 const deleteManyByColumnId = async (columnId: string) => {
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
@@ -94,6 +101,7 @@ export const cardModel = {
   createNew,
   findOneById,
   update,
+  deleteOneById,
   deleteManyByColumnId,
   unshiftNewComment,
   updateMembers,

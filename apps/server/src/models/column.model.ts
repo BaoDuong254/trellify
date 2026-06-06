@@ -62,6 +62,17 @@ const deleteOneById = async (columnId: string) => {
   return result;
 };
 
+const pullCardOrderIds = async (card) => {
+  const result = await GET_DB()
+    .collection(COLUMN_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(card.columnId as string) },
+      { $pull: { cardOrderIds: new ObjectId(card._id as string) } } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+  return result;
+};
+
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   createNew,
@@ -69,4 +80,5 @@ export const columnModel = {
   pushCardOrderIds,
   update,
   deleteOneById,
+  pullCardOrderIds,
 };

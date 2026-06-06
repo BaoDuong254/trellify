@@ -64,6 +64,11 @@ export const updateCardDetailsAPI = async (cardId: string, updateData: UpdateCar
   return response.data.data;
 };
 
+export const deleteCardDetailsAPI = async (cardId: string) => {
+  const response = await http.delete(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards/${cardId}`);
+  return response.data.data;
+};
+
 // User APIs
 export const registerUserAPI = async (data: { email: string; password: string; turnstileToken: string }) => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/register`, data);

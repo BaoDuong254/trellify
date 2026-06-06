@@ -1,8 +1,12 @@
+import { StatusCodes } from "http-status-codes";
+import { ObjectId } from "mongodb";
+
 import { CardCommentType, CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
 
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { CloudinaryProvider } from "src/providers/cloudinary.provider";
+import ApiError from "src/utils/api-error";
 
 const createNew = async (requestBody: CreateNewCardType) => {
   const newCard = {
@@ -50,7 +54,21 @@ const update = async (
   return updatedCard;
 };
 
+const deleteItem = async (cardId: string) => {
+  const targetCard = await cardModel.findOneById(new ObjectId(cardId));
+
+  if (!targetCard) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Card not found!");
+  }
+
+  await cardModel.deleteOneById(cardId);
+  await columnModel.pullCardOrderIds(targetCard);
+
+  return { deleteResult: "Card deleted successfully" };
+};
+
 export const cardService = {
   createNew,
   update,
+  deleteItem,
 };

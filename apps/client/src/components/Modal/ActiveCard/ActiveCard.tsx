@@ -10,6 +10,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
@@ -25,16 +26,22 @@ import Modal from "@mui/material/Modal";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
+import { cloneDeep } from "lodash";
+import { useConfirm } from "material-ui-confirm";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 
 import type { IncomingCardMemberInfoType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
 import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 
-import { updateCardDetailsAPI } from "src/apis";
+import { deleteCardDetailsAPI, updateCardDetailsAPI } from "src/apis";
 import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
 import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
-import { updateCardInBoard } from "src/redux/activeBoard/activeBoardSlice";
+import {
+  selectCurrentActiveBoard,
+  updateCardInBoard,
+  updateCurrentActiveBoard,
+} from "src/redux/activeBoard/activeBoardSlice";
 import {
   clearAndHideCurrentActiveCard,
   selectCurrentActiveCard,
@@ -74,6 +81,9 @@ function ActiveCard() {
   const activeCard = useSelector(selectCurrentActiveCard);
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard);
   const currentUser = useSelector(selectCurrentUser);
+  const board = useSelector(selectCurrentActiveBoard);
+  const confirmDeleteCard = useConfirm();
+
   const handleCloseModal = () => {
     dispatch(clearAndHideCurrentActiveCard());
   };
@@ -123,6 +133,34 @@ function ActiveCard() {
     await callApiUpdateCard({
       incomingMemberInfo,
     });
+  };
+
+  const handleDeleteCard = () => {
+    confirmDeleteCard({
+      title: "Delete Card?",
+      description: "This action will permanently delete this Card! Are you sure?",
+      confirmationText: "Confirm",
+      cancellationText: "Cancel",
+    })
+      .then(({ confirmed }) => {
+        if (confirmed) {
+          if (!board || !activeCard) return;
+
+          const newBoard = cloneDeep(board);
+          const targetColumn = newBoard.columns.find((col) => col._id === activeCard.columnId);
+          if (targetColumn) {
+            targetColumn.cards = targetColumn.cards.filter((c) => c._id !== activeCard._id);
+            targetColumn.cardOrderIds = targetColumn.cardOrderIds.filter((id) => id !== activeCard._id);
+          }
+          dispatch(updateCurrentActiveBoard(newBoard));
+          dispatch(clearAndHideCurrentActiveCard());
+
+          deleteCardDetailsAPI(activeCard._id).then((res) => {
+            toast.success(res?.deleteResult);
+          });
+        }
+      })
+      .catch(() => {});
   };
 
   return (
@@ -303,6 +341,10 @@ function ActiveCard() {
               <SidebarItem>
                 <ArchiveOutlinedIcon fontSize='small' />
                 Archive
+              </SidebarItem>
+              <SidebarItem className='active' onClick={handleDeleteCard}>
+                <DeleteForeverIcon fontSize='small' />
+                Delete
               </SidebarItem>
               <SidebarItem>
                 <ShareOutlinedIcon fontSize='small' />
