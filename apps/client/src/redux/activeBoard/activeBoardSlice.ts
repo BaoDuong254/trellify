@@ -20,7 +20,7 @@ export const fetchBoardDetailsAPI = createAsyncThunk("activeBoard/fetchBoardDeta
   return response.data.data;
 });
 
-export const activeBoardSlice = createSlice({
+const activeBoardSlice = createSlice({
   name: "activeBoard",
   initialState,
   reducers: {

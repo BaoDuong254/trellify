@@ -57,6 +57,9 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
+      - name: Run knip
+        run: pnpm run knip
+
       - name: Run format check
         run: pnpm run format
 

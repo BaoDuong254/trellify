@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@dnd-kit/core": "catalog:",
-    "@dnd-kit/modifiers": "catalog:",
     "@dnd-kit/sortable": "catalog:",
     "@dnd-kit/utilities": "catalog:",
     "@emotion/react": "catalog:",
@@ -29,7 +28,6 @@
     "@reduxjs/toolkit": "catalog:",
     "@uiw/react-md-editor": "catalog:",
     "@workspace/shared": "workspace:*",
-    "@workspace/ui": "workspace:*",
     "axios": "catalog:",
     "cross-env": "catalog:",
     "lodash": "catalog:",
@@ -45,7 +43,6 @@
     "redux-persist": "catalog:",
     "rehype-sanitize": "catalog:",
     "socket.io-client": "catalog:",
-    "vite-tsconfig-paths": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -36,7 +36,7 @@ export const updateUserAPI = createAsyncThunk("user/updateUserAPI", async (data:
   return response.data.data;
 });
 
-export const userSlice = createSlice({
+const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {},

@@ -35,4 +35,4 @@ export interface Board extends BoardCollectionType {
   members: Omit<User, "password" | "verifyToken">[];
 }
 
-export type BoardType = "public" | "private";
+type BoardType = "public" | "private";

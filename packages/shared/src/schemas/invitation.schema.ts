@@ -36,14 +36,16 @@ export const INVITATION_CREATE_SCHEMA = z.object({
   boardId: z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
 });
 
-export const INVITATION_CREATE_SERVICE_SCHEMA = INVITATION_COLLECTION_SCHEMA.pick({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const INVITATION_CREATE_SERVICE_SCHEMA = INVITATION_COLLECTION_SCHEMA.pick({
   inviterId: true,
   inviteeId: true,
   type: true,
   boardInvitation: true,
 });
 
-export const INVITATION_UPDATE_SCHEMA = INVITATION_COLLECTION_SCHEMA.partial();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const INVITATION_UPDATE_SCHEMA = INVITATION_COLLECTION_SCHEMA.partial();
 
 export type InvitationCollectionType = z.infer<typeof INVITATION_COLLECTION_SCHEMA>;
 export type InvitationCreateType = z.infer<typeof INVITATION_CREATE_SCHEMA>;

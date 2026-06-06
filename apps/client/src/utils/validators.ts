@@ -5,8 +5,8 @@ export const PASSWORD_RULE = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d\W]{8,256}$/;
 export const PASSWORD_RULE_MESSAGE = "Password must include at least 1 letter, a number, and at least 8 characters.";
 export const PASSWORD_CONFIRMATION_MESSAGE = "Password Confirmation does not match!";
 
-export const LIMIT_COMMON_FILE_SIZE = 10485760; // byte = 10 MB
-export const ALLOW_COMMON_FILE_TYPES = ["image/jpg", "image/jpeg", "image/png"];
+const LIMIT_COMMON_FILE_SIZE = 10485760; // byte = 10 MB
+const ALLOW_COMMON_FILE_TYPES = ["image/jpg", "image/jpeg", "image/png"];
 interface FileObject {
   name: string;
   size: number;

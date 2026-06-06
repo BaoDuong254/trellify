@@ -7,7 +7,7 @@ import {
   PASSWORD_RULE_MESSAGE,
 } from "@workspace/shared/utils/validators";
 
-export const USER_ROLES = {
+const USER_ROLES = {
   CLIENT: "client",
   ADMIN: "admin",
 };
@@ -30,8 +30,9 @@ export const USER_COLLECTION_SCHEMA = z.object({
 });
 
 export const USER_REGISTRATION_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true, password: true });
-export const USER_LOGIN_SCHEMA = USER_REGISTRATION_SCHEMA;
-export const USER_REGISTRATION_SERVICE_SCHEMA = USER_COLLECTION_SCHEMA.pick({
+export const USER_LOGIN_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true, password: true });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const USER_REGISTRATION_SERVICE_SCHEMA = USER_COLLECTION_SCHEMA.pick({
   email: true,
   password: true,
   username: true,

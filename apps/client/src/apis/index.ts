@@ -11,10 +11,10 @@ import type { Board, Card, Column } from "src/types/board.type";
 import http from "src/utils/http";
 
 // Board APIs
-export const fetchBoardDetailsAPI = async (boardId: string): Promise<Board> => {
-  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`);
-  return response.data.data;
-};
+// export const fetchBoardDetailsAPI = async (boardId: string): Promise<Board> => {
+//   const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`);
+//   return response.data.data;
+// };
 
 export const updateBoardDetailsAPI = async (boardId: string, updateData: UpdateBoardType): Promise<Board> => {
   const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`, updateData);

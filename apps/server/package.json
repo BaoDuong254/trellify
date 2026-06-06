@@ -43,7 +43,6 @@
     "socket.io": "catalog:",
     "streamifier": "catalog:",
     "uuid": "catalog:",
-    "winston": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

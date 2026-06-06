@@ -12,7 +12,7 @@ const initialState = {
   isShowModalActiveCard: false,
 };
 
-export const activeCardSlice = createSlice({
+const activeCardSlice = createSlice({
   name: "activeCard",
   initialState,
   reducers: {

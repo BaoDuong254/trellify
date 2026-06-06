@@ -27,16 +27,10 @@ export const updateBoardInvitationAPI = createAsyncThunk(
   }
 );
 
-export const notificationsSlice = createSlice({
+const notificationsSlice = createSlice({
   name: "notifications",
   initialState,
   reducers: {
-    clearCurrentNotifications: (state) => {
-      state.currentNotifications = null;
-    },
-    updateCurrentNotifications: (state, action) => {
-      state.currentNotifications = action.payload;
-    },
     addNotification: (state, action) => {
       const incomingInvitation = action.payload;
       state.currentNotifications?.unshift(incomingInvitation);
@@ -55,7 +49,7 @@ export const notificationsSlice = createSlice({
   },
 });
 
-export const { clearCurrentNotifications, updateCurrentNotifications, addNotification } = notificationsSlice.actions;
+export const { addNotification } = notificationsSlice.actions;
 
 export const selectCurrentNotifications = (state: { notifications: NotificationsState }) => {
   return state.notifications.currentNotifications;

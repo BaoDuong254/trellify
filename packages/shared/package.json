@@ -20,15 +20,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "chalk": "catalog:",
-    "express": "catalog:",
-    "http-status-codes": "catalog:",
     "rimraf": "catalog:",
     "winston": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/express": "catalog:",
     "@types/node": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
