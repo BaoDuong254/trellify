@@ -1,6 +1,8 @@
-import { CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
+
+import { CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
+
 import { cardService } from "src/services/card.service";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {

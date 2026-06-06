@@ -1,15 +1,16 @@
-import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import VpnLockIcon from "@mui/icons-material/VpnLock";
 import AddToDriveIcon from "@mui/icons-material/AddToDrive";
 import BoltIcon from "@mui/icons-material/Bolt";
+import DashboardIcon from "@mui/icons-material/Dashboard";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import VpnLockIcon from "@mui/icons-material/VpnLock";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
-import type { Board } from "src/types/board.type";
-import { capitalizeFirstLetter } from "src/utils/formatters";
+
 import BoardUserGroup from "src/pages/Boards/BoardBar/BoardUserGroup";
 import InviteBoardUser from "src/pages/Boards/BoardBar/InviteBoardUser";
+import type { Board } from "src/types/board.type";
+import { capitalizeFirstLetter } from "src/utils/formatters";
 
 const MENU_STYLES = {
   color: "white",

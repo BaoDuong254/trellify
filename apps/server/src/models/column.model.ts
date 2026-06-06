@@ -1,9 +1,11 @@
+import { Document, ObjectId, UpdateFilter } from "mongodb";
+
 import {
   COLUMN_COLLECTION_SCHEMA,
   CreateNewColumnType,
   UpdateColumnType,
 } from "@workspace/shared/schemas/column.schema";
-import { Document, ObjectId, UpdateFilter } from "mongodb";
+
 import { GET_DB } from "src/config/database";
 
 const COLUMN_COLLECTION_NAME = "columns";

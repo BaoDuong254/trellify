@@ -1,5 +1,7 @@
+import { Document, ObjectId, UpdateFilter } from "mongodb";
+
 import { BOARD_COLLECTION_SCHEMA, CreateNewBoardType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
-import { ObjectId, UpdateFilter, Document } from "mongodb";
+
 import { GET_DB } from "src/config/database";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";

@@ -1,10 +1,11 @@
 import express, { Router } from "express";
+
 import { boardRoute } from "src/routes/v1/board.route";
-import { columnRoute } from "src/routes/v1/column.route";
 import { cardRoute } from "src/routes/v1/card.route";
-import { userRoute } from "src/routes/v1/user.route";
+import { columnRoute } from "src/routes/v1/column.route";
 import { invitationRoute } from "src/routes/v1/invitation.route";
 import { systemRoute } from "src/routes/v1/system.route";
+import { userRoute } from "src/routes/v1/user.route";
 
 const router: Router = express.Router();
 

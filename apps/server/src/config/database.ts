@@ -1,4 +1,5 @@
 import { Db, MongoClient, ServerApiVersion } from "mongodb";
+
 import environmentConfig from "src/config/environment";
 
 let trellifyDatabaseInstance: Db | undefined;

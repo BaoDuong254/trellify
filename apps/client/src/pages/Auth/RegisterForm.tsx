@@ -1,16 +1,21 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import LockIcon from "@mui/icons-material/Lock";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Avatar from "@mui/material/Avatar";
-import LockIcon from "@mui/icons-material/Lock";
-import Typography from "@mui/material/Typography";
 import MuiCard from "@mui/material/Card";
-import TrelloIcon from "src/assets/trello.svg?react";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import Zoom from "@mui/material/Zoom";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import { registerUserAPI } from "src/apis";
+import TrelloIcon from "src/assets/trello.svg?react";
+import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import TurnstileField from "src/components/Form/TurnstileField";
 import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
@@ -18,10 +23,6 @@ import {
   PASSWORD_RULE,
   PASSWORD_RULE_MESSAGE,
 } from "src/utils/validators";
-import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
-import TurnstileField from "src/components/Form/TurnstileField";
-import { toast } from "react-toastify";
-import { registerUserAPI } from "src/apis";
 
 interface RegisterFormData {
   email: string;

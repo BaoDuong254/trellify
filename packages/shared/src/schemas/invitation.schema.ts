@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { BOARD_INVITATION_STATUS, INVITATION_TYPES } from "@workspace/shared/utils/constants";
 import {
   EMAIL_RULE,
@@ -5,7 +7,6 @@ import {
   OBJECT_ID_RULE,
   OBJECT_ID_RULE_MESSAGE,
 } from "@workspace/shared/utils/validators";
-import { z } from "zod";
 
 export const INVITATION_COLLECTION_SCHEMA = z.object({
   inviterId: z

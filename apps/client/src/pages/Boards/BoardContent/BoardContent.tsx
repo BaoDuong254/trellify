@@ -1,30 +1,31 @@
-import ListColumns from "src/pages/Boards/BoardContent/ListColumns/ListColumns";
-import { type Card, type Board, type Column } from "src/types/board.type";
-import Box from "@mui/material/Box";
 import {
-  DndContext,
-  type DragEndEvent,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
-  DragOverlay,
-  type DropAnimation,
-  defaultDropAnimationSideEffects,
-  type DragOverEvent,
-  type Over,
   type Active,
   type CollisionDetection,
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  type DropAnimation,
+  type Over,
   closestCenter,
-  pointerWithin,
-  getFirstCollision,
   closestCorners,
+  defaultDropAnimationSideEffects,
+  getFirstCollision,
+  pointerWithin,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
-import { MouseSensor, TouchSensor } from "src/lib/DndKitSensors";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
+import Box from "@mui/material/Box";
+import { cloneDeep, isEmpty } from "lodash";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { MouseSensor, TouchSensor } from "src/lib/DndKitSensors";
 import ColumnC from "src/pages/Boards/BoardContent/ListColumns/Column/Column";
 import CardC from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
-import { cloneDeep, isEmpty } from "lodash";
+import ListColumns from "src/pages/Boards/BoardContent/ListColumns/ListColumns";
+import { type Board, type Card, type Column } from "src/types/board.type";
 import { generatePlaceholderCard } from "src/utils/formatters";
 
 const ACTIVE_DRAG_ITEM_TYPE = {

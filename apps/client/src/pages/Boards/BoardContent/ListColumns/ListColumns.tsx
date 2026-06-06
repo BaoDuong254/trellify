@@ -1,19 +1,20 @@
-import Column from "src/pages/Boards/BoardContent/ListColumns/Column/Column";
+import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import CloseIcon from "@mui/icons-material/Close";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import NoteAddIcon from "@mui/icons-material/NoteAdd";
-import type { Column as ColumnType } from "src/types/board.type";
-import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
-import { useState } from "react";
 import TextField from "@mui/material/TextField";
-import CloseIcon from "@mui/icons-material/Close";
-import { toast } from "react-toastify";
-import { createNewColumnAPI } from "src/apis";
-import { generatePlaceholderCard } from "src/utils/formatters";
 import { cloneDeep } from "lodash";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
+import { createNewColumnAPI } from "src/apis";
+import Column from "src/pages/Boards/BoardContent/ListColumns/Column/Column";
 import { selectCurrentActiveBoard, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
 import type { AppDispatch } from "src/redux/store";
+import type { Column as ColumnType } from "src/types/board.type";
+import { generatePlaceholderCard } from "src/utils/formatters";
 
 function ListColumns({ columns }: { columns: ColumnType[] }) {
   const [openNewColumnForm, setOpenNewColumnForm] = useState(false);

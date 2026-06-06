@@ -1,20 +1,23 @@
+import http from "node:http";
+
+import exitHook from "async-exit-hook";
 import chalk from "chalk";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import express, { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import morgan from "morgan";
+import { Server } from "socket.io";
+
+import logger from "@workspace/shared/utils/logger";
+
+import { corsOptions } from "src/config/cors";
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
-import logger from "@workspace/shared/utils/logger";
-import exitHook from "async-exit-hook";
-import { APIs_V1 } from "src/routes/v1";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
-import cors from "cors";
-import { corsOptions } from "src/config/cors";
-import cookieParser from "cookie-parser";
-import http from "node:http";
-import { Server } from "socket.io";
-import { inviteUserToBoardSocket } from "src/sockets/invitation.socket";
-import { userQueue, userWorker } from "src/queues/user.queue";
 import { closeRedisClient } from "src/providers/redis.provider";
+import { userQueue, userWorker } from "src/queues/user.queue";
+import { APIs_V1 } from "src/routes/v1";
+import { inviteUserToBoardSocket } from "src/sockets/invitation.socket";
 
 const START_SERVER = () => {
   // Create Express app

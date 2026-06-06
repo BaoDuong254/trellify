@@ -1,5 +1,6 @@
 import type { BoardCollectionType } from "@workspace/shared/schemas/board.schema";
 import type { InvitationCollectionType } from "@workspace/shared/schemas/invitation.schema";
+
 import type { User } from "src/types/user.type";
 
 export interface Notifications extends InvitationCollectionType {

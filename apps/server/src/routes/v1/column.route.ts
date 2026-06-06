@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+
 import { columnController } from "src/controllers/column.controller";
 import { authMiddleware } from "src/middlewares/auth.middleware";
 import { columnValidation } from "src/validations/column.validation";

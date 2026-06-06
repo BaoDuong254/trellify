@@ -1,12 +1,13 @@
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import HomeIcon from "@mui/icons-material/Home";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import SvgIcon from "@mui/material/SvgIcon";
-import PlanetSvg from "src/assets/404/planet.svg?react";
+import Typography from "@mui/material/Typography";
+import { Link } from "react-router-dom";
+
 import AstronautSvg from "src/assets/404/astronaut.svg?react";
 import particlesImg from "src/assets/404/particles.png";
-import { Link } from "react-router-dom";
+import PlanetSvg from "src/assets/404/planet.svg?react";
 
 function NotFound() {
   return (

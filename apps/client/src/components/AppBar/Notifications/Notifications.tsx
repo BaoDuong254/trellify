@@ -1,20 +1,23 @@
-import { useEffect, useState } from "react";
-import moment from "moment";
-import Badge from "@mui/material/Badge";
+import DoneIcon from "@mui/icons-material/Done";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import NotInterestedIcon from "@mui/icons-material/NotInterested";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Tooltip from "@mui/material/Tooltip";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Divider from "@mui/material/Divider";
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
-import DoneIcon from "@mui/icons-material/Done";
-import NotInterestedIcon from "@mui/icons-material/NotInterested";
-import { BOARD_INVITATION_STATUS } from "@workspace/shared/utils/constants";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import moment from "moment";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
+import { BOARD_INVITATION_STATUS } from "@workspace/shared/utils/constants";
+
 import {
   addNotification,
   fetchInvitationsAPI,
@@ -22,10 +25,9 @@ import {
   updateBoardInvitationAPI,
 } from "src/redux/notifications/notificationsSlice";
 import type { AppDispatch } from "src/redux/store";
-import { socketIoInstance } from "src/socketClient";
 import { selectCurrentUser } from "src/redux/user/userSlice";
+import { socketIoInstance } from "src/socketClient";
 import type { Notifications as NotificationType } from "src/types/invitation.type";
-import { useNavigate } from "react-router-dom";
 
 function Notifications() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

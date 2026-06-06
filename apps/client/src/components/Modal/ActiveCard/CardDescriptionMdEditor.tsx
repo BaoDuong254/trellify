@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { useColorScheme } from "@mui/material/styles";
-import MDEditor from "@uiw/react-md-editor";
-import rehypeSanitize from "rehype-sanitize";
+import EditNoteIcon from "@mui/icons-material/EditNote";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import EditNoteIcon from "@mui/icons-material/EditNote";
+import { useColorScheme } from "@mui/material/styles";
+import MDEditor from "@uiw/react-md-editor";
+import { useState } from "react";
+import rehypeSanitize from "rehype-sanitize";
 
 function CardDescriptionMdEditor({
   cardDescriptionProp,

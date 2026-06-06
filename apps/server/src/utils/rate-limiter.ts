@@ -1,6 +1,7 @@
+import { StatusCodes } from "http-status-codes";
+
 import { getRedisClient } from "src/providers/redis.provider";
 import ApiError from "src/utils/api-error";
-import { StatusCodes } from "http-status-codes";
 
 export const checkRateLimit = async (key: string, limit: number, windowSec: number): Promise<void> => {
   const client = getRedisClient();

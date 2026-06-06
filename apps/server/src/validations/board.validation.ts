@@ -1,11 +1,13 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
-import ApiError from "src/utils/api-error";
+
 import {
   CREATE_NEW_BOARD_SCHEMA,
   MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA,
   UPDATE_BOARD_SCHEMA,
 } from "@workspace/shared/schemas/board.schema";
+
+import ApiError from "src/utils/api-error";
 
 const createNew = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {

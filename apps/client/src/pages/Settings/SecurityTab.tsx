@@ -1,20 +1,21 @@
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import Button from "@mui/material/Button";
-import PasswordIcon from "@mui/icons-material/Password";
-import LockResetIcon from "@mui/icons-material/LockReset";
 import LockIcon from "@mui/icons-material/Lock";
+import LockResetIcon from "@mui/icons-material/LockReset";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { useForm } from "react-hook-form";
+import PasswordIcon from "@mui/icons-material/Password";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useConfirm } from "material-ui-confirm";
-import { FIELD_REQUIRED_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGE } from "src/utils/validators";
+import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import type { AppDispatch } from "src/redux/store";
 import { logoutUserAPI, updateUserAPI } from "src/redux/user/userSlice";
-import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
+import { FIELD_REQUIRED_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGE } from "src/utils/validators";
 
 interface SecurityTabFormData {
   current_password?: string;

@@ -1,11 +1,12 @@
-import { Navigate, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
+import { useSelector } from "react-redux";
+import { Navigate, useLocation } from "react-router-dom";
+
+import loginBgImage from "src/assets/auth/login-register-bg.jpg";
 import ForgotPasswordForm from "src/pages/Auth/ForgotPasswordForm";
 import LoginForm from "src/pages/Auth/LoginForm";
 import RegisterForm from "src/pages/Auth/RegisterForm";
-import { useSelector } from "react-redux";
 import { selectCurrentUser } from "src/redux/user/userSlice";
-import loginBgImage from "src/assets/auth/login-register-bg.jpg";
 
 function Auth() {
   const location = useLocation();

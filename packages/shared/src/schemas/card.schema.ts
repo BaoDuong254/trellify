@@ -1,10 +1,11 @@
+import { z } from "zod";
+
 import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
   OBJECT_ID_RULE,
   OBJECT_ID_RULE_MESSAGE,
 } from "@workspace/shared/utils/validators";
-import { z } from "zod";
 
 export const CARD_COLLECTION_SCHEMA = z.object({
   boardId: z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),

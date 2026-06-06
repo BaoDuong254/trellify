@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { useSearchParams, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
+
 import { verifyUserAPI } from "src/apis";
 import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
 

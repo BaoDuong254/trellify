@@ -1,6 +1,7 @@
-import nodeEslint from "@workspace/eslint/node";
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import nodeEslint from "@workspace/eslint/node";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

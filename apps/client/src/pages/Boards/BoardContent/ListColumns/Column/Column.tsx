@@ -1,34 +1,35 @@
-import ListItemText from "@mui/material/ListItemText";
-import { useState } from "react";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Divider from "@mui/material/Divider";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ContentCut from "@mui/icons-material/ContentCut";
-import ContentCopy from "@mui/icons-material/ContentCopy";
-import ContentPaste from "@mui/icons-material/ContentPaste";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import Cloud from "@mui/icons-material/Cloud";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import Tooltip from "@mui/material/Tooltip";
-import AddCardIcon from "@mui/icons-material/AddCard";
-import Button from "@mui/material/Button";
-import DragHandleIcon from "@mui/icons-material/DragHandle";
-import Box from "@mui/material/Box";
-import ListCards from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
-import type { Card, Column as ColumnType } from "src/types/board.type";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import AddCardIcon from "@mui/icons-material/AddCard";
 import CloseIcon from "@mui/icons-material/Close";
+import Cloud from "@mui/icons-material/Cloud";
+import ContentCopy from "@mui/icons-material/ContentCopy";
+import ContentCut from "@mui/icons-material/ContentCut";
+import ContentPaste from "@mui/icons-material/ContentPaste";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import DragHandleIcon from "@mui/icons-material/DragHandle";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
-import { toast } from "react-toastify";
-import { useConfirm } from "material-ui-confirm";
+import Tooltip from "@mui/material/Tooltip";
 import { cloneDeep } from "lodash";
+import { useConfirm } from "material-ui-confirm";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch } from "src/redux/store";
-import { selectCurrentActiveBoard, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import { toast } from "react-toastify";
+
 import { createNewCardAPI, deleteColumnDetailsAPI, updateColumnDetailsAPI } from "src/apis";
 import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
+import ListCards from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
+import { selectCurrentActiveBoard, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import type { AppDispatch } from "src/redux/store";
+import type { Card, Column as ColumnType } from "src/types/board.type";
 
 function Column({ column }: { column: ColumnType }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({

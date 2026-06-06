@@ -1,10 +1,11 @@
-import { useState } from "react";
-import TextField from "@mui/material/TextField";
+import SearchIcon from "@mui/icons-material/Search";
 import Autocomplete from "@mui/material/Autocomplete";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
-import SearchIcon from "@mui/icons-material/Search";
+import TextField from "@mui/material/TextField";
+import { useState } from "react";
 import { createSearchParams, useNavigate } from "react-router-dom";
+
 import { fetchBoardsAPI } from "src/apis";
 import { useDebounceFn } from "src/hooks/useDebounceFn";
 import type { Board } from "src/types/board.type";

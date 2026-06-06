@@ -1,26 +1,28 @@
-import { useState, useEffect } from "react";
-import Container from "@mui/material/Container";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import Divider from "@mui/material/Divider";
-import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
-import ListAltIcon from "@mui/icons-material/ListAlt";
-import HomeIcon from "@mui/icons-material/Home";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
+import HomeIcon from "@mui/icons-material/Home";
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Container from "@mui/material/Container";
+import Divider from "@mui/material/Divider";
 import Pagination from "@mui/material/Pagination";
 import PaginationItem from "@mui/material/PaginationItem";
-import { Link, useLocation } from "react-router-dom";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
-import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
-import AppBar from "src/components/AppBar/AppBar";
-import SidebarCreateBoardModal from "src/pages/Boards/create";
 import randomColor from "randomcolor";
-import type { Board } from "src/types/board.type";
-import { fetchBoardsAPI } from "src/apis";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+
 import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
+
+import { fetchBoardsAPI } from "src/apis";
+import AppBar from "src/components/AppBar/AppBar";
+import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
+import SidebarCreateBoardModal from "src/pages/Boards/create";
+import type { Board } from "src/types/board.type";
 
 interface FetchBoardsResponse {
   boards: Board[];

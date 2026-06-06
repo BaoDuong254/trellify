@@ -1,9 +1,11 @@
+import { ObjectId } from "mongodb";
+
 import {
   USER_COLLECTION_SCHEMA,
   UserRegistrationServiceType,
   UserUpdateType,
 } from "@workspace/shared/schemas/user.schema";
-import { ObjectId } from "mongodb";
+
 import { GET_DB } from "src/config/database";
 
 const USER_COLLECTION_NAME = "users";

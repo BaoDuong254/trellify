@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
 import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { useState } from "react";
+
 import envConfig from "src/config/env";
 
 interface TurnstileFieldProps {

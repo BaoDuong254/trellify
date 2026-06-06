@@ -1,7 +1,9 @@
-import { Queue, Worker, type Processor, type Job } from "bullmq";
-import { createRedisConnection } from "src/queues/redis.client";
-import { userModel } from "src/models/user.model";
+import { type Job, type Processor, Queue, Worker } from "bullmq";
+
 import logger from "@workspace/shared/utils/logger";
+
+import { userModel } from "src/models/user.model";
+import { createRedisConnection } from "src/queues/redis.client";
 
 export const QUEUE_NAMES = {
   DELETE_UNVERIFIED_USER: "delete-unverified-user",

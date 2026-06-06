@@ -1,10 +1,10 @@
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import tsdoc from "eslint-plugin-tsdoc";
 import eslint from "@eslint/js";
-import importPlugin from "eslint-plugin-import";
-import eslintPlugin from "eslint-plugin-eslint-plugin";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
+import eslintPlugin from "eslint-plugin-eslint-plugin";
+import importPlugin from "eslint-plugin-import";
+import tsdoc from "eslint-plugin-tsdoc";
+import tseslint from "typescript-eslint";
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [

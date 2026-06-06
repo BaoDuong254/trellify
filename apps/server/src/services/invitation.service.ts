@@ -1,7 +1,9 @@
-import { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
-import { BOARD_INVITATION_STATUS, INVITATION_TYPES } from "@workspace/shared/utils/constants";
 import { StatusCodes } from "http-status-codes";
 import { ObjectId } from "mongodb";
+
+import { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
+import { BOARD_INVITATION_STATUS, INVITATION_TYPES } from "@workspace/shared/utils/constants";
+
 import { boardModel } from "src/models/board.model";
 import { invitationModel } from "src/models/invitation.model";
 import { userModel } from "src/models/user.model";

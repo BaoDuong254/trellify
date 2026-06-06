@@ -1,6 +1,8 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { UserLoginType, UserUpdateType } from "@workspace/shared/schemas/user.schema";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
+
+import type { UserLoginType, UserUpdateType } from "@workspace/shared/schemas/user.schema";
+
 import envConfig from "src/config/env";
 import type { User } from "src/types/user.type";
 import http from "src/utils/http";

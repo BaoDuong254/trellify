@@ -1,3 +1,5 @@
+import { Document, ObjectId, UpdateFilter } from "mongodb";
+
 import {
   CARD_COLLECTION_SCHEMA,
   CardCommentType,
@@ -6,7 +8,7 @@ import {
   UpdateCardType,
 } from "@workspace/shared/schemas/card.schema";
 import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
-import { Document, ObjectId, UpdateFilter } from "mongodb";
+
 import { GET_DB } from "src/config/database";
 
 const CARD_COLLECTION_NAME = "cards";

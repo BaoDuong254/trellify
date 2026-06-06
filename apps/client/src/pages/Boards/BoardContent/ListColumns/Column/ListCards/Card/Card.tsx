@@ -1,18 +1,19 @@
-import CardMui from "@mui/material/Card";
-import CardMedia from "@mui/material/CardMedia";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
-import GroupIcon from "@mui/icons-material/Group";
-import CommentIcon from "@mui/icons-material/ModeComment";
-import AttachmentIcon from "@mui/icons-material/Attachment";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import type { Card as CardType } from "src/types/board.type";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { AppDispatch } from "src/redux/store";
+import AttachmentIcon from "@mui/icons-material/Attachment";
+import GroupIcon from "@mui/icons-material/Group";
+import CommentIcon from "@mui/icons-material/ModeComment";
+import Button from "@mui/material/Button";
+import CardMui from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import CardMedia from "@mui/material/CardMedia";
+import Typography from "@mui/material/Typography";
 import { useDispatch } from "react-redux";
+
 import { showModalActiveCard, updateCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
+import type { AppDispatch } from "src/redux/store";
+import type { Card as CardType } from "src/types/board.type";
 
 function Card({ card }: { card: CardType }) {
   const dispatch = useDispatch<AppDispatch>();

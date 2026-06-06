@@ -1,7 +1,9 @@
-import { StatusCodes } from "http-status-codes";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import ApiError from "src/utils/api-error";
+import { StatusCodes } from "http-status-codes";
+
 import { INVITATION_CREATE_SCHEMA } from "@workspace/shared/schemas/invitation.schema";
+
+import ApiError from "src/utils/api-error";
 
 const createNewBoardInvitation = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {

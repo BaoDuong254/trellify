@@ -1,25 +1,26 @@
-import { useSearchParams, useNavigate, Navigate } from "react-router-dom";
+import LockResetIcon from "@mui/icons-material/LockReset";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Avatar from "@mui/material/Avatar";
-import LockResetIcon from "@mui/icons-material/LockReset";
-import Typography from "@mui/material/Typography";
 import MuiCard from "@mui/material/Card";
-import TrelloIcon from "src/assets/trello.svg?react";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import Zoom from "@mui/material/Zoom";
 import { useForm } from "react-hook-form";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import { resetPasswordAPI } from "src/apis";
+import loginBgImage from "src/assets/auth/login-register-bg.jpg";
+import TrelloIcon from "src/assets/trello.svg?react";
+import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import {
   FIELD_REQUIRED_MESSAGE,
   PASSWORD_CONFIRMATION_MESSAGE,
   PASSWORD_RULE,
   PASSWORD_RULE_MESSAGE,
 } from "src/utils/validators";
-import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
-import { toast } from "react-toastify";
-import { resetPasswordAPI } from "src/apis";
-import loginBgImage from "src/assets/auth/login-register-bg.jpg";
 
 interface ResetPasswordFormData {
   password: string;

@@ -1,9 +1,10 @@
-import globals from "globals";
 import jestPlugin from "eslint-plugin-jest";
-import pluginPromise from "eslint-plugin-promise";
-import eslintPluginUnicorn from "eslint-plugin-unicorn";
-import pluginSecurity from "eslint-plugin-security";
 import nodePlugin from "eslint-plugin-n";
+import pluginPromise from "eslint-plugin-promise";
+import pluginSecurity from "eslint-plugin-security";
+import eslintPluginUnicorn from "eslint-plugin-unicorn";
+import globals from "globals";
+
 import baseConfig from "./base.js";
 
 /** @type {import("eslint").Linter.Config[]} */

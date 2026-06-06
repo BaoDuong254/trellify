@@ -1,17 +1,24 @@
-import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import LockIcon from "@mui/icons-material/Lock";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Avatar from "@mui/material/Avatar";
-import LockIcon from "@mui/icons-material/Lock";
-import Typography from "@mui/material/Typography";
 import MuiCard from "@mui/material/Card";
-import TrelloIcon from "src/assets/trello.svg?react";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import Zoom from "@mui/material/Zoom";
-import Alert from "@mui/material/Alert";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import TrelloIcon from "src/assets/trello.svg?react";
+import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import TurnstileField from "src/components/Form/TurnstileField";
+import type { AppDispatch } from "src/redux/store";
+import { loginUserAPI } from "src/redux/user/userSlice";
 import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
@@ -19,12 +26,6 @@ import {
   PASSWORD_RULE,
   PASSWORD_RULE_MESSAGE,
 } from "src/utils/validators";
-import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
-import TurnstileField from "src/components/Form/TurnstileField";
-import { useDispatch } from "react-redux";
-import type { AppDispatch } from "src/redux/store";
-import { toast } from "react-toastify";
-import { loginUserAPI } from "src/redux/user/userSlice";
 
 interface LoginFormData {
   email: string;

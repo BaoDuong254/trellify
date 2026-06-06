@@ -1,7 +1,9 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
-import ApiError from "src/utils/api-error";
+
 import { CREATE_NEW_CARD_SCHEMA, UPDATE_CARD_SCHEMA } from "@workspace/shared/schemas/card.schema";
+
+import ApiError from "src/utils/api-error";
 
 const createNew = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {

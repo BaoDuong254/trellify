@@ -1,7 +1,8 @@
-import Card from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
-import type { Card as CardType } from "src/types/board.type";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import Box from "@mui/material/Box";
+
+import Card from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
+import type { Card as CardType } from "src/types/board.type";
 
 function ListCards({ cards }: { cards: CardType[] }) {
   return (

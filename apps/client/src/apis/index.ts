@@ -1,8 +1,10 @@
+import { toast } from "react-toastify";
+
 import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 import type { UpdateCardType } from "@workspace/shared/schemas/card.schema";
 import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import type { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
-import { toast } from "react-toastify";
+
 import envConfig from "src/config/env";
 import type { CreateBoardFormData } from "src/pages/Boards/create";
 import type { Board, Card, Column } from "src/types/board.type";

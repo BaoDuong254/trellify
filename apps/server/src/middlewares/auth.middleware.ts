@@ -1,8 +1,9 @@
+import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
+
 import environmentConfig from "src/config/environment";
 import { JwtProvider } from "src/providers/jwt.provider";
 import ApiError from "src/utils/api-error";
-import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 
 const isAuthorized = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   const clientAccessToken = request.cookies?.accessToken as string;

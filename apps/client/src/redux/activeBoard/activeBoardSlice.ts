@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { isEmpty } from "lodash";
+
 import envConfig from "src/config/env";
 import type { Board } from "src/types/board.type";
 import { generatePlaceholderCard } from "src/utils/formatters";

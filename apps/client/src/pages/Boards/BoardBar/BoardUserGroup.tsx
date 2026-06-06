@@ -1,8 +1,9 @@
-import { useState } from "react";
-import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
-import Tooltip from "@mui/material/Tooltip";
+import Box from "@mui/material/Box";
 import Popover from "@mui/material/Popover";
+import Tooltip from "@mui/material/Tooltip";
+import { useState } from "react";
+
 import type { User } from "src/types/user.type";
 
 function BoardUserGroup({

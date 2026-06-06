@@ -1,6 +1,8 @@
-import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import { StatusCodes } from "http-status-codes";
 import { ObjectId } from "mongodb";
+
+import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas/column.schema";
+
 import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";

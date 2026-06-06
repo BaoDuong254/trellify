@@ -1,5 +1,6 @@
-import { useMemo } from "react";
 import { debounce } from "lodash";
+import { useMemo } from "react";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const useDebounceFn = (fnToDebounce: any, delay = 500) => {
   if (isNaN(delay)) {

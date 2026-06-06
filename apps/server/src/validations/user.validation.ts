@@ -1,6 +1,6 @@
-import { StatusCodes } from "http-status-codes";
-import ApiError from "src/utils/api-error";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
+
 import {
   USER_FORGOT_PASSWORD_SCHEMA,
   USER_LOGIN_SCHEMA,
@@ -9,6 +9,8 @@ import {
   USER_UPDATE_SCHEMA,
   USER_VERIFICATION_SCHEMA,
 } from "@workspace/shared/schemas/user.schema";
+
+import ApiError from "src/utils/api-error";
 
 const createNew = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {

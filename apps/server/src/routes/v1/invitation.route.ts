@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+
 import { invitationController } from "src/controllers/invitation.controller";
 import { authMiddleware } from "src/middlewares/auth.middleware";
 import { invitationValidation } from "src/validations/invitation.validation";

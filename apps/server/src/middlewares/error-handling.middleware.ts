@@ -1,5 +1,6 @@
+import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
-import { NextFunction, Request as ExpressRequest, Response as ExpressResponse } from "express";
+
 import environmentConfig from "src/config/environment";
 
 interface ApiError extends Error {

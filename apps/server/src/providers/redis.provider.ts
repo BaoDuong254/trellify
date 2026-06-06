@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+
 import environmentConfig from "src/config/environment";
 
 let redisClient: Redis | null = null;

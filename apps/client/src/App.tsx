@@ -1,9 +1,10 @@
+import { Suspense, lazy } from "react";
+import { useSelector } from "react-redux";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { lazy, Suspense } from "react";
+
+import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { User } from "src/types/user.type";
-import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
-import { useSelector } from "react-redux";
 
 // Lazy load page components
 const NotFound = lazy(() => import("src/pages/NotFound/NotFound"));

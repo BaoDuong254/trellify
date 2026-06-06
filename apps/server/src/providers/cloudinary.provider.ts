@@ -1,6 +1,7 @@
 import cloudinary from "cloudinary";
-import environmentConfig from "src/config/environment";
 import streamifier from "streamifier";
+
+import environmentConfig from "src/config/environment";
 
 const cloudinaryV2 = cloudinary.v2;
 cloudinaryV2.config({

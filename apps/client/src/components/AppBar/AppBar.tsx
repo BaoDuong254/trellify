@@ -1,21 +1,22 @@
-import ModeSelect from "src/components/ModeSelect/ModeSelect";
-import Box from "@mui/material/Box";
 import AppsIcon from "@mui/icons-material/Apps";
-import TrelloIcon from "src/assets/trello.svg?react";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutlined";
+import LibraryAddIcon from "@mui/icons-material/LibraryAdd";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import SvgIcon from "@mui/material/SvgIcon";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import Workspaces from "src/components/AppBar/Menus/Workspaces";
+import { Link } from "react-router-dom";
+
+import TrelloIcon from "src/assets/trello.svg?react";
+import Profiles from "src/components/AppBar/Menus/Profiles";
 import Recent from "src/components/AppBar/Menus/Recent";
 import Starred from "src/components/AppBar/Menus/Starred";
 import Templates from "src/components/AppBar/Menus/Templates";
-import Button from "@mui/material/Button";
-import Tooltip from "@mui/material/Tooltip";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutlined";
-import Profiles from "src/components/AppBar/Menus/Profiles";
-import LibraryAddIcon from "@mui/icons-material/LibraryAdd";
-import { Link } from "react-router-dom";
+import Workspaces from "src/components/AppBar/Menus/Workspaces";
 import Notifications from "src/components/AppBar/Notifications/Notifications";
 import AutoCompleteSearchBoard from "src/components/AppBar/SearchBoards/AutoCompleteSearchBoard";
+import ModeSelect from "src/components/ModeSelect/ModeSelect";
 
 function AppBar() {
   return (

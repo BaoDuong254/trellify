@@ -1,10 +1,11 @@
+import { z } from "zod";
+
 import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
   PASSWORD_RULE,
   PASSWORD_RULE_MESSAGE,
 } from "@workspace/shared/utils/validators";
-import { z } from "zod";
 
 export const USER_ROLES = {
   CLIENT: "client",

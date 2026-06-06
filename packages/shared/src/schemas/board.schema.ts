@@ -1,6 +1,7 @@
+import { z } from "zod";
+
 import { BOARD_TYPES } from "@workspace/shared/utils/constants";
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "@workspace/shared/utils/validators";
-import { z } from "zod";
 
 export const BOARD_COLLECTION_SCHEMA = z.object({
   title: z

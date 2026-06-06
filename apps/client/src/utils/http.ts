@@ -1,9 +1,10 @@
 import axios, { type AxiosError } from "axios";
 import { toast } from "react-toastify";
+
 import { refreshTokenAPI } from "src/apis";
+import type { store } from "src/redux/store";
 import { logoutUserAPI } from "src/redux/user/userSlice";
 import { interceptorLoadingElements } from "src/utils/formatters";
-import type { store } from "src/redux/store";
 
 let axiosReduxStore: typeof store | undefined;
 export const injectStore = (mainStore: typeof store): void => {

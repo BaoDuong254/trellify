@@ -1,6 +1,7 @@
-import { StatusCodes } from "http-status-codes";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import { userService } from "src/services/user.service";
+import { StatusCodes } from "http-status-codes";
+import ms, { StringValue } from "ms";
+
 import {
   UserForgotPasswordType,
   UserLoginType,
@@ -9,8 +10,9 @@ import {
   UserUpdateType,
   UserVerificationType,
 } from "@workspace/shared/schemas/user.schema";
-import ms, { StringValue } from "ms";
+
 import environmentConfig from "src/config/environment";
+import { userService } from "src/services/user.service";
 import ApiError from "src/utils/api-error";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {

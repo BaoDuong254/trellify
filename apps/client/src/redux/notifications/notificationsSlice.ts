@@ -1,4 +1,5 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import envConfig from "src/config/env";
 import type { Notifications } from "src/types/invitation.type";
 import http from "src/utils/http";

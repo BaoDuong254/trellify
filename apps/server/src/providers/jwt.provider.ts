@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import JWT from "jsonwebtoken";
 import { ObjectId } from "mongodb";
+
 import ApiError from "src/utils/api-error";
 
 const generateToken = async (

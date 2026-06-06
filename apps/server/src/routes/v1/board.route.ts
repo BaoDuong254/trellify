@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+
 import { boardController } from "src/controllers/board.controller";
 import { authMiddleware } from "src/middlewares/auth.middleware";
 import { boardValidation } from "src/validations/board.validation";

@@ -1,21 +1,22 @@
+import Container from "@mui/material/Container";
+import { cloneDeep } from "lodash";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+
+import { moveCardToDifferentColumnAPI, updateBoardDetailsAPI, updateColumnDetailsAPI } from "src/apis";
 import AppBar from "src/components/AppBar/AppBar";
+import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
+import ActiveCard from "src/components/Modal/ActiveCard/ActiveCard";
 import BoardBar from "src/pages/Boards/BoardBar/BoardBar";
 import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
-import Container from "@mui/material/Container";
-import { useEffect } from "react";
-import { moveCardToDifferentColumnAPI, updateBoardDetailsAPI, updateColumnDetailsAPI } from "src/apis";
-import type { Card, Column } from "src/types/board.type";
-import { useDispatch, useSelector } from "react-redux";
 import {
   fetchBoardDetailsAPI,
   selectCurrentActiveBoard,
   updateCurrentActiveBoard,
 } from "src/redux/activeBoard/activeBoardSlice";
 import type { AppDispatch } from "src/redux/store";
-import { cloneDeep } from "lodash";
-import { useParams } from "react-router-dom";
-import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
-import ActiveCard from "src/components/Modal/ActiveCard/ActiveCard";
+import type { Card, Column } from "src/types/board.type";
 
 function Board() {
   const dispatch = useDispatch<AppDispatch>();

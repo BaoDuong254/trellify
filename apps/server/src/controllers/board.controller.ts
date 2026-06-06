@@ -1,10 +1,12 @@
+import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
+
 import {
   CreateNewBoardType,
   MoveCardToDifferentColumnType,
   UpdateBoardType,
 } from "@workspace/shared/schemas/board.schema";
-import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
+
 import { boardService } from "src/services/board.service";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {

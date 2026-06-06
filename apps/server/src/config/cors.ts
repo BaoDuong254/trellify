@@ -1,5 +1,6 @@
 import { CorsOptions } from "cors";
 import { StatusCodes } from "http-status-codes";
+
 import environmentConfig from "src/config/environment";
 import ApiError from "src/utils/api-error";
 import { WHITELIST_DOMAINS } from "src/utils/constants";

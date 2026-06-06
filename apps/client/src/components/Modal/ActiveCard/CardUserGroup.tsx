@@ -1,15 +1,17 @@
-import { useState } from "react";
-import Box from "@mui/material/Box";
-import Avatar from "@mui/material/Avatar";
-import Tooltip from "@mui/material/Tooltip";
-import Popover from "@mui/material/Popover";
 import AddIcon from "@mui/icons-material/Add";
-import Badge from "@mui/material/Badge";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import Avatar from "@mui/material/Avatar";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import Popover from "@mui/material/Popover";
+import Tooltip from "@mui/material/Tooltip";
+import { useState } from "react";
 import { useSelector } from "react-redux";
-import { selectCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
-import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
+
 import type { IncomingCardMemberInfoType } from "@workspace/shared/schemas/card.schema";
+import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
+
+import { selectCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
 
 function CardUserGroup({
   cardMemberIds,

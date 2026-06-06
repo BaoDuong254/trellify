@@ -1,12 +1,14 @@
-import moment from "moment";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import moment from "moment";
 import { useSelector } from "react-redux";
-import { selectCurrentUser } from "src/redux/user/userSlice";
+
 import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
+
+import { selectCurrentUser } from "src/redux/user/userSlice";
 
 function CardActivitySection({
   cardComments,

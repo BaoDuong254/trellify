@@ -1,10 +1,11 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { activeBoardReducer } from "src/redux/activeBoard/activeBoardSlice";
-import { userReducer } from "src/redux/user/userSlice";
-import storage from "redux-persist/lib/storage";
 import { persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
+
+import { activeBoardReducer } from "src/redux/activeBoard/activeBoardSlice";
 import { activeCardReducer } from "src/redux/activeCard/activeCardSlice";
 import { notificationsReducer } from "src/redux/notifications/notificationsSlice";
+import { userReducer } from "src/redux/user/userSlice";
 
 const rootPersistConfig = {
   key: "root",

@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+
 import { cardController } from "src/controllers/card.controller";
 import { authMiddleware } from "src/middlewares/auth.middleware";
 import { multerMiddleware } from "src/middlewares/multer.middleware";

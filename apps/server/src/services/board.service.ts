@@ -1,16 +1,18 @@
+import { StatusCodes } from "http-status-codes";
 import { cloneDeep } from "lodash";
+
 import {
   CreateNewBoardType,
   MoveCardToDifferentColumnType,
   UpdateBoardType,
 } from "@workspace/shared/schemas/board.schema";
-import { StatusCodes } from "http-status-codes";
+import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
+
 import { boardModel } from "src/models/board.model";
+import { cardModel } from "src/models/card.model";
+import { columnModel } from "src/models/column.model";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
-import { columnModel } from "src/models/column.model";
-import { cardModel } from "src/models/card.model";
-import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
 
 const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
   const newBoard = {

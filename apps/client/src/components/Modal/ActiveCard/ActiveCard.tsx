@@ -1,50 +1,53 @@
-import Box from "@mui/material/Box";
-import Modal from "@mui/material/Modal";
-import Typography from "@mui/material/Typography";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
-import CancelIcon from "@mui/icons-material/Cancel";
-import Stack from "@mui/material/Stack";
-import Divider from "@mui/material/Divider";
-import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
-import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
-import WatchLaterOutlinedIcon from "@mui/icons-material/WatchLaterOutlined";
-import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
-import AspectRatioOutlinedIcon from "@mui/icons-material/AspectRatioOutlined";
-import AddToDriveOutlinedIcon from "@mui/icons-material/AddToDriveOutlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
+import AddToDriveOutlinedIcon from "@mui/icons-material/AddToDriveOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
+import AspectRatioOutlinedIcon from "@mui/icons-material/AspectRatioOutlined";
+import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
+import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import SubjectRoundedIcon from "@mui/icons-material/SubjectRounded";
-import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
-import { toast } from "react-toastify";
+import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
+import WatchLaterOutlinedIcon from "@mui/icons-material/WatchLaterOutlined";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Modal from "@mui/material/Modal";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
-import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
-import CardUserGroup from "./CardUserGroup";
-import CardDescriptionMdEditor from "./CardDescriptionMdEditor";
-import CardActivitySection from "./CardActivitySection";
-import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
-import type { AppDispatch } from "src/redux/store";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
+import type { IncomingCardMemberInfoType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
+
+import { updateCardDetailsAPI } from "src/apis";
+import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
+import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
+import { updateCardInBoard } from "src/redux/activeBoard/activeBoardSlice";
 import {
   clearAndHideCurrentActiveCard,
   selectCurrentActiveCard,
   selectIsShowModalActiveCard,
   updateCurrentActiveCard,
 } from "src/redux/activeCard/activeCardSlice";
-import { updateCardDetailsAPI } from "src/apis";
-import { singleFileValidator } from "src/utils/validators";
-import { updateCardInBoard } from "src/redux/activeBoard/activeBoardSlice";
-import type { IncomingCardMemberInfoType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser } from "src/redux/user/userSlice";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
+import { singleFileValidator } from "src/utils/validators";
+
+import CardActivitySection from "./CardActivitySection";
+import CardDescriptionMdEditor from "./CardDescriptionMdEditor";
+import CardUserGroup from "./CardUserGroup";
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",

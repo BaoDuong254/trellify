@@ -1,22 +1,24 @@
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Avatar from "@mui/material/Avatar";
-import Tooltip from "@mui/material/Tooltip";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import Button from "@mui/material/Button";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import MailIcon from "@mui/icons-material/Mail";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
-import { useDispatch, useSelector } from "react-redux";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import MailIcon from "@mui/icons-material/Mail";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { useForm } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
+import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
+import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser, updateUserAPI } from "src/redux/user/userSlice";
 import { FIELD_REQUIRED_MESSAGE, singleFileValidator } from "src/utils/validators";
-import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
-import type { AppDispatch } from "src/redux/store";
-import { toast } from "react-toastify";
-import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
+
 interface AccountTabFormData {
   displayName?: string;
 }

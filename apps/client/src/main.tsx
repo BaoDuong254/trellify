@@ -1,19 +1,21 @@
+import CssBaseline from "@mui/material/CssBaseline";
+import GlobalStyles from "@mui/material/GlobalStyles";
+import { ThemeProvider } from "@mui/material/styles";
+import { ConfirmProvider } from "material-ui-confirm";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
-import CssBaseline from "@mui/material/CssBaseline";
-import { ThemeProvider } from "@mui/material/styles";
-import theme from "src/theme.ts";
-import { ToastContainer } from "react-toastify";
-import { ConfirmProvider } from "material-ui-confirm";
 import { Provider } from "react-redux";
-import { store } from "src/redux/store.ts";
 import { BrowserRouter } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 import { persistStore } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
-import { injectStore } from "src/utils/http.ts";
-import GlobalStyles from "@mui/material/GlobalStyles";
+
 import ErrorBoundary from "src/components/ErrorBoundary/ErrorBoundary.tsx";
+import { store } from "src/redux/store.ts";
+import theme from "src/theme.ts";
+import { injectStore } from "src/utils/http.ts";
+
+import App from "./App.tsx";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

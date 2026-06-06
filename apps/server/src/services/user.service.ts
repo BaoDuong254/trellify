@@ -1,3 +1,11 @@
+import { createHash } from "node:crypto";
+
+import bcryptjs from "bcryptjs";
+import { StatusCodes } from "http-status-codes";
+import { ObjectId } from "mongodb";
+import ms, { StringValue } from "ms";
+import { v4 as uuidv4 } from "uuid";
+
 import {
   UserForgotPasswordType,
   UserLoginType,
@@ -6,21 +14,16 @@ import {
   UserUpdateType,
   UserVerificationType,
 } from "@workspace/shared/schemas/user.schema";
-import { createHash } from "node:crypto";
-import { checkRateLimit } from "src/utils/rate-limiter";
-import { StatusCodes } from "http-status-codes";
-import { userModel } from "src/models/user.model";
-import ApiError from "src/utils/api-error";
-import bcryptjs from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
-import { pickUser } from "src/utils/formatters";
+
 import environmentConfig from "src/config/environment";
+import { userModel } from "src/models/user.model";
 import { BrevoProvider } from "src/providers/brevo.provider";
-import { JwtProvider } from "src/providers/jwt.provider";
-import ms, { StringValue } from "ms";
-import { ObjectId } from "mongodb";
 import { CloudinaryProvider } from "src/providers/cloudinary.provider";
-import { userQueue, QUEUE_NAMES } from "src/queues/user.queue";
+import { JwtProvider } from "src/providers/jwt.provider";
+import { QUEUE_NAMES, userQueue } from "src/queues/user.queue";
+import ApiError from "src/utils/api-error";
+import { pickUser } from "src/utils/formatters";
+import { checkRateLimit } from "src/utils/rate-limiter";
 
 const createNew = async (requestBody: UserRegistrationType) => {
   const existUser = await userModel.findOneByEmail(requestBody.email);

@@ -1,9 +1,11 @@
+import { ObjectId } from "mongodb";
+
 import {
   INVITATION_COLLECTION_SCHEMA,
   InvitationCreateServiceType,
   InvitationUpdateType,
 } from "@workspace/shared/schemas/invitation.schema";
-import { ObjectId } from "mongodb";
+
 import { GET_DB } from "src/config/database";
 import { boardModel } from "src/models/board.model";
 import { userModel } from "src/models/user.model";

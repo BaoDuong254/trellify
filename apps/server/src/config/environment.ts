@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import z from "zod";
+
 import chalk from "chalk";
-import logger from "@workspace/shared/utils/logger";
 import { config } from "dotenv";
+import z from "zod";
+
+import logger from "@workspace/shared/utils/logger";
 
 const environmentPath = path.resolve(process.cwd(), ".env");
 

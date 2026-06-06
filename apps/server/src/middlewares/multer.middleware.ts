@@ -1,8 +1,10 @@
-import multer from "multer";
-import { StatusCodes } from "http-status-codes";
-import { ALLOW_COMMON_FILE_TYPES, LIMIT_COMMON_FILE_SIZE } from "@workspace/shared/utils/validators";
-import ApiError from "src/utils/api-error";
 import { Request as ExpressRequest } from "express";
+import { StatusCodes } from "http-status-codes";
+import multer from "multer";
+
+import { ALLOW_COMMON_FILE_TYPES, LIMIT_COMMON_FILE_SIZE } from "@workspace/shared/utils/validators";
+
+import ApiError from "src/utils/api-error";
 
 const customFileFilter = (
   _request: ExpressRequest,

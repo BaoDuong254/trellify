@@ -1,23 +1,25 @@
-import { useState } from "react";
-import Box from "@mui/material/Box";
-import Modal from "@mui/material/Modal";
-import Typography from "@mui/material/Typography";
-import LibraryAddIcon from "@mui/icons-material/LibraryAdd";
-import CancelIcon from "@mui/icons-material/Cancel";
-import { useForm, Controller } from "react-hook-form";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
 import AbcIcon from "@mui/icons-material/Abc";
+import CancelIcon from "@mui/icons-material/Cancel";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import LibraryAddIcon from "@mui/icons-material/LibraryAdd";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputAdornment from "@mui/material/InputAdornment";
+import Modal from "@mui/material/Modal";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
-import { FIELD_REQUIRED_MESSAGE } from "src/utils/validators";
-import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+
 import { BOARD_TYPES } from "@workspace/shared/utils/constants";
+
 import { createNewBoardAPI } from "src/apis";
+import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import { FIELD_REQUIRED_MESSAGE } from "src/utils/validators";
 
 export interface CreateBoardFormData {
   title: string;

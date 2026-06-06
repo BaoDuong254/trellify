@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+
 import type { Card } from "src/types/board.type";
 
 interface ActiveCardState {

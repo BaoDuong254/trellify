@@ -1,16 +1,18 @@
-import { useState } from "react";
-import Container from "@mui/material/Container";
-import Box from "@mui/material/Box";
-import Tab from "@mui/material/Tab";
+import PersonIcon from "@mui/icons-material/Person";
+import SecurityIcon from "@mui/icons-material/Security";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
-import SecurityIcon from "@mui/icons-material/Security";
-import PersonIcon from "@mui/icons-material/Person";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Tab from "@mui/material/Tab";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+
+import AppBar from "src/components/AppBar/AppBar";
+
 import AccountTab from "./AccountTab";
 import SecurityTab from "./SecurityTab";
-import AppBar from "src/components/AppBar/AppBar";
 
 const TABS = {
   ACCOUNT: "account",

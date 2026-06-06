@@ -1,6 +1,8 @@
-import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
+
+import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas/column.schema";
+
 import { columnService } from "src/services/column.service";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {

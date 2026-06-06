@@ -1,7 +1,9 @@
-import { StatusCodes } from "http-status-codes";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import { invitationService } from "src/services/invitation.service";
+import { StatusCodes } from "http-status-codes";
+
 import { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
+
+import { invitationService } from "src/services/invitation.service";
 
 const createNewBoardInvitation = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
