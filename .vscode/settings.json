@@ -1,4 +1,8 @@
 {
-  "typescript.preferences.autoImportSpecifierExcludeRegexes": ["^@mui/[^/]+$"],
-  "cSpell.words": ["trellify"]
+  "js/ts.preferences.autoImportSpecifierExcludeRegexes": ["^@mui/[^/]+$"],
+  "cSpell.words": ["trellify"],
+  "sonarlint.connectedMode.project": {
+    "connectionId": "baoduong254",
+    "projectKey": "BaoDuong254_trellify"
+  }
 }
