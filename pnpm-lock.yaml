@@ -196,8 +196,8 @@ catalogs:
       specifier: 0.5.2
       version: 0.5.2
     eslint-plugin-unicorn:
-      specifier: 64.0.0
-      version: 64.0.0
+      specifier: 65.0.1
+      version: 65.0.1
     express:
       specifier: 5.2.1
       version: 5.2.1
@@ -418,7 +418,7 @@ importers:
         version: link:../../packages/shared
       axios:
         specifier: 'catalog:'
-        version: 1.17.0
+        version: 1.17.0(supports-color@5.5.0)
       cross-env:
         specifier: 'catalog:'
         version: 10.1.0
@@ -521,7 +521,7 @@ importers:
         version: 3.0.3
       bullmq:
         specifier: 'catalog:'
-        version: 5.78.0
+        version: 5.78.0(supports-color@5.5.0)
       chalk:
         specifier: 'catalog:'
         version: 5.6.2
@@ -690,7 +690,7 @@ importers:
         version: 0.5.2(eslint@10.4.1(jiti@2.7.0))(supports-color@5.5.0)(typescript@6.0.3)
       eslint-plugin-unicorn:
         specifier: 'catalog:'
-        version: 64.0.0(eslint@10.4.1(jiti@2.7.0))
+        version: 65.0.1(eslint@10.4.1(jiti@2.7.0))
       globals:
         specifier: 'catalog:'
         version: 17.6.0
@@ -2956,10 +2956,6 @@ packages:
   class-variance-authority@0.7.1:
     resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
 
-  clean-regexp@1.0.0:
-    resolution: {integrity: sha512-GfisEZEJvzKrmGWkvfhgzcz/BllN1USeqD2V6tg14OAOgaCD2Z/PUEuxnAZ/nPvmaHRG7a8y77p1T/IRQ4D1Hw==}
-    engines: {node: '>=4'}
-
   cli-cursor@3.1.0:
     resolution: {integrity: sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw==}
     engines: {node: '>=8'}
@@ -3606,8 +3602,8 @@ packages:
   eslint-plugin-tsdoc@0.5.2:
     resolution: {integrity: sha512-BlvqjWZdBJDIPO/YU3zcPCF23CvjYT3gyu63yo6b609NNV3D1b6zceAREy2xnweuBoDpZcLNuPyAUq9cvx6bbQ==}
 
-  eslint-plugin-unicorn@64.0.0:
-    resolution: {integrity: sha512-rNZwalHh8i0UfPlhNwg5BTUO1CMdKNmjqe+TgzOTZnpKoi8VBgsW7u9qCHIdpxEzZ1uwrJrPF0uRb7l//K38gA==}
+  eslint-plugin-unicorn@65.0.1:
+    resolution: {integrity: sha512-daCrQrgxOoOz2uMPWB3Y3vvv/5q+ncwICI8IjoebiwtW87CaY4tAN5EEiRXTYVnf7qi1v1BGBdHOSnZLV0rx6A==}
     engines: {node: ^20.10.0 || >=21.0.0}
     peerDependencies:
       eslint: '>=9.38.0'
@@ -7801,7 +7797,7 @@ snapshots:
 
   acorn@8.16.0: {}
 
-  agent-base@6.0.2:
+  agent-base@6.0.2(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
@@ -7929,11 +7925,11 @@ snapshots:
 
   axe-core@4.12.0: {}
 
-  axios@1.17.0:
+  axios@1.17.0(supports-color@5.5.0):
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.5
-      https-proxy-agent: 5.0.1
+      https-proxy-agent: 5.0.1(supports-color@5.5.0)
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
@@ -8031,10 +8027,10 @@ snapshots:
 
   builtin-modules@5.2.0: {}
 
-  bullmq@5.78.0:
+  bullmq@5.78.0(supports-color@5.5.0):
     dependencies:
       cron-parser: 4.9.0
-      ioredis: 5.10.1
+      ioredis: 5.10.1(supports-color@5.5.0)
       msgpackr: 2.0.2
       node-abort-controller: 3.1.1
       semver: 7.8.0
@@ -8117,10 +8113,6 @@ snapshots:
   class-variance-authority@0.7.1:
     dependencies:
       clsx: 2.1.1
-
-  clean-regexp@1.0.0:
-    dependencies:
-      escape-string-regexp: 1.0.5
 
   cli-cursor@3.1.0:
     dependencies:
@@ -8916,14 +8908,14 @@ snapshots:
       - supports-color
       - typescript
 
-  eslint-plugin-unicorn@64.0.0(eslint@10.4.1(jiti@2.7.0)):
+  eslint-plugin-unicorn@65.0.1(eslint@10.4.1(jiti@2.7.0)):
     dependencies:
       '@babel/helper-validator-identifier': 7.29.7
       '@eslint-community/eslint-utils': 4.9.1(eslint@10.4.1(jiti@2.7.0))
       change-case: 5.4.4
       ci-info: 4.4.0
-      clean-regexp: 1.0.0
       core-js-compat: 3.49.0
+      detect-indent: 7.0.2
       eslint: 10.4.1(jiti@2.7.0)
       find-up-simple: 1.0.1
       globals: 17.6.0
@@ -8931,7 +8923,6 @@ snapshots:
       is-builtin-module: 5.0.0
       jsesc: 3.1.0
       pluralize: 8.0.0
-      regexp-tree: 0.1.27
       regjsparser: 0.13.1
       semver: 7.8.2
       strip-indent: 4.1.1
@@ -9521,9 +9512,9 @@ snapshots:
 
   http-status-codes@2.3.0: {}
 
-  https-proxy-agent@5.0.1:
+  https-proxy-agent@5.0.1(supports-color@5.5.0):
     dependencies:
-      agent-base: 6.0.2
+      agent-base: 6.0.2(supports-color@5.5.0)
       debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
@@ -9592,7 +9583,7 @@ snapshots:
       hasown: 2.0.4
       side-channel: 1.1.0
 
-  ioredis@5.10.1:
+  ioredis@5.10.1(supports-color@5.5.0):
     dependencies:
       '@ioredis/commands': 1.5.1
       cluster-key-slot: 1.1.2
