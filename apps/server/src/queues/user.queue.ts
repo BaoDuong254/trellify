@@ -5,6 +5,8 @@ import logger from "@workspace/shared/utils/logger";
 import { userModel } from "src/models/user.model";
 import { createRedisConnection } from "src/queues/redis.client";
 
+export const QUEUE_PREFIX = "trellify";
+
 export const QUEUE_NAMES = {
   DELETE_UNVERIFIED_USER: "delete-unverified-user",
 } as const;
@@ -15,6 +17,7 @@ export interface DeleteUnverifiedUserJobData {
 
 export const userQueue = new Queue<DeleteUnverifiedUserJobData>(QUEUE_NAMES.DELETE_UNVERIFIED_USER, {
   connection: createRedisConnection(),
+  prefix: QUEUE_PREFIX,
 });
 
 const processDeleteUnverifiedUser: Processor<DeleteUnverifiedUserJobData> = async (
@@ -35,7 +38,7 @@ const processDeleteUnverifiedUser: Processor<DeleteUnverifiedUserJobData> = asyn
 export const userWorker = new Worker<DeleteUnverifiedUserJobData>(
   QUEUE_NAMES.DELETE_UNVERIFIED_USER,
   processDeleteUnverifiedUser,
-  { connection: createRedisConnection() }
+  { connection: createRedisConnection(), prefix: QUEUE_PREFIX }
 );
 
 userQueue.on("error", (error: Error) => {
