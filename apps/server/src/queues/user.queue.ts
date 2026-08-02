@@ -5,7 +5,7 @@ import logger from "@workspace/shared/utils/logger";
 import { userModel } from "src/models/user.model";
 import { createRedisConnection } from "src/queues/redis.client";
 
-export const QUEUE_PREFIX = "trellify";
+const QUEUE_PREFIX = "trellify";
 
 export const QUEUE_NAMES = {
   DELETE_UNVERIFIED_USER: "delete-unverified-user",

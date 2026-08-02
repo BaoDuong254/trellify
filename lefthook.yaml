@@ -1,6 +1,12 @@
 pre-commit:
-  parallel: true
   commands:
+    check-lockfile:
+      run: bash scripts/check-lockfile.sh
+
+    knip:
+      glob: "*"
+      run: pnpm knip
+
     format:
       glob: "*"
       run: pnpm exec prettier --write --ignore-unknown {staged_files}
@@ -10,9 +16,6 @@ pre-commit:
       glob: "**/*.{js,ts,jsx,tsx}"
       run: pnpm lint:fix
       stage_fixed: true
-
-    check-lockfile:
-      run: bash scripts/check-lockfile.sh
 
 commit-msg:
   commands:
