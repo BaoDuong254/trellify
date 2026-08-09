@@ -75,5 +75,5 @@ WORKDIR /workspace/apps/server
 # Expose port 3000 for Express server
 EXPOSE 3000
 
-# Start the server
+# Start the server (the worker service overrides this with `node dist/worker.js`)
 CMD ["node", "dist/index.js"]

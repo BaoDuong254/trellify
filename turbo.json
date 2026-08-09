@@ -28,6 +28,16 @@
       "cache": false,
       "persistent": true
     },
+    "start:worker:dev": {
+      "dependsOn": ["^start:worker:dev"],
+      "cache": false,
+      "persistent": true
+    },
+    "start:worker:prod": {
+      "dependsOn": ["^start:worker:prod"],
+      "cache": false,
+      "persistent": true
+    },
     "clean": {
       "cache": false
     },

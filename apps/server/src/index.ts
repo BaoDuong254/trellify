@@ -15,7 +15,7 @@ import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
 import { closeRedisClient } from "src/providers/redis.provider";
-import { userQueue, userWorker } from "src/queues/user.queue";
+import { userQueue } from "src/queues/user/user.queue";
 import { APIs_V1 } from "src/routes/v1";
 import { inviteUserToBoardSocket } from "src/sockets/invitation.socket";
 
@@ -86,8 +86,7 @@ const START_SERVER = () => {
   // Handle graceful shutdown
   exitHook((done) => {
     void (async () => {
-      logger.info("4. Closing BullMQ worker and queue...");
-      await userWorker.close();
+      logger.info("4. Closing BullMQ queue...");
       await userQueue.close();
       logger.info("5. Closing Redis client...");
       await closeRedisClient();

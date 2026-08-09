@@ -1,5 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "tags": ["-lintignore"],
-  "ignoreDependencies": ["@commitlint/cli", "eslint-import-resolver-typescript"]
+  "ignoreDependencies": ["@commitlint/cli", "eslint-import-resolver-typescript"],
+  "workspaces": {
+    "apps/server": {
+      "entry": ["src/index.ts!", "src/worker.ts!"]
+    }
+  }
 }

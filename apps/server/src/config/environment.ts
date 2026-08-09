@@ -37,6 +37,11 @@ const configSchema = z.object({
   CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY is required"),
   CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
+  QUEUE_PREFIX: z.string().default("trellify"),
+  WORKER_CONCURRENCY: z
+    .string()
+    .default("5")
+    .transform((value) => Number.parseInt(value, 10)),
   TURNSTILE_SECRET_KEY: z.string().min(1, "TURNSTILE_SECRET_KEY is required"),
 });
 

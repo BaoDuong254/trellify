@@ -15,6 +15,15 @@ services:
     networks:
       - trellify-network
 
+  worker:
+    image: ${DOCKERHUB_USERNAME}/trellify-server:latest
+    command: ["node", "dist/worker.js"]
+    restart: unless-stopped
+    env_file:
+      - ./apps/server/.env
+    networks:
+      - trellify-network
+
   client:
     image: ${DOCKERHUB_USERNAME}/trellify-client:latest
     container_name: trellify-client

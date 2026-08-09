@@ -17,6 +17,8 @@
     "start:debug": "nodemon --inspect=9229 -e ts,tsx --exec tsx ./src/index.ts",
     "start:dev": "cross-env NODE_ENV=development pnpm exec nodemon",
     "start:prod": "cross-env NODE_ENV=production node dist/index",
+    "start:worker:dev": "cross-env NODE_ENV=development pnpm exec nodemon --exec tsx ./src/worker.ts",
+    "start:worker:prod": "cross-env NODE_ENV=production node dist/worker",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

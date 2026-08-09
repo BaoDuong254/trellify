@@ -20,8 +20,8 @@
     "pkg:build": "turbo run pkg:build",
     "prepare": "node -e \"const cp=require('child_process');try{cp.execSync('git rev-parse --git-dir',{stdio:'ignore'});cp.execSync('lefthook install',{stdio:'inherit'})}catch(e){}\"",
     "shared": "pnpm --filter=shared",
-    "start:dev": "turbo run start:dev --parallel",
-    "start:prod": "turbo run start:prod --parallel",
+    "start:dev": "turbo run start:dev start:worker:dev",
+    "start:prod": "turbo run start:prod start:worker:prod",
     "typecheck": "turbo run typecheck",
     "ui": "pnpm --filter=ui"
   },
