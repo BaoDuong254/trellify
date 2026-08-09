@@ -17,7 +17,11 @@ if (fs.existsSync(environmentPath)) {
 }
 
 const configSchema = z.object({
-  PORT: z.int("PORT must be an integer").positive("PORT must be a positive integer").default(3000),
+  PORT: z.coerce
+    .number("PORT must be a number")
+    .int("PORT must be an integer")
+    .positive("PORT must be a positive integer")
+    .default(3000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   CLIENT_URL: z.string().min(1, "CLIENT_URL is required"),
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
@@ -35,7 +39,8 @@ const configSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
   QUEUE_PREFIX: z.string().default("trellify"),
-  WORKER_CONCURRENCY: z
+  WORKER_CONCURRENCY: z.coerce
+    .number("WORKER_CONCURRENCY must be a number")
     .int("WORKER_CONCURRENCY must be an integer")
     .positive("WORKER_CONCURRENCY must be a positive integer")
     .default(5),
@@ -45,7 +50,7 @@ const configSchema = z.object({
 const configServer = configSchema.safeParse(process.env);
 
 if (!configServer.success) {
-  logger.error(chalk.red("Invalid environment variables:"), z.treeifyError(configServer.error));
+  logger.error(`${chalk.red("Invalid environment variables:")}\n${z.prettifyError(configServer.error)}`);
   throw new Error("Invalid environment variables");
 }
 
