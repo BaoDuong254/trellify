@@ -13,11 +13,11 @@ const createNew = async (requestBody: CreateNewCardType) => {
     ...requestBody,
   };
   const createdCard = await cardModel.createNew(newCard);
-  const getNewlyCreatedCard = await cardModel.findOneById(createdCard.insertedId);
-  if (getNewlyCreatedCard) {
-    await columnModel.pushCardOrderIds(getNewlyCreatedCard);
+  const newlyCreatedCard = await cardModel.findOneById(createdCard.insertedId);
+  if (newlyCreatedCard) {
+    await columnModel.pushCardOrderIds(newlyCreatedCard);
   }
-  return getNewlyCreatedCard;
+  return newlyCreatedCard;
 };
 
 const update = async (

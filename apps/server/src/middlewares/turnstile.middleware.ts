@@ -21,7 +21,7 @@ const verify = async (request: ExpressRequest, _response: ExpressResponse, next:
       body: JSON.stringify({
         secret: environmentConfig.TURNSTILE_SECRET_KEY,
         response: turnstileToken,
-        remoteip: (request.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? request.ip,
+        remoteip: (request.headers["x-forwarded-for"] as string)?.split(",", 1)[0]?.trim() ?? request.ip,
       }),
       signal: AbortSignal.timeout(5000),
     });

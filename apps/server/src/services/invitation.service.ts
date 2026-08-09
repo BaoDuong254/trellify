@@ -34,10 +34,10 @@ const createNewBoardInvitation = async (requestBody: InvitationCreateType, invit
   };
 
   const createdInvitation = await invitationModel.createNewBoardInvitation(newInvitationData);
-  const getInvitation = await invitationModel.findOneById(createdInvitation.insertedId.toString());
+  const createdInvitationDetails = await invitationModel.findOneById(createdInvitation.insertedId.toString());
 
   const resultInvitation = {
-    ...getInvitation,
+    ...createdInvitationDetails,
     board,
     inviter: pickUser(inviter),
     invitee: pickUser(invitee),
@@ -46,8 +46,8 @@ const createNewBoardInvitation = async (requestBody: InvitationCreateType, invit
 };
 
 const getInvitations = async (userId: string) => {
-  const getInvitations = await invitationModel.findByUser(userId);
-  const resultInvitations = getInvitations.map((invite) => ({
+  const invitations = await invitationModel.findByUser(userId);
+  const resultInvitations = invitations.map((invite) => ({
     ...invite,
     inviter: invite.inviter[0] || {},
     invitee: invite.invitee[0] || {},
@@ -58,21 +58,21 @@ const getInvitations = async (userId: string) => {
 };
 
 const updateBoardInvitation = async (invitationId: string, status: string, userId: string) => {
-  const getInvitation = await invitationModel.findOneById(invitationId);
-  if (!getInvitation) throw new ApiError(StatusCodes.NOT_FOUND, "Invitation not found!");
+  const invitation = await invitationModel.findOneById(invitationId);
+  if (!invitation) throw new ApiError(StatusCodes.NOT_FOUND, "Invitation not found!");
 
-  const boardId = getInvitation.boardInvitation.boardId.toString() as string;
-  const getBoard = await boardModel.findOneById(new ObjectId(boardId));
-  if (!getBoard) throw new ApiError(StatusCodes.NOT_FOUND, "Board not found!");
+  const boardId = invitation.boardInvitation.boardId.toString() as string;
+  const board = await boardModel.findOneById(new ObjectId(boardId));
+  if (!board) throw new ApiError(StatusCodes.NOT_FOUND, "Board not found!");
 
-  const boardOwnerAndMemberIds = [...getBoard.ownerIds, ...getBoard.memberIds].toString();
+  const boardOwnerAndMemberIds = [...board.ownerIds, ...board.memberIds].toString();
   if (status === BOARD_INVITATION_STATUS.ACCEPTED && boardOwnerAndMemberIds.includes(userId)) {
     throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You are already a member of this board.");
   }
 
   const updateData = {
     boardInvitation: {
-      ...getInvitation.boardInvitation,
+      ...invitation.boardInvitation,
       status: status,
     },
   };

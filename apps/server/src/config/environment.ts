@@ -17,10 +17,7 @@ if (fs.existsSync(environmentPath)) {
 }
 
 const configSchema = z.object({
-  PORT: z
-    .string()
-    .default("3000")
-    .transform((value) => Number.parseInt(value, 10)),
+  PORT: z.int("PORT must be an integer").positive("PORT must be a positive integer").default(3000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   CLIENT_URL: z.string().min(1, "CLIENT_URL is required"),
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
@@ -39,9 +36,9 @@ const configSchema = z.object({
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
   QUEUE_PREFIX: z.string().default("trellify"),
   WORKER_CONCURRENCY: z
-    .string()
-    .default("5")
-    .transform((value) => Number.parseInt(value, 10)),
+    .int("WORKER_CONCURRENCY must be an integer")
+    .positive("WORKER_CONCURRENCY must be a positive integer")
+    .default(5),
   TURNSTILE_SECRET_KEY: z.string().min(1, "TURNSTILE_SECRET_KEY is required"),
 });
 

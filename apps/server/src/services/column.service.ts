@@ -13,12 +13,12 @@ const createNew = async (requestBody: CreateNewColumnType) => {
     ...requestBody,
   };
   const createdColumn = await columnModel.createNew(newColumn);
-  const getNewlyCreatedColumn = await columnModel.findOneById(createdColumn.insertedId);
-  if (getNewlyCreatedColumn) {
-    getNewlyCreatedColumn.cards = [];
-    await boardModel.pushColumnOrderIds(getNewlyCreatedColumn);
+  const newlyCreatedColumn = await columnModel.findOneById(createdColumn.insertedId);
+  if (newlyCreatedColumn) {
+    newlyCreatedColumn.cards = [];
+    await boardModel.pushColumnOrderIds(newlyCreatedColumn);
   }
-  return getNewlyCreatedColumn;
+  return newlyCreatedColumn;
 };
 
 const update = async (columnId: string, requestBody: UpdateColumnType) => {

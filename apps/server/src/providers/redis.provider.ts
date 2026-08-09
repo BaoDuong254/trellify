@@ -12,8 +12,10 @@ export const getRedisClient = (): Redis => {
 };
 
 export const closeRedisClient = async (): Promise<void> => {
-  if (redisClient) {
-    await redisClient.quit();
-    redisClient = null;
+  if (!redisClient) {
+    return;
   }
+
+  await redisClient.quit();
+  redisClient = null;
 };

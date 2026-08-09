@@ -33,6 +33,9 @@ export default [
       "security/detect-object-injection": "off",
       "unicorn/prefer-top-level-await": "off",
       "unicorn/no-null": "off",
+      "unicorn/max-nested-calls": "off",
+      "unicorn/no-top-level-side-effects": "off",
+      "unicorn/no-top-level-assignment-in-function": "off",
     },
   },
 ];

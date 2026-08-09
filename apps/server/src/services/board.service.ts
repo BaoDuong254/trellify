@@ -20,8 +20,8 @@ const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
     slug: slugify(requestBody.title),
   };
   const createdBoard = await boardModel.createNew(userId, newBoard);
-  const getNewlyCreatedBoard = await boardModel.findOneById(createdBoard.insertedId);
-  return getNewlyCreatedBoard;
+  const newlyCreatedBoard = await boardModel.findOneById(createdBoard.insertedId);
+  return newlyCreatedBoard;
 };
 
 const getDetails = async (userId: string, boardId: string) => {
@@ -72,8 +72,8 @@ const getBoards = async (
 
   const boards = await boardModel.getBoards(
     userId,
-    Number.parseInt(page, 10),
-    Number.parseInt(itemsPerPage, 10),
+    Math.trunc(Number(page)),
+    Math.trunc(Number(itemsPerPage)),
     queryFilters
   );
   return boards;

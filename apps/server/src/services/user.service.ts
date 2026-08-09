@@ -31,7 +31,7 @@ const createNew = async (requestBody: UserRegistrationType) => {
   if (existUser) {
     throw new ApiError(StatusCodes.CONFLICT, "User with this email already exists");
   }
-  const nameFromEmail = requestBody.email.split("@")[0];
+  const nameFromEmail = requestBody.email.split("@", 1)[0];
   const newUserData = {
     email: requestBody.email,
     password: bcryptjs.hashSync(requestBody.password, 10),
@@ -40,7 +40,7 @@ const createNew = async (requestBody: UserRegistrationType) => {
     verifyToken: uuidv4(),
   };
   const createdUser = await userModel.createNew(newUserData);
-  const getNewlyCreatedUser = await userModel.findOneById(createdUser.insertedId.toString());
+  const newlyCreatedUser = await userModel.findOneById(createdUser.insertedId.toString());
 
   await userQueue.add(
     QUEUE_NAMES.DELETE_UNVERIFIED_USER,
@@ -52,7 +52,7 @@ const createNew = async (requestBody: UserRegistrationType) => {
     }
   );
 
-  const verificationLink = `${environmentConfig.CLIENT_URL}/account/verification?email=${getNewlyCreatedUser?.email}&token=${getNewlyCreatedUser?.verifyToken}`;
+  const verificationLink = `${environmentConfig.CLIENT_URL}/account/verification?email=${newlyCreatedUser?.email}&token=${newlyCreatedUser?.verifyToken}`;
   const subject = "Trellify - Verify your email address";
   const htmlContent = `
     <h1>Trellify - Email Verification</h1>
@@ -61,8 +61,8 @@ const createNew = async (requestBody: UserRegistrationType) => {
     <p>If you did not create an account, please ignore this email.</p>
     <p>Best regards,<br/>The Trellify Team</p>
   `;
-  await BrevoProvider.sendEmail(getNewlyCreatedUser!.email as string, subject, htmlContent);
-  return pickUser(getNewlyCreatedUser);
+  await BrevoProvider.sendEmail(newlyCreatedUser!.email as string, subject, htmlContent);
+  return pickUser(newlyCreatedUser);
 };
 
 const verifyAccount = async (requestBody: UserVerificationType) => {

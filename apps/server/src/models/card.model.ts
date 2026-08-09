@@ -81,14 +81,10 @@ const unshiftNewComment = async (cardId: string, commentData: CardCommentType) =
 };
 
 const updateMembers = async (cardId: string, incomingMemberInfo: IncomingCardMemberInfoType) => {
-  let updateCondition = {};
-  if (incomingMemberInfo.action === CARD_MEMBER_ACTIONS.ADD) {
-    updateCondition = { $push: { memberIds: new ObjectId(incomingMemberInfo.userId) } };
-  }
-
-  if (incomingMemberInfo.action === CARD_MEMBER_ACTIONS.REMOVE) {
-    updateCondition = { $pull: { memberIds: new ObjectId(incomingMemberInfo.userId) } };
-  }
+  const updateCondition: Record<string, unknown> =
+    incomingMemberInfo.action === CARD_MEMBER_ACTIONS.ADD
+      ? { $push: { memberIds: new ObjectId(incomingMemberInfo.userId) } }
+      : { $pull: { memberIds: new ObjectId(incomingMemberInfo.userId) } };
 
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)

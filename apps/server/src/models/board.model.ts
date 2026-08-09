@@ -122,8 +122,7 @@ const getBoards = async (userId: string, page: number, itemsPerPage: number, que
   ];
 
   if (queryFilters) {
-    for (const key of Object.keys(queryFilters)) {
-      const filterValue = queryFilters[key];
+    for (const [key, filterValue] of Object.entries(queryFilters)) {
       if (filterValue) {
         // eslint-disable-next-line security/detect-non-literal-regexp
         queryConditions.push({ [key]: { $regex: new RegExp(filterValue, "i") } });
