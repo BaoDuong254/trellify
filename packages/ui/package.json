@@ -20,7 +20,6 @@
   "dependencies": {
     "@radix-ui/react-slot": "catalog:",
     "@tailwindcss/typography": "catalog:",
-    "@tailwindcss/vite": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "react": "catalog:",
@@ -28,6 +27,7 @@
     "tailwindcss": "catalog:"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",

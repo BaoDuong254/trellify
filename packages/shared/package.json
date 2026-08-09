@@ -20,7 +20,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "rimraf": "catalog:",
     "winston": "catalog:",
     "zod": "catalog:"
   },
@@ -29,6 +28,7 @@
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "eslint": "catalog:",
+    "rimraf": "catalog:",
     "tsc-alias": "catalog:",
     "typescript": "catalog:"
   },

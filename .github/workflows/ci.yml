@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
     branches:
       - main
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci:
@@ -61,6 +67,9 @@ jobs:
 
       - name: Run knip
         run: pnpm run knip
+
+      - name: Run knip (production)
+        run: pnpm run knip:production
 
       - name: Run format check
         run: pnpm run format

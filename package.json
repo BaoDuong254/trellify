@@ -14,6 +14,7 @@
     "format:fix": "prettier --write --ignore-unknown .",
     "preinstall": "pnpm dlx only-allow pnpm",
     "knip": "knip",
+    "knip:production": "knip --production",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "ncu": "pnpm update --latest --workspace-root",
