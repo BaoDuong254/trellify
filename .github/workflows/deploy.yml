@@ -108,7 +108,7 @@ jobs:
           username: ${{ secrets.USERNAME_VPS }}
           key: ${{ secrets.KEY_VPS }}
           port: ${{ secrets.PORT_VPS }}
-          source: "apps/server/.env,apps/client/.env,.env,docker-compose.yml"
+          source: "apps/server/.env,apps/client/.env,.env,docker-compose.yml,docker-compose.portainer.yml"
           target: "~/trellify"
 
       - name: Deploy to LXC via SSH
@@ -126,6 +126,10 @@ jobs:
 
             # Set environment variables for docker-compose
             export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+
+            # Ensure Portainer is running
+            docker compose -f docker-compose.portainer.yml pull -q
+            docker compose -f docker-compose.portainer.yml up -d
 
             # Stop and remove old containers first
             docker compose down
