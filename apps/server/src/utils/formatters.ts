@@ -1,5 +1,7 @@
 import { pick } from "lodash";
 
+import type { PublicUserType } from "@workspace/shared/schemas/user.schema";
+
 /**
  * Converts a string into a URL-friendly slug.
  * @param value - The string to be slugify.
@@ -26,9 +28,9 @@ export default function slugify(value: string) {
   ); // remove consecutive hyphens
 }
 
-export const pickUser = (user: unknown) => {
-  if (!user) return {};
-  return pick(user, [
+export const pickUser = (user: unknown): PublicUserType | null => {
+  if (!user) return null;
+  return pick(user as PublicUserType, [
     "_id",
     "email",
     "username",

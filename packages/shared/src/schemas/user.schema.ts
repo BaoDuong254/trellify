@@ -61,6 +61,10 @@ export const USER_RESET_PASSWORD_SCHEMA = z.object({
 });
 
 export type UserCollectionType = z.infer<typeof USER_COLLECTION_SCHEMA>;
+export type PublicUserType = Pick<
+  UserCollectionType,
+  "email" | "username" | "displayName" | "avatar" | "role" | "isActive" | "createdAt" | "updatedAt"
+> & { _id: string };
 export type UserRegistrationType = z.infer<typeof USER_REGISTRATION_SCHEMA>;
 export type UserRegistrationServiceType = z.infer<typeof USER_REGISTRATION_SERVICE_SCHEMA>;
 export type UserLoginType = z.infer<typeof USER_LOGIN_SCHEMA>;

@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { ObjectId } from "mongodb";
 
 import { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
+import type { UserInvitedToBoardPayloadType } from "@workspace/shared/schemas/socket.schema";
 import { BOARD_INVITATION_STATUS, INVITATION_TYPES } from "@workspace/shared/utils/constants";
 
 import { boardModel } from "src/models/board.model";
@@ -10,7 +11,10 @@ import { userModel } from "src/models/user.model";
 import ApiError from "src/utils/api-error";
 import { pickUser } from "src/utils/formatters";
 
-const createNewBoardInvitation = async (requestBody: InvitationCreateType, inviterId: string) => {
+const createNewBoardInvitation = async (
+  requestBody: InvitationCreateType,
+  inviterId: string
+): Promise<UserInvitedToBoardPayloadType> => {
   const inviter = await userModel.findOneById(inviterId);
   const invitee = await userModel.findOneByEmail(requestBody.inviteeEmail);
   const board = await boardModel.findOneById(new ObjectId(requestBody.boardId));
@@ -35,15 +39,25 @@ const createNewBoardInvitation = async (requestBody: InvitationCreateType, invit
 
   const createdInvitation = await invitationModel.createNewBoardInvitation(newInvitationData);
   const createdInvitationDetails = await invitationModel.findOneById(createdInvitation.insertedId.toString());
+  const publicInviter = pickUser(inviter);
+  const publicInvitee = pickUser(invitee);
 
-  const resultInvitation = {
-    ...createdInvitationDetails,
+  if (!createdInvitationDetails || !publicInviter || !publicInvitee) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.InvitationNotFound");
+  }
+
+  return {
+    _id: createdInvitationDetails._id.toString(),
+    inviterId,
     inviteeId: invitee._id.toString(),
+    type: newInvitationData.type,
+    boardInvitation: newInvitationData.boardInvitation,
+    createdAt: createdInvitationDetails.createdAt,
+    updatedAt: createdInvitationDetails.updatedAt,
+    inviter: publicInviter,
+    invitee: publicInvitee,
     board,
-    inviter: pickUser(inviter),
-    invitee: pickUser(invitee),
   };
-  return resultInvitation;
 };
 
 const getInvitations = async (userId: string) => {

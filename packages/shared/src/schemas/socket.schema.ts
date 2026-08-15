@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { InvitationCollectionType } from "@workspace/shared/schemas/invitation.schema";
+import type { PublicUserType } from "@workspace/shared/schemas/user.schema";
 import type { BoardUpdateReason } from "@workspace/shared/utils/socket-events";
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "@workspace/shared/utils/validators";
 
@@ -27,4 +29,11 @@ export interface BoardUpdatedPayloadType<TBoard = unknown> {
 
 export interface BoardAccessDeniedPayloadType {
   boardId: string;
+}
+
+export interface UserInvitedToBoardPayloadType<TBoard = unknown> extends Omit<InvitationCollectionType, "_destroy"> {
+  _id: string;
+  inviter: PublicUserType;
+  invitee: PublicUserType;
+  board: TBoard;
 }
