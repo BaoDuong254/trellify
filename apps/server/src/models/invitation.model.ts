@@ -101,10 +101,25 @@ const findByUser = async (userId: string) => {
   return results;
 };
 
+const revokeBoardInvitations = async (boardId: string, inviteeId: string) => {
+  const result = await GET_DB()
+    .collection(INVITATION_COLLECTION_NAME)
+    .updateMany(
+      {
+        inviteeId: new ObjectId(inviteeId),
+        "boardInvitation.boardId": new ObjectId(boardId),
+        _destroy: false,
+      },
+      { $set: { _destroy: true, updatedAt: new Date() } }
+    );
+  return result;
+};
+
 export const invitationModel = {
   INVITATION_COLLECTION_NAME,
   createNewBoardInvitation,
   findOneById,
   update,
   findByUser,
+  revokeBoardInvitations,
 };

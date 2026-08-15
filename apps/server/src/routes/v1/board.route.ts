@@ -17,6 +17,10 @@ router
   .put(authMiddleware.isAuthorized, boardValidation.update, boardController.update);
 
 router
+  .route("/:id/members/:userId")
+  .delete(authMiddleware.isAuthorized, boardValidation.removeMember, boardController.removeMember);
+
+router
   .route("/supports/moving_card")
   .put(
     authMiddleware.isAuthorized,

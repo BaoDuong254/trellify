@@ -7,7 +7,7 @@
   "author": "",
   "scripts": {
     "apps:build": "pnpm clean && tsc --project tsconfig.build.json && tsc-alias --project tsconfig.build.json",
-    "clean": "rimraf dist/",
+    "clean": "rimraf dist/ && rimraf --glob \"*.tsbuildinfo\"",
     "copy-files": "copyfiles -u 1 \"src/openapi/**/*.yaml\" \"src/mailtrap/template/**\" dist/",
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
     "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
@@ -23,12 +23,14 @@
   },
   "dependencies": {
     "@getbrevo/brevo": "catalog:",
+    "@socket.io/redis-adapter": "catalog:",
     "@workspace/shared": "workspace:*",
     "async-exit-hook": "catalog:",
     "bcryptjs": "catalog:",
     "bullmq": "catalog:",
     "chalk": "catalog:",
     "cloudinary": "catalog:",
+    "cookie": "catalog:",
     "cookie-parser": "catalog:",
     "cors": "catalog:",
     "dotenv": "catalog:",

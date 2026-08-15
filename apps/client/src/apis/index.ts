@@ -37,6 +37,11 @@ export const createNewBoardAPI = async (data: CreateBoardFormData) => {
   return response.data.data;
 };
 
+export const removeBoardMemberAPI = async (boardId: string, userId: string): Promise<{ removeResult: string }> => {
+  const response = await http.delete(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}/members/${userId}`);
+  return response.data.data;
+};
+
 // Column APIs
 export const createNewColumnAPI = async (newColumnData: Partial<Column>): Promise<Column> => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/columns`, newColumnData);

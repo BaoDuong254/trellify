@@ -8,6 +8,7 @@ import { moveCardToDifferentColumnAPI, updateBoardDetailsAPI, updateColumnDetail
 import AppBar from "src/components/AppBar/AppBar";
 import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
 import ActiveCard from "src/components/Modal/ActiveCard/ActiveCard";
+import { useBoardSocket } from "src/hooks/useBoardSocket";
 import BoardBar from "src/pages/Boards/BoardBar/BoardBar";
 import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
 import {
@@ -15,6 +16,7 @@ import {
   selectCurrentActiveBoard,
   updateCurrentActiveBoard,
 } from "src/redux/activeBoard/activeBoardSlice";
+import { selectCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card, Column } from "src/types/board.type";
 
@@ -22,8 +24,11 @@ function Board() {
   const dispatch = useDispatch<AppDispatch>();
 
   const board = useSelector(selectCurrentActiveBoard);
+  const activeCard = useSelector(selectCurrentActiveCard);
 
   const { boardId } = useParams();
+
+  const { presentUserIds } = useBoardSocket(boardId, activeCard?._id);
 
   useEffect(() => {
     if (boardId) {
@@ -93,7 +98,7 @@ function Board() {
     <Container sx={{ height: "100vh", backgroundColor: "primary.main" }} disableGutters maxWidth={false}>
       <ActiveCard />
       <AppBar />
-      <BoardBar board={board} />
+      <BoardBar board={board} presentUserIds={presentUserIds} />
       <BoardContent
         board={board}
         moveColumns={moveColumns}

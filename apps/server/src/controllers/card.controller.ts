@@ -2,8 +2,10 @@ import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } 
 import { StatusCodes } from "http-status-codes";
 
 import { CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import { BOARD_UPDATE_REASONS } from "@workspace/shared/utils/socket-events";
 
 import { cardService } from "src/services/card.service";
+import { broadcastBoardUpdate } from "src/sockets/board.broadcast";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
@@ -13,6 +15,7 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
       message: "Card created successfully",
       data: createdCard,
     });
+    broadcastBoardUpdate(request, createdCard?.boardId, BOARD_UPDATE_REASONS.CARD_CREATED);
   } catch (error) {
     next(error);
   }
@@ -34,6 +37,7 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
       message: "Card updated successfully",
       data: updatedCard,
     });
+    broadcastBoardUpdate(request, updatedCard?.boardId, BOARD_UPDATE_REASONS.CARD_UPDATED);
   } catch (error) {
     next(error);
   }
@@ -48,6 +52,7 @@ const deleteItem = async (request: ExpressRequest, response: ExpressResponse, ne
       message: "Card deleted successfully",
       data: result,
     });
+    broadcastBoardUpdate(request, result.boardId, BOARD_UPDATE_REASONS.CARD_DELETED);
   } catch (error) {
     next(error);
   }

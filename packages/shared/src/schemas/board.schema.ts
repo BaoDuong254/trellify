@@ -61,6 +61,11 @@ export const MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA = z.object({
     .default([]),
 });
 
+export const REMOVE_BOARD_MEMBER_PARAMS_SCHEMA = z.object({
+  id: z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+  userId: z.string({ error: "Error.UserIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+});
+
 export type BoardCollectionType = z.infer<typeof BOARD_COLLECTION_SCHEMA>;
 export type CreateNewBoardType = z.infer<typeof CREATE_NEW_BOARD_SCHEMA>;
 export type UpdateBoardType = z.infer<typeof UPDATE_BOARD_SCHEMA>;

@@ -9,17 +9,21 @@ import morgan from "morgan";
 import { Server } from "socket.io";
 
 import logger from "@workspace/shared/utils/logger";
+import { socketRoom } from "@workspace/shared/utils/socket-events";
 
 import { corsOptions } from "src/config/cors";
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
 import { closeRedisClient } from "src/providers/redis.provider";
+import { closeSocketAdapter, setIo, setupSocketAdapter } from "src/providers/socket.provider";
 import { userQueue } from "src/queues/user/user.queue";
 import { APIs_V1 } from "src/routes/v1";
-import { inviteUserToBoardSocket } from "src/sockets/invitation.socket";
+import { registerSocketAuth } from "src/sockets/auth.socket";
+import { registerBoardSocketHandlers } from "src/sockets/board.socket";
+import type { AppServer } from "src/types/socket.type";
 
-const START_SERVER = () => {
+const START_SERVER = async (): Promise<void> => {
   // Create Express app
   const app = express();
   const port = environmentConfig.PORT;
@@ -67,15 +71,23 @@ const START_SERVER = () => {
 
   // Create HTTP server and setup Socket.io
   const server = http.createServer(app);
-  const io = new Server(server, {
+  const io: AppServer = new Server(server, {
     cors: corsOptions,
   });
+  setIo(io);
+  await setupSocketAdapter(io);
+
+  // Register authentication middleware for Socket.io
+  registerSocketAuth(io);
+
   io.on("connection", (socket) => {
-    logger.info(chalk.greenBright(`New client connected: ${socket.id}`));
-    inviteUserToBoardSocket(socket);
-  });
-  io.on("disconnect", (socket) => {
-    logger.info(chalk.yellowBright(`Client disconnected: ${socket.id}`));
+    logger.info(chalk.greenBright(`New client connected: ${socket.id} (${socket.data.user._id})`));
+    void socket.join(socketRoom.user(socket.data.user._id));
+    registerBoardSocketHandlers(io, socket);
+
+    socket.on("disconnect", (reason) => {
+      logger.info(chalk.yellowBright(`Client disconnected: ${socket.id} (${reason})`));
+    });
   });
 
   // Start the server
@@ -88,9 +100,11 @@ const START_SERVER = () => {
     void (async () => {
       logger.info("4. Closing BullMQ queue...");
       await userQueue.close();
-      logger.info("5. Closing Redis client...");
+      logger.info("5. Closing Socket.io Redis adapter...");
+      await closeSocketAdapter();
+      logger.info("6. Closing Redis client...");
       await closeRedisClient();
-      logger.info("6. Closing MongoDB Cloud Atlas connection...");
+      logger.info("7. Closing MongoDB Cloud Atlas connection...");
       await CLOSE_DB();
       logger.info(chalk.bgBlueBright("Shutting down server..."));
       done();
@@ -104,7 +118,7 @@ void (async () => {
     await CONNECT_DB();
     logger.info("2. Connected to MongoDB Cloud Atlas!");
     logger.info("3. Starting Express server...");
-    START_SERVER();
+    await START_SERVER();
   } catch (error) {
     throw new Error(`Failed to start server: ${(error as Error).message}`, { cause: error });
   }

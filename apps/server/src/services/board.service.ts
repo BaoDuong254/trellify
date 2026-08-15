@@ -1,16 +1,18 @@
 import { StatusCodes } from "http-status-codes";
 import { cloneDeep } from "lodash";
+import { Document, ObjectId } from "mongodb";
 
 import {
   CreateNewBoardType,
   MoveCardToDifferentColumnType,
   UpdateBoardType,
 } from "@workspace/shared/schemas/board.schema";
-import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
+import { BOARD_TYPES, DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
 
 import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
+import { invitationModel } from "src/models/invitation.model";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
 
@@ -24,17 +26,90 @@ const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
   return newlyCreatedBoard;
 };
 
-const getDetails = async (userId: string, boardId: string) => {
-  const boardDetails = await boardModel.getDetails(userId, boardId);
-  if (!boardDetails) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
-  }
+const groupCardsIntoColumns = (boardDetails: Document) => {
   const resultBoard = cloneDeep(boardDetails);
   for (const column of resultBoard.columns) {
     column.cards = resultBoard.cards.filter((card) => card.columnId.equals(column._id));
   }
   delete resultBoard.cards;
   return resultBoard;
+};
+
+const getDetails = async (userId: string, boardId: string) => {
+  const boardDetails = await boardModel.getDetails(userId, boardId);
+  if (!boardDetails) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+  }
+  return groupCardsIntoColumns(boardDetails);
+};
+
+const IS_PUBLIC_BOARD_READ_ALLOWED = false;
+
+const canUserAccessBoard = async (userId: string, boardId: string): Promise<boolean> => {
+  const board = await boardModel.findMembership(boardId);
+  if (!board) return false;
+  if (IS_PUBLIC_BOARD_READ_ALLOWED && board.type === BOARD_TYPES.PUBLIC) return true;
+
+  const allowedIds: ObjectId[] = [...board.ownerIds, ...board.memberIds];
+  return allowedIds.some((id) => id.toString() === userId);
+};
+
+const assertBoardAccess = async (userId: string, boardId: string): Promise<void> => {
+  if (!(await canUserAccessBoard(userId, boardId))) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "Error.BoardAccessDenied");
+  }
+};
+
+const isBoardOwner = async (userId: string, boardId: string): Promise<boolean> => {
+  const board = await boardModel.findMembership(boardId);
+  if (!board) return false;
+
+  const ownerIds: ObjectId[] = [...board.ownerIds];
+  return ownerIds.some((id) => id.toString() === userId);
+};
+
+const assertBoardOwner = async (userId: string, boardId: string): Promise<void> => {
+  if (!(await isBoardOwner(userId, boardId))) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "Error.BoardOwnerOnly");
+  }
+};
+
+const removeMember = async (
+  actorId: string,
+  boardId: string,
+  targetUserId: string
+): Promise<{ removeResult: string }> => {
+  const board = await boardModel.findMembership(boardId);
+  if (!board) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+  }
+
+  const ownerIds: ObjectId[] = [...board.ownerIds];
+  if (ownerIds.some((id) => id.toString() === targetUserId)) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "Error.CannotRemoveBoardOwner");
+  }
+
+  const memberIds: ObjectId[] = [...board.memberIds];
+  if (memberIds.every((id) => id.toString() !== targetUserId)) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.UserIsNotBoardMember");
+  }
+
+  const isSelfRemoval = actorId === targetUserId;
+  if (!isSelfRemoval) {
+    await assertBoardOwner(actorId, boardId);
+  }
+
+  await boardModel.pullMemberIds(boardId, targetUserId);
+  await cardModel.pullMemberFromBoardCards(boardId, targetUserId);
+  await invitationModel.revokeBoardInvitations(boardId, targetUserId);
+
+  return { removeResult: "Member removed from board successfully" };
+};
+
+const getBoardSnapshot = async (boardId: string) => {
+  const boardDetails = await boardModel.getDetailsById(boardId);
+  if (!boardDetails) return null;
+  return groupCardsIntoColumns(boardDetails);
 };
 
 const update = async (boardId: string, requestBody: UpdateBoardType) => {
@@ -58,7 +133,9 @@ const moveCardToDifferentColumn = async (requestBody: MoveCardToDifferentColumnT
     columnId: requestBody.nextColumnId,
   });
 
-  return { updateResult: "Successfully!" };
+  const nextColumn = await columnModel.findOneById(new ObjectId(requestBody.nextColumnId));
+
+  return { updateResult: "Successfully!", boardId: nextColumn?.boardId?.toString() };
 };
 
 const getBoards = async (
@@ -85,4 +162,10 @@ export const boardService = {
   update,
   moveCardToDifferentColumn,
   getBoards,
+  canUserAccessBoard,
+  assertBoardAccess,
+  isBoardOwner,
+  assertBoardOwner,
+  removeMember,
+  getBoardSnapshot,
 };

@@ -1,9 +1,12 @@
 import axios, { type AxiosError } from "axios";
 import { toast } from "react-toastify";
 
+import { SOCKET_ID_HEADER } from "@workspace/shared/utils/socket-events";
+
 import { refreshTokenAPI } from "src/apis";
 import type { store } from "src/redux/store";
 import { logoutUserAPI } from "src/redux/user/userSlice";
+import { socketIoInstance } from "src/socketClient";
 import { interceptorLoadingElements } from "src/utils/formatters";
 
 let axiosReduxStore: typeof store | undefined;
@@ -21,6 +24,7 @@ http.defaults.withCredentials = true;
 http.interceptors.request.use(
   (config) => {
     interceptorLoadingElements(true);
+    config.headers.set(SOCKET_ID_HEADER, socketIoInstance.id ?? "");
     return config;
   },
   (error: AxiosError) => {

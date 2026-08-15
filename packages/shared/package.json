@@ -10,7 +10,7 @@
     "./schemas/*": "./dist/schemas/*.js"
   },
   "scripts": {
-    "clean": "rimraf dist/",
+    "clean": "rimraf dist/ && rimraf --glob \"*.tsbuildinfo\"",
     "format": "prettier --check . --ignore-unknown --ignore-path ../../.prettierignore",
     "format:fix": "prettier --write . --ignore-unknown --ignore-path ../../.prettierignore",
     "preinstall": "pnpm dlx only-allow pnpm",

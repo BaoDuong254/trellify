@@ -26,7 +26,7 @@ const MENU_STYLES = {
   },
 };
 
-function BoardBar({ board }: { board?: Board }) {
+function BoardBar({ board, presentUserIds }: { board?: Board; presentUserIds?: string[] }) {
   return (
     <Box
       sx={{
@@ -55,7 +55,12 @@ function BoardBar({ board }: { board?: Board }) {
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         <InviteBoardUser boardId={board?._id as string} />
-        <BoardUserGroup boardUsers={board?.FE_allUsers} />
+        <BoardUserGroup
+          boardId={board?._id}
+          boardUsers={board?.FE_allUsers}
+          ownerIds={board?.ownerIds}
+          presentUserIds={presentUserIds}
+        />
       </Box>
     </Box>
   );

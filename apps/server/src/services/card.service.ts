@@ -64,7 +64,10 @@ const deleteItem = async (cardId: string) => {
   await cardModel.deleteOneById(cardId);
   await columnModel.pullCardOrderIds(targetCard);
 
-  return { deleteResult: "Card deleted successfully" };
+  return {
+    deleteResult: "Card deleted successfully",
+    boardId: targetCard.boardId?.toString() as string | undefined,
+  };
 };
 
 export const cardService = {

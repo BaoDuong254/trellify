@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import {
   CREATE_NEW_BOARD_SCHEMA,
   MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA,
+  REMOVE_BOARD_MEMBER_PARAMS_SCHEMA,
   UPDATE_BOARD_SCHEMA,
 } from "@workspace/shared/schemas/board.schema";
 
@@ -42,8 +43,20 @@ const moveCardToDifferentColumn = async (request: ExpressRequest, _response: Exp
   }
 };
 
+const removeMember = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
+  try {
+    await REMOVE_BOARD_MEMBER_PARAMS_SCHEMA.parseAsync(request.params);
+    next();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
+    next(customError);
+  }
+};
+
 export const boardValidation = {
   createNew,
   update,
   moveCardToDifferentColumn,
+  removeMember,
 };

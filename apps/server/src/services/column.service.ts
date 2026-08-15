@@ -40,7 +40,10 @@ const deleteItem = async (columnId: string) => {
 
   await boardModel.pullColumnOrderIds(targetColumn);
 
-  return { deleteResult: "Column and associated cards deleted successfully" };
+  return {
+    deleteResult: "Column and associated cards deleted successfully",
+    boardId: targetColumn.boardId?.toString() as string | undefined,
+  };
 };
 
 export const columnService = {

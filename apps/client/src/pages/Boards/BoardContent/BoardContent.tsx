@@ -26,6 +26,7 @@ import ColumnC from "src/pages/Boards/BoardContent/ListColumns/Column/Column";
 import CardC from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
 import ListColumns from "src/pages/Boards/BoardContent/ListColumns/ListColumns";
 import { type Board, type Card, type Column } from "src/types/board.type";
+import { setBoardDragging } from "src/utils/boardDragState";
 import { generatePlaceholderCard } from "src/utils/formatters";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
@@ -136,6 +137,7 @@ function BoardContent({
   };
 
   const handleDragStart = (event: DragStartEvent) => {
+    setBoardDragging(true);
     setActiveDragItemId(event?.active?.id as string);
     setActiveDragItemType(
       event?.active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN
@@ -181,7 +183,7 @@ function BoardContent({
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEndInternal = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over || !active) return;
@@ -242,6 +244,18 @@ function BoardContent({
     setOldColumnWhenDraggingCard(null);
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    try {
+      handleDragEndInternal(event);
+    } finally {
+      setBoardDragging(false);
+    }
+  };
+
+  const handleDragCancel = () => {
+    setBoardDragging(false);
+  };
+
   const dropAnimation: DropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
       styles: {
@@ -288,6 +302,7 @@ function BoardContent({
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
       collisionDetection={collisionDetectionStrategy}
     >
       <Box

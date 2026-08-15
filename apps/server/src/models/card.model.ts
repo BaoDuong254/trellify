@@ -92,6 +92,15 @@ const updateMembers = async (cardId: string, incomingMemberInfo: IncomingCardMem
   return result;
 };
 
+const pullMemberFromBoardCards = async (boardId: string, userId: string) => {
+  const result = await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .updateMany({ boardId: new ObjectId(boardId), memberIds: new ObjectId(userId), _destroy: false }, {
+      $pull: { memberIds: new ObjectId(userId) },
+    } as unknown as UpdateFilter<Document>);
+  return result;
+};
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   createNew,
@@ -101,4 +110,5 @@ export const cardModel = {
   deleteManyByColumnId,
   unshiftNewComment,
   updateMembers,
+  pullMemberFromBoardCards,
 };

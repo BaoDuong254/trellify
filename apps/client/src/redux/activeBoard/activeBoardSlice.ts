@@ -1,11 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { isEmpty } from "lodash";
 
 import envConfig from "src/config/env";
 import type { Board } from "src/types/board.type";
-import { generatePlaceholderCard } from "src/utils/formatters";
+import { normalizeBoard } from "src/utils/board";
 import http from "src/utils/http";
-import { mapOrder } from "src/utils/sort";
 
 export interface ActiveBoardState {
   currentActiveBoard: Board | null;
@@ -42,19 +40,7 @@ const activeBoardSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchBoardDetailsAPI.fulfilled, (state, action) => {
-      const board = action.payload as Board;
-      board.FE_allUsers = board.owners?.concat(board.members);
-      board.columns = mapOrder(board.columns, board.columnOrderIds, "_id");
-
-      board.columns.forEach((column) => {
-        if (isEmpty(column.cards)) {
-          column.cards = [generatePlaceholderCard(column)];
-          column.cardOrderIds = [generatePlaceholderCard(column)._id];
-        } else {
-          column.cards = mapOrder(column.cards, column.cardOrderIds, "_id");
-        }
-      });
-      state.currentActiveBoard = board;
+      state.currentActiveBoard = normalizeBoard(action.payload as Board);
     });
   },
 });

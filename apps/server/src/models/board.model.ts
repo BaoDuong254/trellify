@@ -31,12 +31,15 @@ const findOneById = async (id: ObjectId) => {
   return board;
 };
 
-const getDetails = async (userId: string, boardId: string) => {
-  const queryConditions = [
-    { _id: new ObjectId(boardId) },
-    { _destroy: false },
-    { $or: [{ ownerIds: { $all: [new ObjectId(userId)] } }, { memberIds: { $all: [new ObjectId(userId)] } }] },
-  ];
+const aggregateBoardDetails = async (boardId: string, userId?: string) => {
+  const queryConditions: Array<Record<string, unknown>> = [{ _id: new ObjectId(boardId) }, { _destroy: false }];
+
+  if (userId) {
+    queryConditions.push({
+      $or: [{ ownerIds: { $all: [new ObjectId(userId)] } }, { memberIds: { $all: [new ObjectId(userId)] } }],
+    });
+  }
+
   const board = await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
     .aggregate([
@@ -78,6 +81,20 @@ const getDetails = async (userId: string, boardId: string) => {
     ])
     .toArray();
   return board[0] || null;
+};
+
+const getDetails = async (userId: string, boardId: string) => {
+  return await aggregateBoardDetails(boardId, userId);
+};
+
+const getDetailsById = async (boardId: string) => {
+  return await aggregateBoardDetails(boardId);
+};
+
+const findMembership = async (boardId: string) => {
+  return await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .findOne({ _id: new ObjectId(boardId), _destroy: false }, { projection: { ownerIds: 1, memberIds: 1, type: 1 } });
 };
 
 const pushColumnOrderIds = async (column) => {
@@ -165,14 +182,28 @@ const pushMemberIds = async (boardId: string, userId: string) => {
   return result;
 };
 
+const pullMemberIds = async (boardId: string, userId: string) => {
+  const result = await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(boardId) },
+      { $pull: { memberIds: new ObjectId(userId) } } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+  return result;
+};
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
   findOneById,
   getDetails,
+  getDetailsById,
+  findMembership,
   pushColumnOrderIds,
   update,
   pullColumnOrderIds,
   getBoards,
   pushMemberIds,
+  pullMemberIds,
 };

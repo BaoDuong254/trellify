@@ -38,6 +38,7 @@ const createNewBoardInvitation = async (requestBody: InvitationCreateType, invit
 
   const resultInvitation = {
     ...createdInvitationDetails,
+    inviteeId: invitee._id.toString(),
     board,
     inviter: pickUser(inviter),
     invitee: pickUser(invitee),
@@ -59,15 +60,25 @@ const getInvitations = async (userId: string) => {
 
 const updateBoardInvitation = async (invitationId: string, status: string, userId: string) => {
   const invitation = await invitationModel.findOneById(invitationId);
-  if (!invitation) throw new ApiError(StatusCodes.NOT_FOUND, "Invitation not found!");
+  if (!invitation || invitation._destroy) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.InvitationNotFound");
+  }
+
+  if (invitation.inviteeId.toString() !== userId) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "Error.InvitationAccessDenied");
+  }
+
+  if (invitation.boardInvitation.status !== BOARD_INVITATION_STATUS.PENDING) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Error.InvitationAlreadyResolved");
+  }
 
   const boardId = invitation.boardInvitation.boardId.toString() as string;
   const board = await boardModel.findOneById(new ObjectId(boardId));
-  if (!board) throw new ApiError(StatusCodes.NOT_FOUND, "Board not found!");
+  if (!board) throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
 
-  const boardOwnerAndMemberIds = [...board.ownerIds, ...board.memberIds].toString();
-  if (status === BOARD_INVITATION_STATUS.ACCEPTED && boardOwnerAndMemberIds.includes(userId)) {
-    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You are already a member of this board.");
+  const isAlreadyBoardMember = [...board.ownerIds, ...board.memberIds].some((id: ObjectId) => id.toString() === userId);
+  if (isAlreadyBoardMember && status === BOARD_INVITATION_STATUS.ACCEPTED) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Error.AlreadyBoardMember");
   }
 
   const updateData = {

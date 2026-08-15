@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
+import { useSocketConnection } from "src/hooks/useSocketConnection";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { User } from "src/types/user.type";
 
@@ -22,6 +23,8 @@ const ProtectedRoute = ({ user }: { user: User | null }) => {
 
 export default function App() {
   const currentUser = useSelector(selectCurrentUser);
+
+  useSocketConnection();
 
   return (
     <Suspense fallback={<PageLoadingSpinner caption='Loading...' />}>
