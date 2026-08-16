@@ -16,6 +16,7 @@ A full-stack project management platform with real-time collaboration, drag-and-
   - [🏃‍♂️ Running the Project](#️-running-the-project)
     - [Development mode](#development-mode)
     - [Production build](#production-build)
+  - [🚀 Deployment](#-deployment)
   - [📮 Testing with Postman](#-testing-with-postman)
     - [Setup](#setup)
   - [🔄 Git Workflow](#-git-workflow)
@@ -31,6 +32,10 @@ A full-stack project management platform with real-time collaboration, drag-and-
 - 👥 **Team Collaboration** - Invite members to boards and assign cards to team members
 - 💬 **Real-time Updates** - Socket.io for live synchronization across all users
 - 🔐 **Authentication & Authorization** - JWT-based auth with secure user management
+- 🔑 **Password Reset** - Email-based forgot-password and reset flow
+- 🛡️ **Bot Protection** - Cloudflare Turnstile on register, login, and forgot-password
+- 🖼️ **Avatar Uploads** - Cloudinary-backed profile image uploads
+- ⚙️ **Background Jobs** - BullMQ worker for deferred tasks (e.g. unverified-account cleanup)
 - 🎨 **Theme Support** - Light and dark mode with customizable themes
 - 🔔 **Notifications** - Real-time notifications for board activities and invitations
 
@@ -150,6 +155,10 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 # Redis cloud configuration
 REDIS_URL=your_redis_url
 
+# BullMQ configuration
+QUEUE_PREFIX=trellify
+WORKER_CONCURRENCY=5
+
 # Turnstile configuration, use 1x0000000000000000000000000000000AA for dev mode
 TURNSTILE_SECRET_KEY=your_turnstile_secret_key
 ```
@@ -157,35 +166,48 @@ TURNSTILE_SECRET_KEY=your_turnstile_secret_key
 **Client (.env in `apps/client/`):**
 
 ```env
-# API Configuration
-VITE_API_ENDPOINT=http://localhost:5000/api/v1
+# API Configuration - server origin only, the client appends /api/v1 itself
+VITE_API_ENDPOINT=http://localhost:3000
 
 # Turnstile Site Key, use 1x00000000000000000000AA for dev mode
 VITE_TURNSTILE_SITE_KEY=your-turnstile-site-key
 ```
 
+> **Note**
+>
+> - Both apps validate their environment with Zod at startup (`apps/server/src/config/environment.ts`, `apps/client/src/config/env.ts`) and **throw on the first missing or invalid variable** - a typo fails fast at boot instead of surfacing later as a broken request.
+> - `VITE_API_ENDPOINT` must be the server **origin only**. Every API call already appends `/api/v1/...`, so adding the path here produces `/api/v1/api/v1/...`.
+> - MongoDB and Redis are **external services** (e.g. MongoDB Atlas and Redis Cloud) - there is no local container for either, so `MONGODB_URI` and `REDIS_URL` must point at real instances before `pnpm start:dev` will boot.
+
 ## 🏃‍♂️ Running the Project
 
 ### Development mode
 
-The project uses Turbo for monorepo management. Run both client and server simultaneously:
+The project uses Turbo for monorepo management. A single command starts **three** processes - the client, the API server, and the BullMQ worker:
 
 ```bash
-# From root directory - runs both client and server in parallel
+# From root directory - runs client (5173), API server (3000) and worker in parallel
 pnpm start:dev
 ```
 
-Or run them separately:
+Or run a single workspace. From the root directory, `fe` and `be` are aliases for `pnpm --filter=client` and `pnpm --filter=server`, so there is no need to change directory:
 
 ```bash
-# Terminal 1 - Run server only
-cd apps/server
-pnpm start:dev
+# Terminal 1 - Client only
+pnpm fe start:dev
 
-# Terminal 2 - Run client only
-cd apps/client
-pnpm start:dev
+# Terminal 2 - API server only (does NOT start the worker)
+pnpm be start:dev
+
+# Terminal 3 - BullMQ worker only
+pnpm be start:worker:dev
+
+# API server with the Node inspector attached on port 9229
+pnpm be start:debug
 ```
+
+> **Note**
+> The worker is a separate process from the API server (`apps/server/src/worker.ts`). If you start only `pnpm be start:dev`, the API still enqueues jobs but nothing consumes them - queued work such as unverified-account cleanup will silently never run.
 
 ### Production build
 
@@ -201,6 +223,51 @@ pnpm apps:build
 # Step 3: Run production
 pnpm start:prod
 ```
+
+## 🚀 Deployment
+
+Deployment is fully automated by GitHub Actions (`.github/workflows/deploy.yml`).
+
+**1. Trigger** - the workflow runs on `workflow_run` after the **CI** workflow completes successfully on `main`. If CI fails, nothing is built or deployed.
+
+**2. Build & push** - `apps/server/Dockerfile` and `apps/client/Dockerfile` are built and pushed to Docker Hub as `trellify-server:latest` and `trellify-client:latest`, using registry-backed build caching.
+
+**3. Deploy** - the compose files and the generated `.env` files are copied to the host over SCP, then started over SSH:
+
+```bash
+# Portainer is brought up first for container management
+docker compose -f docker-compose.portainer.yml up -d
+
+# Then the application stack
+docker compose pull
+docker compose up -d --scale server=3 --scale worker=1 --remove-orphans
+```
+
+**Topology** (`docker-compose.yml`):
+
+| Service  | Replicas | Ports                    | Notes                                                      |
+| -------- | -------- | ------------------------ | ---------------------------------------------------------- |
+| `server` | 3        | `expose 3000` (internal) | Healthcheck on `/api/v1/status`                            |
+| `worker` | 1        | none                     | Runs `node dist/worker.js` from the same image as `server` |
+| `client` | 1        | `4014:80`                | Starts only once `server` is healthy                       |
+
+Portainer is published on `127.0.0.1:9443` only, so it is reachable through an SSH tunnel rather than the public internet.
+
+> **Note**
+> Running **3 server replicas** is why Socket.io is configured with the Redis adapter (`@socket.io/redis-adapter`). A broadcast issued on one replica must reach clients connected to the other two, so real-time code has to be adapter-aware - use `io.in(...).fetchSockets()` rather than assuming a single process.
+
+**Required GitHub secrets:**
+
+| Secret                                            | Purpose                                       |
+| ------------------------------------------------- | --------------------------------------------- |
+| `DOCKERHUB_USERNAME`, `DOCKERHUB_PASSWORD`        | Docker Hub authentication and image namespace |
+| `SERVER_ENV`, `CLIENT_ENV`                        | Full contents of each app's `.env` file       |
+| `HOST_VPS`, `USERNAME_VPS`, `KEY_VPS`, `PORT_VPS` | SSH access to the deployment host             |
+| `TELEGRAM_TO`, `TELEGRAM_TOKEN`                   | Build and deploy status notifications         |
+| `SONAR_TOKEN`                                     | SonarCloud scan in the CI workflow            |
+
+> **Important**
+> `SERVER_ENV` and `CLIENT_ENV` hold the entire `.env` file contents and are written to disk by the workflow. When you add a new environment variable, update these secrets as well - otherwise the deployed container fails Zod validation at startup and the stack will not come up.
 
 ## 📮 Testing with Postman
 
@@ -258,10 +325,18 @@ git commit -m "style(client): format code with prettier"
 
 ### Hooks
 
-The project has built-in git hooks to ensure code quality:
+Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook) and configured in `lefthook.yaml`. They are installed automatically by the `prepare` script on `pnpm install`:
 
-- **pre-commit**: Run lint and format code
-- **commit-msg**: Check commit message format
+- **pre-commit**:
+  1. Verify `pnpm-lock.yaml` is in sync (`scripts/check-lockfile.sh`)
+  2. Run `knip` to detect unused files, exports, and dependencies
+  3. Format staged files with Prettier
+  4. Run `pnpm lint:fix`
+- **commit-msg**: Validate the message against Conventional Commits via commitlint
+- **post-commit**: Print a success message
+
+> **Note**
+> `knip` also runs in CI (both `knip` and `knip:production`). An exported symbol nobody imports, or a dependency nobody uses, will fail the build - delete it or wire it up rather than leaving it dangling.
 
 ### Branch Naming
 
