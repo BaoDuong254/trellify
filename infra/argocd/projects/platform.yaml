@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  description: Nền tảng cụm dùng chung cho mọi dự án
+  sourceRepos:
+    - https://github.com/BaoDuong254/trellify.git
+    - https://kubernetes.github.io/ingress-nginx
+    - https://bitnami-labs.github.io/sealed-secrets
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

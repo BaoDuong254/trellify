@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-cloudflared
+  namespace: argocd
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/BaoDuong254/trellify.git
+    targetRevision: main
+    path: infra/cloudflared
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloudflared
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

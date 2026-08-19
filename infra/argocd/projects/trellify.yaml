@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: trellify
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  description: Ứng dụng Trellify (app + MongoDB + Redis)
+  sourceRepos:
+    - https://github.com/BaoDuong254/trellify.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: trellify
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
