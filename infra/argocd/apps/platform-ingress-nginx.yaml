@@ -10,6 +10,7 @@ spec:
       chart: ingress-nginx
       targetRevision: 4.15.1
       helm:
+        releaseName: ingress-nginx
         valueFiles:
           - $values/infra/ingress-nginx/values.yaml
     - repoURL: https://github.com/BaoDuong254/trellify.git
