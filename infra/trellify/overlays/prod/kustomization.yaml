@@ -16,7 +16,7 @@ patches:
 images:
 - name: ghcr.io/baoduong254/trellify-client
   newName: ghcr.io/baoduong254/trellify-client
-  newTag: sha-d59d5c1
+  newTag: sha-1d51a6b
 - name: ghcr.io/baoduong254/trellify-server
   newName: ghcr.io/baoduong254/trellify-server
-  newTag: sha-d59d5c1
+  newTag: sha-1d51a6b
