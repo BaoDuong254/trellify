@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: trellify-prod
+  namespace: argocd
+spec:
+  project: trellify
+  source:
+    repoURL: https://github.com/BaoDuong254/trellify.git
+    targetRevision: feat/k3s-migration
+    path: infra/trellify/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: trellify
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: trellify-server
+      jsonPointers:
+        - /spec/replicas
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
