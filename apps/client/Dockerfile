@@ -41,8 +41,11 @@ COPY apps/client/index.html ./apps/client/
 COPY apps/client/public ./apps/client/public
 COPY apps/client/src ./apps/client/src
 
-# Set environment variables for build
-COPY apps/client/.env ./apps/client/.env
+# Configure environment variables for the client build. 
+ARG VITE_API_ENDPOINT=""
+ARG VITE_TURNSTILE_SITE_KEY
+RUN printf 'VITE_API_ENDPOINT=%s\nVITE_TURNSTILE_SITE_KEY=%s\n' \
+    "$VITE_API_ENDPOINT" "$VITE_TURNSTILE_SITE_KEY" > ./apps/client/.env
 
 # Build the client application
 WORKDIR /workspace/apps/client
@@ -50,7 +53,7 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm run apps:build
 
 # Production stage
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 
 # Copy custom nginx configuration
 COPY apps/client/nginx.conf /etc/nginx/conf.d/default.conf
@@ -59,7 +62,7 @@ COPY apps/client/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /workspace/apps/client/dist /usr/share/nginx/html
 
 # Expose ports
-EXPOSE 80
+EXPOSE 8080
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

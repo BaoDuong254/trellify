@@ -28,6 +28,9 @@ const START_SERVER = async (): Promise<void> => {
   const app = express();
   const port = environmentConfig.PORT;
 
+  // Trust proxy headers (e.g., X-Forwarded-For) for correct client IP detection
+  app.set("trust proxy", true);
+
   // Disable caching
   app.use((_request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
     response.set("Cache-Control", "no-store");
@@ -98,13 +101,18 @@ const START_SERVER = async (): Promise<void> => {
   // Handle graceful shutdown
   exitHook((done) => {
     void (async () => {
-      logger.info("4. Closing BullMQ queue...");
+      logger.info("4. Draining HTTP and Socket.io connections...");
+      await Promise.race([
+        new Promise<void>((resolve) => io.close(() => resolve())),
+        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
+      ]);
+      logger.info("5. Closing BullMQ queue...");
       await userQueue.close();
-      logger.info("5. Closing Socket.io Redis adapter...");
+      logger.info("6. Closing Socket.io Redis adapter...");
       await closeSocketAdapter();
-      logger.info("6. Closing Redis client...");
+      logger.info("7. Closing Redis client...");
       await closeRedisClient();
-      logger.info("7. Closing MongoDB Cloud Atlas connection...");
+      logger.info("8. Closing MongoDB connection...");
       await CLOSE_DB();
       logger.info(chalk.bgBlueBright("Shutting down server..."));
       done();

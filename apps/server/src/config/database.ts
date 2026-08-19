@@ -10,6 +10,8 @@ const mongoClientInstance = new MongoClient(environmentConfig.MONGODB_URI, {
     strict: true,
     deprecationErrors: true,
   },
+  maxPoolSize: 20,
+  minPoolSize: 2,
 });
 
 export const CONNECT_DB = async (): Promise<Db | undefined> => {

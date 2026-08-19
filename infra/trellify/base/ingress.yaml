@@ -1,0 +1,62 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trellify-api
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "2" # 20 x 2 = burst 40
+    nginx.ingress.kubernetes.io/limit-req-status-code: "429"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: trellify.duonggiabao.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: trellify-server
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trellify-ws
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "trellify-ws"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: trellify.duonggiabao.com
+      http:
+        paths:
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: trellify-server
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trellify-web
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: trellify.duonggiabao.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: trellify-client
+                port:
+                  name: http

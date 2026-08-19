@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: trellify
+
+resources:
+  - ../../base
+  - sealedsecret-server.yaml
+
+patches:
+  - path: patch-ingress-host.yaml
+    target:
+      kind: Ingress
+
+images:
+  - name: ghcr.io/baoduong254/trellify-server
+    newTag: REPLACE_WITH_SHA_TAG
+  - name: ghcr.io/baoduong254/trellify-client
+    newTag: REPLACE_WITH_SHA_TAG
