@@ -88,3 +88,13 @@ next-env.d.ts
 
 # Cache
 .eslintcache
+
+# Kubernetes / GitOps
+kubeconfig
+*.kubeconfig
+.kube/
+*.key
+!**/*.key.pub
+credentials.json
+cert.pem
+sealed-secrets-master*.yaml
