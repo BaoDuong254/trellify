@@ -31,6 +31,14 @@ spec:
                 name: trellify-server-config
             - secretRef:
                 name: trellify-server-secrets
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: trellify-redis-auth
+                  key: password
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@trellify-redis:6379"
           startupProbe:
             httpGet:
               path: /healthz

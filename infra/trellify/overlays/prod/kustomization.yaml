@@ -4,18 +4,19 @@ kind: Kustomization
 namespace: trellify
 
 resources:
-- ../../base
-- sealedsecret-server.yaml
+  - ../../base
+  - sealedsecret-server.yaml
+  - sealedsecret-redis.yaml
 
 patches:
-- path: patch-ingress-host.yaml
-  target:
-    kind: Ingress
+  - path: patch-ingress-host.yaml
+    target:
+      kind: Ingress
 
 images:
-- name: ghcr.io/baoduong254/trellify-client
-  newName: ghcr.io/baoduong254/trellify-client
-  newTag: sha-27f9e26
-- name: ghcr.io/baoduong254/trellify-server
-  newName: ghcr.io/baoduong254/trellify-server
-  newTag: sha-27f9e26
+  - name: ghcr.io/baoduong254/trellify-client
+    newName: ghcr.io/baoduong254/trellify-client
+    newTag: sha-27f9e26
+  - name: ghcr.io/baoduong254/trellify-server
+    newName: ghcr.io/baoduong254/trellify-server
+    newTag: sha-27f9e26
