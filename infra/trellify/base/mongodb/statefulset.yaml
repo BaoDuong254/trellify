@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: trellify-mongodb
+spec:
+  serviceName: trellify-mongodb-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trellify-mongodb
+  template:
+    metadata:
+      labels:
+        app: trellify-mongodb
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+        - name: mongod
+          image: mongo:8.0
+          args:
+            - "--bind_ip_all"
+            - "--auth"
+            - "--wiredTigerCacheSizeGB"
+            - "0.5"
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: root-username } }
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: root-password } }
+            - name: MONGO_APP_USERNAME
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: username } }
+            - name: MONGO_APP_PASSWORD
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: password } }
+            - name: MONGO_APP_DB
+              valueFrom: { configMapKeyRef: { name: trellify-server-config, key: DATABASE_NAME } }
+          ports:
+            - name: mongo
+              containerPort: 27017
+          readinessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1536Mi
+            limits:
+              memory: 1536Mi
+          volumeMounts:
+            - { name: data, mountPath: /data/db }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: init
+          configMap:
+            name: trellify-mongodb-init
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: local-path-retain
+        resources:
+          requests:
+            storage: 20Gi

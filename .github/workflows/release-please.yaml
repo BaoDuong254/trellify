@@ -1,6 +1,6 @@
 on:
   workflow_run:
-    workflows: ["Deploy Production"]
+    workflows: ["Build k8s Images"]
     types:
       - completed
     branches:

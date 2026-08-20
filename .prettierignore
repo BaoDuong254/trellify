@@ -12,3 +12,4 @@ CHANGELOG.md
 .agents/
 .idea/
 .claude/
+infra/trellify/overlays/*/kustomization.yaml

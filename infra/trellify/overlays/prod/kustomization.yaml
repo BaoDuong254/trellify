@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: trellify
+
+resources:
+- ../../base
+- sealedsecret-server.yaml
+- sealedsecret-redis.yaml
+- sealedsecret-mongodb.yaml
+
+patches:
+- path: patch-ingress-host.yaml
+  target:
+    kind: Ingress
+- path: patch-mongodb-uri-server.yaml
+  target:
+    kind: Deployment
+    name: trellify-server
+- path: patch-mongodb-uri-worker.yaml
+  target:
+    kind: Deployment
+    name: trellify-worker
+
+images:
+- name: ghcr.io/baoduong254/trellify-client
+  newName: ghcr.io/baoduong254/trellify-client
+  newTag: sha-64ba109
+- name: ghcr.io/baoduong254/trellify-server
+  newName: ghcr.io/baoduong254/trellify-server
+  newTag: sha-64ba109

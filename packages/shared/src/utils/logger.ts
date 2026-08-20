@@ -1,6 +1,6 @@
 import { createLogger, format, transports } from "winston";
 
-const { combine, timestamp, printf, colorize } = format;
+const { combine, timestamp, printf, colorize, json, errors } = format;
 
 /**
  * Custom log format for Winston logger
@@ -25,9 +25,13 @@ const logFormat = printf(({ level, message, timestamp }) => {
  * logger.debug("This is a debug message");
  * ```
  */
+const isProduction = process.env.NODE_ENV === "production";
+
 const logger = createLogger({
-  level: "info",
-  format: combine(timestamp({ format: "DD-MM-YYYY HH:mm:ss" }), colorize(), logFormat),
+  level: process.env.LOG_LEVEL ?? "info",
+  format: isProduction
+    ? combine(timestamp(), errors({ stack: true }), json())
+    : combine(timestamp({ format: "DD-MM-YYYY HH:mm:ss" }), colorize(), logFormat),
   transports: [new transports.Console()],
 });
 

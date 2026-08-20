@@ -44,8 +44,8 @@ RUN pnpm run apps:build
 # Production stage
 FROM node:24.12.0-alpine
 
-# Install wget for healthcheck and pnpm
-RUN apk add --no-cache wget && corepack enable
+RUN corepack enable
+ENV NODE_ENV=production
 
 # Set workdir to monorepo root for proper workspace resolution
 WORKDIR /workspace
@@ -68,6 +68,9 @@ COPY --from=builder /workspace/apps/server/dist ./apps/server/dist
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+
+RUN chown -R node:node /workspace
+USER node
 
 # Set working directory to server app
 WORKDIR /workspace/apps/server

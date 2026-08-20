@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trellify-redis-config
+data:
+  redis.conf: |
+    appendonly yes
+    appendfsync everysec
+    maxmemory 200mb
+    maxmemory-policy noeviction
+    maxclients 1000

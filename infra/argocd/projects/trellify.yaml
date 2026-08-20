@@ -6,18 +6,12 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  description: Ứng dụng Trellify (app + MongoDB + Redis)
+  description: Trellify Application (app + MongoDB + Redis)
   sourceRepos:
     - https://github.com/BaoDuong254/trellify.git
   destinations:
     - server: https://kubernetes.default.svc
       namespace: trellify
-  # Chỉ cho phép ĐÚNG MỘT loại tài nguyên cấp cụm: chính Namespace của nó.
-  #
-  # Namespace là cluster-scoped, nên `clusterResourceWhitelist: []` (rỗng hoàn toàn)
-  # chặn luôn việc app tạo namespace của chính mình — sync đứng im ở Missing mà không
-  # tạo được gì. Vẫn cấm ClusterRole, ClusterRoleBinding, CRD, StorageClass... nên
-  # hàng rào "lỗi ở tầng app không leo lên thành sự cố toàn cụm" vẫn còn nguyên.
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
