@@ -27,7 +27,7 @@ controller:
   metrics:
     enabled: true
     serviceMonitor:
-      enabled: false
+      enabled: true
 
   resources:
     requests:

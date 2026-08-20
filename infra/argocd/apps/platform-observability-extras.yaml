@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-observability-extras
+  namespace: argocd
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/BaoDuong254/trellify.git
+    targetRevision: main
+    path: infra/observability/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
