@@ -13,6 +13,14 @@ patches:
 - path: patch-ingress-host.yaml
   target:
     kind: Ingress
+- path: patch-mongodb-uri-server.yaml
+  target:
+    kind: Deployment
+    name: trellify-server
+- path: patch-mongodb-uri-worker.yaml
+  target:
+    kind: Deployment
+    name: trellify-worker
 
 images:
 - name: ghcr.io/baoduong254/trellify-client

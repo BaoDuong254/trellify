@@ -19,8 +19,8 @@ spec:
             - |
               set -e
               echo "=== Document counts on SOURCE (Atlas) ==="
-              mongosh "$SRC_URI/$DB_NAME" --quiet --eval \
-                'db.getCollectionNames().forEach(c => print(c, db[c].countDocuments()))'
+              mongosh "$SRC_URI" --quiet --eval \
+                "const d = db.getSiblingDB('$DB_NAME'); d.getCollectionNames().sort().forEach(c => print(c, d[c].countDocuments()))"
 
               echo "=== Dump ==="
               mongodump --uri="$SRC_URI" --db="$DB_NAME" --archive=/tmp/dump.gz --gzip
@@ -30,8 +30,8 @@ spec:
               mongorestore --uri="$DST_URI" --archive=/tmp/dump.gz --gzip --drop
 
               echo "=== Document counts on TARGET (in-cluster) ==="
-              mongosh "$DST_URI/$DB_NAME" --quiet --eval \
-                'db.getCollectionNames().forEach(c => print(c, db[c].countDocuments()))'
+              mongosh "$DST_URI" --quiet --eval \
+                "const d = db.getSiblingDB('$DB_NAME'); d.getCollectionNames().sort().forEach(c => print(c, d[c].countDocuments()))"
 
               echo "=== DONE. Compare the two tables above before proceeding. ==="
           env:
