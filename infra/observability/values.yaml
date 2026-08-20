@@ -59,9 +59,9 @@ grafana:
   resources:
     requests:
       cpu: 50m
-      memory: 192Mi
+      memory: 512Mi
     limits:
-      memory: 192Mi
+      memory: 512Mi
 
 kube-state-metrics:
   resources:
