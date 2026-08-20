@@ -7,7 +7,7 @@ spec:
   project: trellify
   source:
     repoURL: https://github.com/BaoDuong254/trellify.git
-    targetRevision: feat/k3s-migration
+    targetRevision: main
     path: infra/trellify/overlays/prod
   destination:
     server: https://kubernetes.default.svc
