@@ -1,0 +1,21 @@
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: MONGO_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: trellify-mongodb-auth
+        key: username
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: MONGO_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: trellify-mongodb-auth
+        key: password
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: MONGODB_URI
+    value: mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@trellify-mongodb:27017/?authSource=admin&directConnection=true

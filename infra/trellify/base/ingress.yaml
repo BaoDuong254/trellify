@@ -4,7 +4,7 @@ metadata:
   name: trellify-api
   annotations:
     nginx.ingress.kubernetes.io/limit-rps: "20"
-    nginx.ingress.kubernetes.io/limit-burst-multiplier: "2" # 20 x 2 = burst 40
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "2"
     nginx.ingress.kubernetes.io/limit-req-status-code: "429"
 spec:
   ingressClassName: nginx

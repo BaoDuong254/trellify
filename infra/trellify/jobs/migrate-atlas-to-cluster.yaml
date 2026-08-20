@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-migrate
+  namespace: trellify
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        job: mongo-migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: mongo:8.0
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Document counts on SOURCE (Atlas) ==="
+              mongosh "$SRC_URI/$DB_NAME" --quiet --eval \
+                'db.getCollectionNames().forEach(c => print(c, db[c].countDocuments()))'
+
+              echo "=== Dump ==="
+              mongodump --uri="$SRC_URI" --db="$DB_NAME" --archive=/tmp/dump.gz --gzip
+              ls -lh /tmp/dump.gz
+
+              echo "=== Restore into in-cluster MongoDB ==="
+              mongorestore --uri="$DST_URI" --archive=/tmp/dump.gz --gzip --drop
+
+              echo "=== Document counts on TARGET (in-cluster) ==="
+              mongosh "$DST_URI/$DB_NAME" --quiet --eval \
+                'db.getCollectionNames().forEach(c => print(c, db[c].countDocuments()))'
+
+              echo "=== DONE. Compare the two tables above before proceeding. ==="
+          env:
+            - name: SRC_URI
+              valueFrom: { secretKeyRef: { name: trellify-server-secrets, key: MONGODB_URI } }
+            - name: DB_NAME
+              valueFrom: { configMapKeyRef: { name: trellify-server-config, key: DATABASE_NAME } }
+            - name: MONGO_USERNAME
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: username } }
+            - name: MONGO_PASSWORD
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: password } }
+            - name: DST_URI
+              value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@trellify-mongodb:27017/?authSource=admin&directConnection=true"
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { memory: 1Gi }

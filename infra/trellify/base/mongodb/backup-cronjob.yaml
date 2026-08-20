@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trellify-mongodb-backups
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path-retain
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trellify-mongodb-backup
+spec:
+  schedule: "0 20 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            fsGroup: 999
+          containers:
+            - name: dump
+              image: mongo:8.0
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  STAMP=$(date +%F-%H%M)
+                  mongodump --uri="$MONGODB_URI" --archive="/backup/trellify-$STAMP.gz" --gzip
+                  ls -lh "/backup/trellify-$STAMP.gz"
+                  find /backup -name 'trellify-*.gz' -mtime +7 -delete
+                  echo "Backups retained: $(ls -1 /backup | wc -l)"
+              env:
+                - name: MONGO_USERNAME
+                  valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: username } }
+                - name: MONGO_PASSWORD
+                  valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: password } }
+                - name: MONGODB_URI
+                  value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@trellify-mongodb:27017/?authSource=admin&directConnection=true"
+              resources:
+                requests: { cpu: 100m, memory: 256Mi }
+                limits: { memory: 512Mi }
+              volumeMounts:
+                - { name: backup, mountPath: /backup }
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: trellify-mongodb-backups

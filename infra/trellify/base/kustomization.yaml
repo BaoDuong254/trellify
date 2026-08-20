@@ -17,6 +17,10 @@ resources:
   - redis/configmap.yaml
   - redis/statefulset.yaml
   - redis/services.yaml
+  - mongodb/init-configmap.yaml
+  - mongodb/statefulset.yaml
+  - mongodb/services.yaml
+  - mongodb/backup-cronjob.yaml
 
 labels:
   - pairs:

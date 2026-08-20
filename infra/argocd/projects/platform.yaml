@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  description: Nền tảng cụm dùng chung cho mọi dự án
+  description: Shared cluster platform for all projects
   sourceRepos:
     - https://github.com/BaoDuong254/trellify.git
     - https://kubernetes.github.io/ingress-nginx
