@@ -2,7 +2,7 @@ name: Build k8s Images
 
 on:
   push:
-    branches: [feat/k3s-migration]
+    branches: [main]
     paths-ignore:
       - "infra/trellify/overlays/**"
       - "**/*.md"
@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: feat/k3s-migration
+          ref: ${{ github.ref_name }}
 
       - name: Install kustomize
         run: |
