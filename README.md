@@ -17,6 +17,9 @@ A full-stack project management platform with real-time collaboration, drag-and-
     - [Development mode](#development-mode)
     - [Production build](#production-build)
   - [🚀 Deployment](#-deployment)
+    - [Cluster topology](#cluster-topology)
+    - [Required GitHub secrets](#required-github-secrets)
+    - [Legacy: Docker Compose deployment](#legacy-docker-compose-deployment)
   - [📮 Testing with Postman](#-testing-with-postman)
     - [Setup](#setup)
   - [🔄 Git Workflow](#-git-workflow)
@@ -177,7 +180,7 @@ VITE_TURNSTILE_SITE_KEY=your-turnstile-site-key
 >
 > - Both apps validate their environment with Zod at startup (`apps/server/src/config/environment.ts`, `apps/client/src/config/env.ts`) and **throw on the first missing or invalid variable** - a typo fails fast at boot instead of surfacing later as a broken request.
 > - `VITE_API_ENDPOINT` must be the server **origin only**. Every API call already appends `/api/v1/...`, so adding the path here produces `/api/v1/api/v1/...`.
-> - MongoDB and Redis are **external services** (e.g. MongoDB Atlas and Redis Cloud) - there is no local container for either, so `MONGODB_URI` and `REDIS_URL` must point at real instances before `pnpm start:dev` will boot.
+> - **For local development**, MongoDB and Redis are **external services** (e.g. MongoDB Atlas and Redis Cloud) - there is no local container for either, so `MONGODB_URI` and `REDIS_URL` must point at real instances before `pnpm start:dev` will boot. Production is different: both run in-cluster as StatefulSets, and the connection details come from the manifests in [`infra/`](infra/README.md), not from these files.
 
 ## 🏃‍♂️ Running the Project
 
@@ -226,48 +229,56 @@ pnpm start:prod
 
 ## 🚀 Deployment
 
-Deployment is fully automated by GitHub Actions (`.github/workflows/deploy.yml`).
+Production runs on a self-hosted **k3s** cluster and is deployed by **GitOps** — GitHub Actions builds images, commits the new tag back to this repo, and ArgoCD reconciles the cluster to match. Nothing is deployed by SSH-ing into a machine.
 
-**1. Trigger** - the workflow runs on `workflow_run` after the **CI** workflow completes successfully on `main`. If CI fails, nothing is built or deployed.
+**1. Build** — a push to `main` triggers [`.github/workflows/build-k8s-images.yml`](.github/workflows/build-k8s-images.yml), which builds `apps/server/Dockerfile` and `apps/client/Dockerfile` and pushes them to GHCR as `ghcr.io/baoduong254/trellify-{server,client}`.
 
-**2. Build & push** - `apps/server/Dockerfile` and `apps/client/Dockerfile` are built and pushed to Docker Hub as `trellify-server:latest` and `trellify-client:latest`, using registry-backed build caching.
+**2. Tag** — each image gets the immutable tag `sha-<short-commit>` alongside `latest`. Only the `sha-` tag is ever deployed, so whatever is running traces back to exactly one commit.
 
-**3. Deploy** - the compose files and the generated `.env` files are copied to the host over SCP, then started over SSH:
+**3. Bump** — the `bump-manifest` job runs `kustomize edit set image` against `infra/trellify/overlays/prod` and commits the result as `chore(deploy): trellify -> sha-xxxxxxx [skip ci]`. The `[skip ci]` marker is what stops the workflow from re-triggering itself.
 
-```bash
-# Portainer is brought up first for container management
-docker compose -f docker-compose.portainer.yml up -d
+**4. Sync** — ArgoCD sees the new commit and rolls the Deployments forward. CI runs in parallel with the build rather than gating it; the Docker build itself runs `pnpm apps:build`, so code that does not compile never produces an image.
 
-# Then the application stack
-docker compose pull
-docker compose up -d --scale server=3 --scale worker=1 --remove-orphans
-```
+See [`infra/README.md`](infra/README.md) for the full infrastructure reference — cluster bootstrap, ArgoCD project layout, SealedSecrets, and the operations runbook.
 
-**Topology** (`docker-compose.yml`):
+### Cluster topology
 
-| Service  | Replicas | Ports                    | Notes                                                      |
-| -------- | -------- | ------------------------ | ---------------------------------------------------------- |
-| `server` | 3        | `expose 3000` (internal) | Healthcheck on `/api/v1/status`                            |
-| `worker` | 1        | none                     | Runs `node dist/worker.js` from the same image as `server` |
-| `client` | 1        | `4014:80`                | Starts only once `server` is healthy                       |
+| Workload           | Replicas        | Notes                                                                    |
+| ------------------ | --------------- | ------------------------------------------------------------------------ |
+| `trellify-server`  | 3, HPA up to 6  | Autoscales at 70% CPU; PodDisruptionBudget keeps `minAvailable: 2`       |
+| `trellify-worker`  | 1               | Same image as the server, running `dist/worker.js` - the BullMQ consumer |
+| `trellify-client`  | 2               | nginx serving the built Vite bundle                                      |
+| `trellify-mongodb` | 1 (StatefulSet) | In-cluster, 20Gi retained volume, nightly backup CronJob                 |
+| `trellify-redis`   | 1 (StatefulSet) | In-cluster, 8Gi retained volume                                          |
 
-Portainer is published on `127.0.0.1:9443` only, so it is reachable through an SSH tunnel rather than the public internet.
+All three public paths share one host: `/` goes to the client, `/api` to the server (rate limited), and `/socket.io` to the server with long timeouts and cookie affinity. There is no public port on the VM — traffic arrives through an outbound-only Cloudflare tunnel.
 
-> **Note**
-> Running **3 server replicas** is why Socket.io is configured with the Redis adapter (`@socket.io/redis-adapter`). A broadcast issued on one replica must reach clients connected to the other two, so real-time code has to be adapter-aware - use `io.in(...).fetchSockets()` rather than assuming a single process.
+### Required GitHub secrets
 
-**Required GitHub secrets:**
+| Secret / variable               | Purpose                                         |
+| ------------------------------- | ----------------------------------------------- |
+| `GITHUB_TOKEN` (built in)       | Pushes images to GHCR                           |
+| `GITOPS_TOKEN`                  | Pushes the image-tag bump commit back to `main` |
+| `SERVER_ENV`, `CLIENT_ENV`      | Full `.env` contents, used by the CI build only |
+| `vars.VITE_TURNSTILE_SITE_KEY`  | Baked into the client image at build time       |
+| `TELEGRAM_TO`, `TELEGRAM_TOKEN` | Build success / failure notifications           |
+| `SONAR_TOKEN`                   | SonarCloud scan in the CI workflow              |
+
+> **Important**
+> Runtime configuration for the cluster does **not** come from these secrets — it comes from `infra/trellify/base/configmap-server.yaml` and the SealedSecrets in `infra/trellify/overlays/prod/`. When you add a new environment variable, update those as well, or the pod fails Zod validation at startup and never becomes ready.
+
+### Legacy: Docker Compose deployment
+
+Before the k3s migration, production ran as a Docker Compose stack on a single VPS, deployed over SSH by [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) with images on Docker Hub and Portainer for container management. Those files are still in the repo: [`docker-compose.yml`](docker-compose.yml) and [`docker-compose.portainer.yml`](docker-compose.portainer.yml), and remain useful for self-hosting on a single machine.
+
+**This path is no longer used for production.** `deploy.yml` is `workflow_dispatch`-only and its job guard (`github.event.workflow_run.conclusion`) never evaluates true on a manual dispatch, so the workflow is effectively inert. It is kept for reference rather than maintained.
+
+It required its own secrets, none of which the k3s pipeline uses:
 
 | Secret                                            | Purpose                                       |
 | ------------------------------------------------- | --------------------------------------------- |
 | `DOCKERHUB_USERNAME`, `DOCKERHUB_PASSWORD`        | Docker Hub authentication and image namespace |
-| `SERVER_ENV`, `CLIENT_ENV`                        | Full contents of each app's `.env` file       |
 | `HOST_VPS`, `USERNAME_VPS`, `KEY_VPS`, `PORT_VPS` | SSH access to the deployment host             |
-| `TELEGRAM_TO`, `TELEGRAM_TOKEN`                   | Build and deploy status notifications         |
-| `SONAR_TOKEN`                                     | SonarCloud scan in the CI workflow            |
-
-> **Important**
-> `SERVER_ENV` and `CLIENT_ENV` hold the entire `.env` file contents and are written to disk by the workflow. When you add a new environment variable, update these secrets as well - otherwise the deployed container fails Zod validation at startup and the stack will not come up.
 
 ## 📮 Testing with Postman
 
