@@ -248,7 +248,7 @@ See [`infra/README.md`](infra/README.md) for the full infrastructure reference �
 | `trellify-server`  | 3, HPA up to 6  | Autoscales at 70% CPU; PodDisruptionBudget keeps `minAvailable: 2`       |
 | `trellify-worker`  | 1               | Same image as the server, running `dist/worker.js` - the BullMQ consumer |
 | `trellify-client`  | 2               | nginx serving the built Vite bundle                                      |
-| `trellify-mongodb` | 1 (StatefulSet) | In-cluster, 20Gi retained volume, nightly backup CronJob                 |
+| `trellify-mongodb` | 1 (StatefulSet) | In-cluster, 20Gi retained volume, nightly backup CronJob → Cloudflare R2 |
 | `trellify-redis`   | 1 (StatefulSet) | In-cluster, 8Gi retained volume                                          |
 
 All three public paths share one host: `/` goes to the client, `/api` to the server (rate limited), and `/socket.io` to the server with long timeouts and cookie affinity. There is no public port on the VM — traffic arrives through an outbound-only Cloudflare tunnel.

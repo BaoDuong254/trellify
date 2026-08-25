@@ -8,6 +8,7 @@ resources:
 - sealedsecret-server.yaml
 - sealedsecret-redis.yaml
 - sealedsecret-mongodb.yaml
+- sealedsecret-r2.yaml
 
 patches:
 - path: patch-ingress-host.yaml

@@ -28,7 +28,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 999
             fsGroup: 999
-          containers:
+          initContainers:
             - name: dump
               image: mongo:8.0
               command:
@@ -40,7 +40,8 @@ spec:
                   mongodump --uri="$MONGODB_URI" --archive="/backup/trellify-$STAMP.gz" --gzip
                   ls -lh "/backup/trellify-$STAMP.gz"
                   find /backup -name 'trellify-*.gz' -mtime +7 -delete
-                  echo "Backups retained: $(ls -1 /backup | wc -l)"
+                  echo "trellify-$STAMP.gz" > /backup/.latest
+                  echo "Backups retained: $(ls -1 /backup/trellify-*.gz | wc -l)"
               env:
                 - name: MONGO_USERNAME
                   valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: username } }
@@ -53,7 +54,80 @@ spec:
                 limits: { memory: 512Mi }
               volumeMounts:
                 - { name: backup, mountPath: /backup }
+          containers:
+            - name: upload
+              image: rclone/rclone:1.75
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  FILE=$(cat /backup/.latest)
+
+                  USED=$(rclone size "$R2_BUCKET_REMOTE" --json | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p') || true
+                  case "$USED" in
+                    "" | *[!0-9]*)
+                      echo "ABORT: could not read usage of $R2_BUCKET_REMOTE."
+                      echo "Check the R2 credentials and bucket name in trellify-r2-backup."
+                      exit 1
+                      ;;
+                  esac
+                  echo "R2 usage before upload: ${USED}B of ${MAX_BUCKET_BYTES}B allowed"
+                  if [ "$USED" -gt "$MAX_BUCKET_BYTES" ]; then
+                    echo "ABORT: bucket is over the guardrail, refusing to upload $FILE."
+                    echo "Prune old objects or shorten RETENTION before the next run."
+                    exit 1
+                  fi
+
+                  rclone copyto "/backup/$FILE" "offsite:$FILE" \
+                    --header-upload "Cache-Control: no-transform" \
+                    --stats-one-line --stats 0
+                  echo "Uploaded $FILE"
+
+                  rclone delete offsite: --min-age "$RETENTION" --stats-one-line --stats 0
+                  echo "R2 usage after prune:"
+                  rclone size "$R2_BUCKET_REMOTE"
+              env:
+                - name: HOME
+                  value: /tmp
+                - name: XDG_CACHE_HOME
+                  value: /tmp
+                - name: RCLONE_CONFIG
+                  value: /dev/null
+                - name: RETENTION
+                  value: 14d
+                - name: MAX_BUCKET_BYTES
+                  value: "8589934592" # 8GiB
+                - name: R2_BUCKET_REMOTE
+                  value: "r2:trellify-k3s-backups"
+                - name: RCLONE_CONFIG_R2_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_R2_PROVIDER
+                  value: Cloudflare
+                - name: RCLONE_CONFIG_R2_REGION
+                  value: auto
+                - name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET
+                  value: "true"
+                - name: RCLONE_CONFIG_OFFSITE_TYPE
+                  value: crypt
+                - name: RCLONE_CONFIG_OFFSITE_REMOTE
+                  value: "r2:trellify-k3s-backups/mongodb"
+                - name: RCLONE_CONFIG_OFFSITE_FILENAME_ENCRYPTION
+                  value: "off"
+                - name: RCLONE_CONFIG_OFFSITE_DIRECTORY_NAME_ENCRYPTION
+                  value: "false"
+              envFrom:
+                - secretRef:
+                    name: trellify-r2-backup
+              resources:
+                requests: { cpu: 50m, memory: 128Mi }
+                limits: { memory: 256Mi }
+              volumeMounts:
+                - { name: backup, mountPath: /backup, readOnly: true }
+                - { name: tmp, mountPath: /tmp }
           volumes:
             - name: backup
               persistentVolumeClaim:
                 claimName: trellify-mongodb-backups
+            - name: tmp
+              emptyDir: {}
