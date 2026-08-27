@@ -18,6 +18,9 @@ const theme = createTheme({
     light: {},
     dark: {},
   },
+  typography: {
+    fontFamily: '"Roboto Variable", "Roboto", "Helvetica", "Arial", sans-serif',
+  },
   components: {
     MuiCssBaseline: {
       styleOverrides: {

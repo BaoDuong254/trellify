@@ -2,7 +2,6 @@ import Box from "@mui/material/Box";
 import { useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 
-import loginBgImage from "src/assets/auth/login-register-bg.jpg";
 import ForgotPasswordForm from "src/pages/Auth/ForgotPasswordForm";
 import LoginForm from "src/pages/Auth/LoginForm";
 import RegisterForm from "src/pages/Auth/RegisterForm";
@@ -21,13 +20,14 @@ function Auth() {
 
   return (
     <Box
+      component='main'
       sx={{
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
         alignItems: "center",
         justifyContent: "flex-start",
-        background: `url(${loginBgImage})`,
+        background: "url(/login-bg.webp)",
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
         backgroundPosition: "center",

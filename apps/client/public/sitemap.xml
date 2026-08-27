@@ -5,19 +5,19 @@
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 
 <url>
-  <loc>https://trellify.ticklab.site/</loc>
+  <loc>https://trellify.duonggiabao.com/</loc>
   <lastmod>2026-01-30T10:02:09.053Z</lastmod>
   <changefreq>daily</changefreq>
   <priority>1</priority>
 </url>
 <url>
-  <loc>https://trellify.ticklab.site/login</loc>
+  <loc>https://trellify.duonggiabao.com/login</loc>
   <lastmod>2026-01-30T10:02:09.053Z</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.8</priority>
 </url>
 <url>
-  <loc>https://trellify.ticklab.site/register</loc>
+  <loc>https://trellify.duonggiabao.com/register</loc>
   <lastmod>2026-01-30T10:02:09.053Z</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.8</priority>

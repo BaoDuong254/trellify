@@ -29,7 +29,7 @@ import {
 } from "src/redux/notifications/notificationsSlice";
 import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser } from "src/redux/user/userSlice";
-import { socketIoInstance } from "src/socketClient";
+import { ensureSocket } from "src/socketClient";
 import type { Notifications as NotificationType } from "src/types/invitation.type";
 
 function Notifications() {
@@ -53,9 +53,18 @@ function Notifications() {
         dispatch(addNotification(invitation));
       }
     };
-    socketIoInstance.on(SOCKET_SERVER_EVENTS.USER_INVITED_TO_BOARD, onReceiveNewInvitation);
+    let cancelled = false;
+    let detach: (() => void) | undefined;
+    void ensureSocket().then((socket) => {
+      if (cancelled) return;
+      socket.on(SOCKET_SERVER_EVENTS.USER_INVITED_TO_BOARD, onReceiveNewInvitation);
+      detach = () => {
+        socket.off(SOCKET_SERVER_EVENTS.USER_INVITED_TO_BOARD, onReceiveNewInvitation);
+      };
+    });
     return () => {
-      socketIoInstance.off(SOCKET_SERVER_EVENTS.USER_INVITED_TO_BOARD, onReceiveNewInvitation);
+      cancelled = true;
+      detach?.();
     };
   }, [dispatch, currentUser?._id]);
 

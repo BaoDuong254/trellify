@@ -72,7 +72,7 @@ function ForgotPasswordForm() {
               marginTop: "1em",
               display: "flex",
               justifyContent: "center",
-              color: (theme) => theme.palette.grey[500],
+              color: (theme) => theme.palette.text.secondary,
             }}
           >
             Author: BaoGiaDuong

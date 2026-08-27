@@ -6,7 +6,7 @@ import { SOCKET_AUTH_ERRORS } from "@workspace/shared/utils/socket-events";
 import { refreshTokenAPI } from "src/apis";
 import type { AppDispatch } from "src/redux/store";
 import { logoutUserAPI, selectCurrentUser } from "src/redux/user/userSlice";
-import { socketIoInstance } from "src/socketClient";
+import { ensureSocket, getSocket } from "src/socketClient";
 
 export const useSocketConnection = (): void => {
   const dispatch = useDispatch<AppDispatch>();
@@ -15,9 +15,12 @@ export const useSocketConnection = (): void => {
 
   useEffect(() => {
     if (!currentUser?._id) {
-      socketIoInstance.disconnect();
+      getSocket()?.disconnect();
       return;
     }
+
+    let cancelled = false;
+    let detach: (() => void) | undefined;
 
     const handleConnectError = (error: Error): void => {
       if (error.message === SOCKET_AUTH_ERRORS.TOKEN_EXPIRED) {
@@ -26,7 +29,8 @@ export const useSocketConnection = (): void => {
 
         refreshTokenAPI()
           .then(() => {
-            if (!socketIoInstance.active) socketIoInstance.connect();
+            const socket = getSocket();
+            if (socket && !socket.active) socket.connect();
           })
           .catch(() => {
             dispatch(logoutUserAPI(false));
@@ -42,11 +46,18 @@ export const useSocketConnection = (): void => {
       }
     };
 
-    socketIoInstance.on("connect_error", handleConnectError);
-    socketIoInstance.connect();
+    void ensureSocket().then((socket) => {
+      if (cancelled) return;
+      socket.on("connect_error", handleConnectError);
+      socket.connect();
+      detach = (): void => {
+        socket.off("connect_error", handleConnectError);
+      };
+    });
 
     return (): void => {
-      socketIoInstance.off("connect_error", handleConnectError);
+      cancelled = true;
+      detach?.();
     };
   }, [currentUser?._id, dispatch]);
 };

@@ -6,7 +6,7 @@ import { SOCKET_ID_HEADER } from "@workspace/shared/utils/socket-events";
 import { refreshTokenAPI } from "src/apis";
 import type { store } from "src/redux/store";
 import { logoutUserAPI } from "src/redux/user/userSlice";
-import { socketIoInstance } from "src/socketClient";
+import { getSocketId } from "src/socketClient";
 import { interceptorLoadingElements } from "src/utils/formatters";
 
 let axiosReduxStore: typeof store | undefined;
@@ -24,7 +24,7 @@ http.defaults.withCredentials = true;
 http.interceptors.request.use(
   (config) => {
     interceptorLoadingElements(true);
-    config.headers.set(SOCKET_ID_HEADER, socketIoInstance.id ?? "");
+    config.headers.set(SOCKET_ID_HEADER, getSocketId());
     return config;
   },
   (error: AxiosError) => {

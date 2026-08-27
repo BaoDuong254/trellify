@@ -21,6 +21,7 @@
     "@dnd-kit/utilities": "catalog:",
     "@emotion/react": "catalog:",
     "@emotion/styled": "catalog:",
+    "@fontsource-variable/roboto": "catalog:",
     "@marsidev/react-turnstile": "catalog:",
     "@mui/icons-material": "catalog:",
     "@mui/lab": "catalog:",

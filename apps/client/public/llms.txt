@@ -1,0 +1,20 @@
+# Trellify
+
+> A collaborative Kanban platform with real-time board sync, drag-and-drop lists
+> and cards, and shared team workspaces.
+
+Trellify is a single-page web application. Boards, columns and cards are private
+to their members, so most of the product sits behind authentication and is not
+crawlable.
+
+## Pages
+
+- [Home](https://trellify.duonggiabao.com/): Entry point; redirects to the signed-in board list or to login.
+- [Login](https://trellify.duonggiabao.com/login): Email and password sign-in.
+- [Register](https://trellify.duonggiabao.com/register): Account creation, followed by email verification.
+- [Forgot password](https://trellify.duonggiabao.com/forgot-password): Requests a password reset link by email.
+
+## Notes
+
+- Boards, cards and user settings require an authenticated session.
+- The API is served under `/api` on the same origin; it is not a public API.

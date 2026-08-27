@@ -12,7 +12,6 @@ import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { resetPasswordAPI } from "src/apis";
-import loginBgImage from "src/assets/auth/login-register-bg.jpg";
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import {
@@ -54,13 +53,14 @@ function ResetPasswordForm() {
 
   return (
     <Box
+      component='main'
       sx={{
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
         alignItems: "center",
         justifyContent: "flex-start",
-        background: `url(${loginBgImage})`,
+        background: "url(/login-bg.webp)",
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -90,7 +90,7 @@ function ResetPasswordForm() {
                 marginTop: "1em",
                 display: "flex",
                 justifyContent: "center",
-                color: (theme) => theme.palette.grey[500],
+                color: (theme) => theme.palette.text.secondary,
               }}
             >
               Author: BaoGiaDuong

@@ -1,3 +1,4 @@
+import "@fontsource-variable/roboto/wght.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { ThemeProvider } from "@mui/material/styles";

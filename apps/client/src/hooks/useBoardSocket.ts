@@ -14,7 +14,7 @@ import { SOCKET_ACK_ERRORS, SOCKET_CLIENT_EVENTS, SOCKET_SERVER_EVENTS } from "@
 import { fetchBoardDetailsAPI, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
 import { updateCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
-import { socketIoInstance } from "src/socketClient";
+import { ensureSocket, getSocket } from "src/socketClient";
 import type { Board, Card } from "src/types/board.type";
 import { normalizeBoard } from "src/utils/board";
 import { isBoardDragging, subscribeToDragEnd } from "src/utils/boardDragState";
@@ -25,7 +25,7 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
   const [presentUserIds, setPresentUserIds] = useState<string[]>([]);
 
   const pendingBoardRef = useRef<Board | null>(null);
-  const wasConnectedRef = useRef(socketIoInstance.connected);
+  const wasConnectedRef = useRef(false);
   const activeCardIdRef = useRef(activeCardId);
   useEffect(() => {
     activeCardIdRef.current = activeCardId;
@@ -34,7 +34,8 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
   useEffect(() => {
     if (!boardId) return;
 
-    const socket = socketIoInstance;
+    let cancelled = false;
+    let detach: (() => void) | undefined;
 
     const applyBoard = (rawBoard: Board): void => {
       const board = normalizeBoard(rawBoard);
@@ -48,7 +49,7 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
     };
 
     const joinRoom = (): void => {
-      socket.emit(SOCKET_CLIENT_EVENTS.JOIN_BOARD, { boardId }, (ack: SocketAckType) => {
+      getSocket()?.emit(SOCKET_CLIENT_EVENTS.JOIN_BOARD, { boardId }, (ack: SocketAckType) => {
         if (!ack?.ok && ack?.error !== SOCKET_ACK_ERRORS.BOARD_ACCESS_DENIED) {
           toast.error("Could not sync this board in real time.");
         }
@@ -63,7 +64,7 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
 
     const handleBoardUpdated = (payload: BoardUpdatedPayloadType<Board>): void => {
       if (payload.boardId !== boardId) return;
-      if (payload.actorSocketId && payload.actorSocketId === socket.id) return;
+      if (payload.actorSocketId && payload.actorSocketId === getSocket()?.id) return;
 
       if (isBoardDragging()) {
         pendingBoardRef.current = payload.board;
@@ -82,11 +83,25 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
       navigate("/boards", { replace: true });
     };
 
-    socket.on("connect", handleConnect);
-    socket.on(SOCKET_SERVER_EVENTS.BOARD_UPDATED, handleBoardUpdated);
-    socket.on(SOCKET_SERVER_EVENTS.BOARD_PRESENCE, handlePresence);
-    socket.on(SOCKET_SERVER_EVENTS.BOARD_ACCESS_DENIED, handleAccessDenied);
-    if (socket.connected) joinRoom();
+    void ensureSocket().then((socket) => {
+      if (cancelled) return;
+
+      wasConnectedRef.current = socket.connected;
+
+      socket.on("connect", handleConnect);
+      socket.on(SOCKET_SERVER_EVENTS.BOARD_UPDATED, handleBoardUpdated);
+      socket.on(SOCKET_SERVER_EVENTS.BOARD_PRESENCE, handlePresence);
+      socket.on(SOCKET_SERVER_EVENTS.BOARD_ACCESS_DENIED, handleAccessDenied);
+      if (socket.connected) joinRoom();
+
+      detach = (): void => {
+        socket.off("connect", handleConnect);
+        socket.off(SOCKET_SERVER_EVENTS.BOARD_UPDATED, handleBoardUpdated);
+        socket.off(SOCKET_SERVER_EVENTS.BOARD_PRESENCE, handlePresence);
+        socket.off(SOCKET_SERVER_EVENTS.BOARD_ACCESS_DENIED, handleAccessDenied);
+        if (socket.connected) socket.emit(SOCKET_CLIENT_EVENTS.LEAVE_BOARD, { boardId });
+      };
+    });
 
     const unsubscribeDragEnd = subscribeToDragEnd(() => {
       const pendingBoard = pendingBoardRef.current;
@@ -95,12 +110,9 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
     });
 
     return (): void => {
+      cancelled = true;
       unsubscribeDragEnd();
-      socket.off("connect", handleConnect);
-      socket.off(SOCKET_SERVER_EVENTS.BOARD_UPDATED, handleBoardUpdated);
-      socket.off(SOCKET_SERVER_EVENTS.BOARD_PRESENCE, handlePresence);
-      socket.off(SOCKET_SERVER_EVENTS.BOARD_ACCESS_DENIED, handleAccessDenied);
-      if (socket.connected) socket.emit(SOCKET_CLIENT_EVENTS.LEAVE_BOARD, { boardId });
+      detach?.();
       pendingBoardRef.current = null;
       setPresentUserIds([]);
     };
