@@ -1,4 +1,3 @@
-import "@fontsource-variable/roboto/wght.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { ThemeProvider } from "@mui/material/styles";
@@ -15,6 +14,7 @@ import ErrorBoundary from "src/components/ErrorBoundary/ErrorBoundary.tsx";
 import { store } from "src/redux/store.ts";
 import theme from "src/theme.ts";
 import { injectStore } from "src/utils/http.ts";
+import { reloadOnStalePreload } from "src/utils/preloadError.ts";
 
 import App from "./App.tsx";
 
@@ -26,6 +26,7 @@ if (!rootElement) {
 const persistor = persistStore(store);
 
 injectStore(store);
+reloadOnStalePreload();
 
 createRoot(rootElement).render(
   <StrictMode>

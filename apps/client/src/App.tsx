@@ -4,13 +4,13 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
 import { useSocketConnection } from "src/hooks/useSocketConnection";
+import Auth from "src/pages/Auth/Auth";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { User } from "src/types/user.type";
 
 // Lazy load page components
 const NotFound = lazy(() => import("src/pages/NotFound/NotFound"));
 const Board = lazy(() => import("src/pages/Boards/_id"));
-const Auth = lazy(() => import("src/pages/Auth/Auth"));
 const AccountVerification = lazy(() => import("src/pages/Auth/AccountVerification"));
 const Settings = lazy(() => import("src/pages/Settings/Settings"));
 const Boards = lazy(() => import("src/pages/Boards"));

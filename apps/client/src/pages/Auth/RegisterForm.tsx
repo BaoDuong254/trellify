@@ -6,7 +6,6 @@ import MuiCard from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import Zoom from "@mui/material/Zoom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -16,6 +15,7 @@ import { registerUserAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import TurnstileField from "src/components/Form/TurnstileField";
+import { authCardSx } from "src/pages/Auth/authLayout";
 import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
@@ -42,6 +42,7 @@ function RegisterForm() {
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileKey, setTurnstileKey] = useState(0);
+  const [turnstileArmed, setTurnstileArmed] = useState(false);
 
   const resetTurnstile = () => {
     setTurnstileKey((k) => k + 1);
@@ -63,115 +64,114 @@ function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(submitRegister)}>
-      <Zoom in={true} style={{ transitionDelay: "200ms" }}>
-        <MuiCard sx={{ minWidth: 380, maxWidth: 380, marginTop: "6em" }}>
-          <Box
-            sx={{
-              margin: "1em",
-              display: "flex",
-              justifyContent: "center",
-              gap: 1,
-            }}
-          >
-            <Avatar sx={{ bgcolor: "primary.main" }}>
-              <LockIcon />
-            </Avatar>
-            <Avatar sx={{ bgcolor: "primary.main" }}>
-              <TrelloIcon />
-            </Avatar>
-          </Box>
-          <Box
-            sx={{
-              marginTop: "1em",
-              display: "flex",
-              justifyContent: "center",
-              color: (theme) => theme.palette.text.secondary,
-            }}
-          >
-            Author: BaoGiaDuong
-          </Box>
-          <Box sx={{ padding: "0 1em 1em 1em" }}>
-            <Box sx={{ marginTop: "1em" }}>
-              <TextField
-                fullWidth
-                label='Enter Email...'
-                type='text'
-                variant='outlined'
-                error={!!errors.email}
-                {...register("email", {
-                  required: FIELD_REQUIRED_MESSAGE,
-                  pattern: {
-                    value: EMAIL_RULE,
-                    message: EMAIL_RULE_MESSAGE,
-                  },
-                })}
-              />
-              <FieldErrorAlert errors={errors} fieldName={"email"} />
-            </Box>
-            <Box sx={{ marginTop: "1em" }}>
-              <TextField
-                fullWidth
-                label='Enter Password...'
-                type='password'
-                variant='outlined'
-                error={!!errors.password}
-                {...register("password", {
-                  required: FIELD_REQUIRED_MESSAGE,
-                  pattern: {
-                    value: PASSWORD_RULE,
-                    message: PASSWORD_RULE_MESSAGE,
-                  },
-                })}
-              />
-              <FieldErrorAlert errors={errors} fieldName={"password"} />
-            </Box>
-            <Box sx={{ marginTop: "1em" }}>
-              <TextField
-                fullWidth
-                label='Enter Password Confirmation...'
-                type='password'
-                variant='outlined'
-                error={!!errors.passwordConfirmation}
-                {...register("passwordConfirmation", {
-                  validate: (value: string) => {
-                    if (value === getValues("password")) {
-                      return true;
-                    }
-                    return "Password Confirmation does not match!";
-                  },
-                })}
-              />
-              <FieldErrorAlert errors={errors} fieldName={"passwordConfirmation"} />
-            </Box>
-          </Box>
-          <TurnstileField
-            key={turnstileKey}
-            onSuccess={setTurnstileToken}
-            onExpire={() => setTurnstileToken(null)}
-            onError={() => setTurnstileToken(null)}
-          />
-          <CardActions sx={{ padding: "0 1em 1em 1em" }}>
-            <Button
-              type='submit'
-              variant='contained'
-              color='primary'
-              size='large'
+    <form onSubmit={handleSubmit(submitRegister)} onFocusCapture={() => setTurnstileArmed(true)}>
+      <MuiCard sx={authCardSx}>
+        <Box
+          sx={{
+            margin: "1em",
+            display: "flex",
+            justifyContent: "center",
+            gap: 1,
+          }}
+        >
+          <Avatar sx={{ bgcolor: "primary.main" }}>
+            <LockIcon />
+          </Avatar>
+          <Avatar sx={{ bgcolor: "primary.main" }}>
+            <TrelloIcon />
+          </Avatar>
+        </Box>
+        <Box
+          sx={{
+            marginTop: "1em",
+            display: "flex",
+            justifyContent: "center",
+            color: (theme) => theme.palette.text.secondary,
+          }}
+        >
+          Author: BaoGiaDuong
+        </Box>
+        <Box sx={{ padding: "0 1em 1em 1em" }}>
+          <Box sx={{ marginTop: "1em" }}>
+            <TextField
               fullWidth
-              className='interceptor-loading'
-              disabled={!turnstileToken}
-            >
-              Register
-            </Button>
-          </CardActions>
-          <Box sx={{ padding: "0 1em 1em 1em", textAlign: "center" }}>
-            <Typography>Already have an account?</Typography>
-            <Link to='/login' style={{ textDecoration: "none" }}>
-              <Typography sx={{ color: "primary.main", "&:hover": { color: "#ffbb39" } }}>Log in!</Typography>
-            </Link>
+              label='Enter Email...'
+              type='text'
+              variant='outlined'
+              error={!!errors.email}
+              {...register("email", {
+                required: FIELD_REQUIRED_MESSAGE,
+                pattern: {
+                  value: EMAIL_RULE,
+                  message: EMAIL_RULE_MESSAGE,
+                },
+              })}
+            />
+            <FieldErrorAlert errors={errors} fieldName={"email"} />
           </Box>
-        </MuiCard>
-      </Zoom>
+          <Box sx={{ marginTop: "1em" }}>
+            <TextField
+              fullWidth
+              label='Enter Password...'
+              type='password'
+              variant='outlined'
+              error={!!errors.password}
+              {...register("password", {
+                required: FIELD_REQUIRED_MESSAGE,
+                pattern: {
+                  value: PASSWORD_RULE,
+                  message: PASSWORD_RULE_MESSAGE,
+                },
+              })}
+            />
+            <FieldErrorAlert errors={errors} fieldName={"password"} />
+          </Box>
+          <Box sx={{ marginTop: "1em" }}>
+            <TextField
+              fullWidth
+              label='Enter Password Confirmation...'
+              type='password'
+              variant='outlined'
+              error={!!errors.passwordConfirmation}
+              {...register("passwordConfirmation", {
+                validate: (value: string) => {
+                  if (value === getValues("password")) {
+                    return true;
+                  }
+                  return "Password Confirmation does not match!";
+                },
+              })}
+            />
+            <FieldErrorAlert errors={errors} fieldName={"passwordConfirmation"} />
+          </Box>
+        </Box>
+        <TurnstileField
+          key={turnstileKey}
+          active={turnstileArmed}
+          onSuccess={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          onError={() => setTurnstileToken(null)}
+        />
+        <CardActions sx={{ padding: "0 1em 1em 1em" }}>
+          <Button
+            type='submit'
+            variant='contained'
+            color='primary'
+            size='large'
+            fullWidth
+            className='interceptor-loading'
+            disabled={!turnstileToken}
+          >
+            Register
+          </Button>
+        </CardActions>
+        <Box sx={{ padding: "0 1em 1em 1em", textAlign: "center" }}>
+          <Typography>Already have an account?</Typography>
+          <Link to='/login' style={{ textDecoration: "none" }}>
+            <Typography sx={{ color: "primary.main", "&:hover": { color: "#ffbb39" } }}>Log in!</Typography>
+          </Link>
+        </Box>
+      </MuiCard>
     </form>
   );
 }

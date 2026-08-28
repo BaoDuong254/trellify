@@ -56,8 +56,8 @@ RUN pnpm run apps:build
 FROM nginxinc/nginx-unprivileged:alpine
 
 # Copy custom nginx configuration (default.conf includes security-headers.conf)
-COPY apps/client/nginx.conf /etc/nginx/conf.d/default.conf
-COPY apps/client/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY apps/client/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/client/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 
 # Copy built application from builder stage
 COPY --from=builder /workspace/apps/client/dist /usr/share/nginx/html

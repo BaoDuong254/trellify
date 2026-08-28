@@ -6,7 +6,6 @@ import MuiCard from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import Zoom from "@mui/material/Zoom";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -14,6 +13,7 @@ import { toast } from "react-toastify";
 import { resetPasswordAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import { authCardSx, authPageSx } from "src/pages/Auth/authLayout";
 import {
   FIELD_REQUIRED_MESSAGE,
   PASSWORD_CONFIRMATION_MESSAGE,
@@ -52,97 +52,81 @@ function ResetPasswordForm() {
   };
 
   return (
-    <Box
-      component='main'
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        background: "url(/login-bg.webp)",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        boxShadow: "inset 0 0 0 2000px rgba(0, 0, 0, 0.2)",
-      }}
-    >
+    <Box component='main' sx={authPageSx}>
       <form onSubmit={handleSubmit(submitResetPassword)}>
-        <Zoom in={true} style={{ transitionDelay: "200ms" }}>
-          <MuiCard sx={{ minWidth: 380, maxWidth: 380, marginTop: "6em" }}>
-            <Box
-              sx={{
-                margin: "1em",
-                display: "flex",
-                justifyContent: "center",
-                gap: 1,
-              }}
-            >
-              <Avatar sx={{ bgcolor: "primary.main" }}>
-                <LockResetIcon />
-              </Avatar>
-              <Avatar sx={{ bgcolor: "primary.main" }}>
-                <TrelloIcon />
-              </Avatar>
-            </Box>
-            <Box
-              sx={{
-                marginTop: "1em",
-                display: "flex",
-                justifyContent: "center",
-                color: (theme) => theme.palette.text.secondary,
-              }}
-            >
-              Author: BaoGiaDuong
-            </Box>
-            <Box sx={{ padding: "0 1em 1em 1em" }}>
-              <Box sx={{ marginTop: "1em" }}>
-                <TextField
-                  fullWidth
-                  label='New Password...'
-                  type='password'
-                  variant='outlined'
-                  error={!!errors.password}
-                  {...register("password", {
-                    required: FIELD_REQUIRED_MESSAGE,
-                    pattern: { value: PASSWORD_RULE, message: PASSWORD_RULE_MESSAGE },
-                  })}
-                />
-                <FieldErrorAlert errors={errors} fieldName='password' />
-              </Box>
-              <Box sx={{ marginTop: "1em" }}>
-                <TextField
-                  fullWidth
-                  label='Confirm New Password...'
-                  type='password'
-                  variant='outlined'
-                  error={!!errors.passwordConfirmation}
-                  {...register("passwordConfirmation", {
-                    validate: (value: string) => value === getValues("password") || PASSWORD_CONFIRMATION_MESSAGE,
-                  })}
-                />
-                <FieldErrorAlert errors={errors} fieldName='passwordConfirmation' />
-              </Box>
-            </Box>
-            <CardActions sx={{ padding: "0 1em 1em 1em" }}>
-              <Button
-                type='submit'
-                variant='contained'
-                color='primary'
-                size='large'
+        <MuiCard sx={authCardSx}>
+          <Box
+            sx={{
+              margin: "1em",
+              display: "flex",
+              justifyContent: "center",
+              gap: 1,
+            }}
+          >
+            <Avatar sx={{ bgcolor: "primary.main" }}>
+              <LockResetIcon />
+            </Avatar>
+            <Avatar sx={{ bgcolor: "primary.main" }}>
+              <TrelloIcon />
+            </Avatar>
+          </Box>
+          <Box
+            sx={{
+              marginTop: "1em",
+              display: "flex",
+              justifyContent: "center",
+              color: (theme) => theme.palette.text.secondary,
+            }}
+          >
+            Author: BaoGiaDuong
+          </Box>
+          <Box sx={{ padding: "0 1em 1em 1em" }}>
+            <Box sx={{ marginTop: "1em" }}>
+              <TextField
                 fullWidth
-                className='interceptor-loading'
-              >
-                Reset Password
-              </Button>
-            </CardActions>
-            <Box sx={{ padding: "0 0.5em 1em 0.5em", textAlign: "center" }}>
-              <Typography variant='body2' color='text.secondary'>
-                The password reset link is valid for 15 minutes.
-              </Typography>
+                label='New Password...'
+                type='password'
+                variant='outlined'
+                error={!!errors.password}
+                {...register("password", {
+                  required: FIELD_REQUIRED_MESSAGE,
+                  pattern: { value: PASSWORD_RULE, message: PASSWORD_RULE_MESSAGE },
+                })}
+              />
+              <FieldErrorAlert errors={errors} fieldName='password' />
             </Box>
-          </MuiCard>
-        </Zoom>
+            <Box sx={{ marginTop: "1em" }}>
+              <TextField
+                fullWidth
+                label='Confirm New Password...'
+                type='password'
+                variant='outlined'
+                error={!!errors.passwordConfirmation}
+                {...register("passwordConfirmation", {
+                  validate: (value: string) => value === getValues("password") || PASSWORD_CONFIRMATION_MESSAGE,
+                })}
+              />
+              <FieldErrorAlert errors={errors} fieldName='passwordConfirmation' />
+            </Box>
+          </Box>
+          <CardActions sx={{ padding: "0 1em 1em 1em" }}>
+            <Button
+              type='submit'
+              variant='contained'
+              color='primary'
+              size='large'
+              fullWidth
+              className='interceptor-loading'
+            >
+              Reset Password
+            </Button>
+          </CardActions>
+          <Box sx={{ padding: "0 0.5em 1em 0.5em", textAlign: "center" }}>
+            <Typography variant='body2' color='text.secondary'>
+              The password reset link is valid for 15 minutes.
+            </Typography>
+          </Box>
+        </MuiCard>
       </form>
     </Box>
   );

@@ -5,6 +5,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import ForgotPasswordForm from "src/pages/Auth/ForgotPasswordForm";
 import LoginForm from "src/pages/Auth/LoginForm";
 import RegisterForm from "src/pages/Auth/RegisterForm";
+import { authPageSx } from "src/pages/Auth/authLayout";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 
 function Auth() {
@@ -19,21 +20,7 @@ function Auth() {
   }
 
   return (
-    <Box
-      component='main'
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        background: "url(/login-bg.webp)",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        boxShadow: "inset 0 0 0 2000px rgba(0, 0, 0, 0.2)",
-      }}
-    >
+    <Box component='main' sx={authPageSx}>
       {isLogin && <LoginForm />}
       {isRegister && <RegisterForm />}
       {isForgotPassword && <ForgotPasswordForm />}

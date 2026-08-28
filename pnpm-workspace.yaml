@@ -19,7 +19,6 @@ catalog:
   "@emotion/styled": 11.14.1
   "@eslint-react/eslint-plugin": 5.8.13
   "@eslint/js": 10.0.1
-  "@fontsource-variable/roboto": 5.3.0
   "@getbrevo/brevo": 5.0.4
   "@mui/icons-material": 9.0.1
   "@mui/lab": 7.0.1-beta.25
