@@ -6,7 +6,6 @@ import MuiCard from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -15,6 +14,7 @@ import { forgotPasswordAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import TurnstileField from "src/components/Form/TurnstileField";
+import { useTurnstile } from "src/hooks/useTurnstile";
 import { authCardSx } from "src/pages/Auth/authLayout";
 import { EMAIL_RULE, EMAIL_RULE_MESSAGE, FIELD_REQUIRED_MESSAGE } from "src/utils/validators";
 
@@ -29,28 +29,21 @@ function ForgotPasswordForm() {
     formState: { errors },
   } = useForm<ForgotPasswordFormData>();
 
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileKey, setTurnstileKey] = useState(0);
-  const [turnstileArmed, setTurnstileArmed] = useState(false);
-
-  const resetTurnstile = () => {
-    setTurnstileKey((k) => k + 1);
-    setTurnstileToken(null);
-  };
+  const turnstile = useTurnstile();
 
   const submitForgotPassword = (data: ForgotPasswordFormData) => {
     toast
-      .promise(forgotPasswordAPI({ email: data.email, turnstileToken: turnstileToken! }), {
+      .promise(forgotPasswordAPI({ email: data.email, turnstileToken: turnstile.token! }), {
         pending: "Sending reset link...",
         success:
           "If the email is registered, a password reset link has been sent. Please check your inbox and spam folder.",
       })
       .catch(() => {})
-      .finally(resetTurnstile);
+      .finally(turnstile.reset);
   };
 
   return (
-    <form onSubmit={handleSubmit(submitForgotPassword)} onFocusCapture={() => setTurnstileArmed(true)}>
+    <form onSubmit={handleSubmit(submitForgotPassword)} {...turnstile.formProps}>
       <MuiCard sx={authCardSx}>
         <Box
           sx={{
@@ -99,11 +92,11 @@ function ForgotPasswordForm() {
           </Box>
         </Box>
         <TurnstileField
-          key={turnstileKey}
-          active={turnstileArmed}
-          onSuccess={setTurnstileToken}
-          onExpire={() => setTurnstileToken(null)}
-          onError={() => setTurnstileToken(null)}
+          key={turnstile.widgetKey}
+          active={turnstile.armed}
+          onSuccess={turnstile.setToken}
+          onExpire={turnstile.clearToken}
+          onError={turnstile.clearToken}
         />
         <CardActions sx={{ padding: "0 1em 1em 1em" }}>
           <Button
@@ -113,7 +106,7 @@ function ForgotPasswordForm() {
             size='large'
             fullWidth
             className='interceptor-loading'
-            disabled={!turnstileToken}
+            disabled={!turnstile.token}
           >
             Send Password Reset Link
           </Button>

@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import { resetPasswordAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
+import { useAuthShell } from "src/hooks/useAuthShell";
 import { authCardSx, authPageSx } from "src/pages/Auth/authLayout";
 import {
   FIELD_REQUIRED_MESSAGE,
@@ -30,6 +31,8 @@ function ResetPasswordForm() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const navigate = useNavigate();
+
+  useAuthShell();
 
   const {
     register,

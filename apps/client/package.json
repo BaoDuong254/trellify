@@ -41,8 +41,7 @@
     "react-toastify": "11.1.0",
     "redux-persist": "catalog:",
     "rehype-sanitize": "catalog:",
-    "socket.io-client": "catalog:",
-    "zod": "catalog:"
+    "socket.io-client": "catalog:"
   },
   "devDependencies": {
     "@types/lodash": "catalog:",

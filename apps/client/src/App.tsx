@@ -4,7 +4,8 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
 import { useSocketConnection } from "src/hooks/useSocketConnection";
-import Auth from "src/pages/Auth/Auth";
+import AuthLayout from "src/layouts/AuthLayout";
+import LoginForm from "src/pages/Auth/LoginForm";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { User } from "src/types/user.type";
 
@@ -15,6 +16,9 @@ const AccountVerification = lazy(() => import("src/pages/Auth/AccountVerificatio
 const Settings = lazy(() => import("src/pages/Settings/Settings"));
 const Boards = lazy(() => import("src/pages/Boards"));
 const ResetPasswordForm = lazy(() => import("src/pages/Auth/ResetPasswordForm"));
+const RegisterForm = lazy(() => import("src/pages/Auth/RegisterForm"));
+const ForgotPasswordForm = lazy(() => import("src/pages/Auth/ForgotPasswordForm"));
+const ConfirmLayout = lazy(() => import("src/layouts/ConfirmLayout"));
 
 const ProtectedRoute = ({ user }: { user: User | null }) => {
   if (!user) return <Navigate to='/login' replace={true} />;
@@ -33,19 +37,23 @@ export default function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute user={currentUser} />}>
-          {/* Board Details */}
-          <Route path='/boards/:boardId' element={<Board />} />
-          <Route path='/boards' element={<Boards />} />
+          <Route element={<ConfirmLayout />}>
+            {/* Board Details */}
+            <Route path='/boards/:boardId' element={<Board />} />
+            <Route path='/boards' element={<Boards />} />
 
-          {/* User Settings */}
-          <Route path='/settings/account' element={<Settings />} />
-          <Route path='/settings/security' element={<Settings />} />
+            {/* User Settings */}
+            <Route path='/settings/account' element={<Settings />} />
+            <Route path='/settings/security' element={<Settings />} />
+          </Route>
         </Route>
 
         {/* Authentication */}
-        <Route path='/login' element={<Auth />} />
-        <Route path='/register' element={<Auth />} />
-        <Route path='/forgot-password' element={<Auth />} />
+        <Route element={<AuthLayout />}>
+          <Route path='/login' element={<LoginForm />} />
+          <Route path='/register' element={<RegisterForm />} />
+          <Route path='/forgot-password' element={<ForgotPasswordForm />} />
+        </Route>
         <Route path='/reset-password' element={<ResetPasswordForm />} />
         <Route path='/account/verification' element={<AccountVerification />} />
 

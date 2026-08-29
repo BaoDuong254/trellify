@@ -464,9 +464,6 @@ importers:
       socket.io-client:
         specifier: 'catalog:'
         version: 4.8.3(supports-color@5.5.0)
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
     devDependencies:
       '@types/lodash':
         specifier: 'catalog:'

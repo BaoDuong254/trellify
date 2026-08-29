@@ -1,7 +1,6 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { ThemeProvider } from "@mui/material/styles";
-import { ConfirmProvider } from "material-ui-confirm";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
@@ -35,20 +34,10 @@ createRoot(rootElement).render(
         <BrowserRouter basename='/'>
           <ThemeProvider theme={theme}>
             <ErrorBoundary>
-              <ConfirmProvider
-                defaultOptions={{
-                  allowClose: false,
-                  dialogProps: { maxWidth: "xs" },
-                  buttonOrder: ["confirm", "cancel"],
-                  cancellationButtonProps: { color: "inherit" },
-                  confirmationButtonProps: { color: "secondary", variant: "outlined" },
-                }}
-              >
-                <GlobalStyles styles={{ a: { textDecoration: "none" } }} />
-                <CssBaseline />
-                <App />
-                <ToastContainer position='bottom-left' theme='colored' />
-              </ConfirmProvider>
+              <GlobalStyles styles={{ a: { textDecoration: "none" } }} />
+              <CssBaseline />
+              <App />
+              <ToastContainer position='bottom-left' theme='colored' />
             </ErrorBoundary>
           </ThemeProvider>
         </BrowserRouter>

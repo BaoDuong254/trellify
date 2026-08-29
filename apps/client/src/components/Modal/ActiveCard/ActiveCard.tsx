@@ -23,11 +23,13 @@ import WatchLaterOutlinedIcon from "@mui/icons-material/WatchLaterOutlined";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Modal from "@mui/material/Modal";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 import { cloneDeep } from "lodash";
 import { useConfirm } from "material-ui-confirm";
+import { Suspense, lazy } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 
@@ -53,8 +55,9 @@ import { selectCurrentUser } from "src/redux/user/userSlice";
 import { singleFileValidator } from "src/utils/validators";
 
 import CardActivitySection from "./CardActivitySection";
-import CardDescriptionMdEditor from "./CardDescriptionMdEditor";
 import CardUserGroup from "./CardUserGroup";
+
+const CardDescriptionMdEditor = lazy(() => import("./CardDescriptionMdEditor"));
 
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -221,10 +224,12 @@ function ActiveCard() {
                   Description
                 </Typography>
               </Box>
-              <CardDescriptionMdEditor
-                cardDescriptionProp={activeCard?.description || ""}
-                handleUpdateCardDescription={onUpdateCardDescription}
-              />
+              <Suspense fallback={<Skeleton variant='rounded' height={120} sx={{ mt: 1 }} />}>
+                <CardDescriptionMdEditor
+                  cardDescriptionProp={activeCard?.description || ""}
+                  handleUpdateCardDescription={onUpdateCardDescription}
+                />
+              </Suspense>
             </Box>
 
             <Box sx={{ mb: 3 }}>

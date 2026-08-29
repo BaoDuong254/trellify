@@ -74,6 +74,9 @@ jobs:
       - name: Run format check
         run: pnpm run format
 
+      - name: Check CSP script hashes
+        run: bash scripts/check-csp-hashes.sh
+
       - name: Build packages
         run: pnpm run pkg:build
 

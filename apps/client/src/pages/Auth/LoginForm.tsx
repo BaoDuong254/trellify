@@ -7,7 +7,6 @@ import MuiCard from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -16,6 +15,7 @@ import { toast } from "react-toastify";
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import TurnstileField from "src/components/Form/TurnstileField";
+import { useTurnstile } from "src/hooks/useTurnstile";
 import { authCardSx } from "src/pages/Auth/authLayout";
 import type { AppDispatch } from "src/redux/store";
 import { loginUserAPI } from "src/redux/user/userSlice";
@@ -45,33 +45,26 @@ function LoginForm() {
   const registeredEmail = searchParams.get("registeredEmail");
   const verifiedEmail = searchParams.get("verifiedEmail");
 
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileKey, setTurnstileKey] = useState(0);
-  const [turnstileArmed, setTurnstileArmed] = useState(false);
-
-  const resetTurnstile = () => {
-    setTurnstileKey((k) => k + 1);
-    setTurnstileToken(null);
-  };
+  const turnstile = useTurnstile();
 
   const submitLogIn = (data: LoginFormData) => {
     const { email, password } = data;
 
     toast
-      .promise(dispatch(loginUserAPI({ email, password, turnstileToken: turnstileToken! })), {
+      .promise(dispatch(loginUserAPI({ email, password, turnstileToken: turnstile.token! })), {
         pending: "Logging in...",
       })
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
           navigate("/");
         } else {
-          resetTurnstile();
+          turnstile.reset();
         }
       });
   };
 
   return (
-    <form onSubmit={handleSubmit(submitLogIn)} onFocusCapture={() => setTurnstileArmed(true)}>
+    <form onSubmit={handleSubmit(submitLogIn)} {...turnstile.formProps}>
       <MuiCard sx={authCardSx}>
         <Box
           sx={{
@@ -173,11 +166,11 @@ function LoginForm() {
           </Box>
         </Box>
         <TurnstileField
-          key={turnstileKey}
-          active={turnstileArmed}
-          onSuccess={setTurnstileToken}
-          onExpire={() => setTurnstileToken(null)}
-          onError={() => setTurnstileToken(null)}
+          key={turnstile.widgetKey}
+          active={turnstile.armed}
+          onSuccess={turnstile.setToken}
+          onExpire={turnstile.clearToken}
+          onError={turnstile.clearToken}
         />
         <CardActions sx={{ padding: "0 1em 1em 1em" }}>
           <Button
@@ -187,7 +180,7 @@ function LoginForm() {
             size='large'
             fullWidth
             className='interceptor-loading'
-            disabled={!turnstileToken}
+            disabled={!turnstile.token}
           >
             Login
           </Button>

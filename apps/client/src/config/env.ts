@@ -1,16 +1,13 @@
-import z from "zod";
+const VITE_API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT ?? "";
+const VITE_TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "";
 
-const configSchema = z.object({
-  VITE_API_ENDPOINT: z.string().default(""),
-  VITE_TURNSTILE_SITE_KEY: z.string().min(1, "VITE_TURNSTILE_SITE_KEY is required"),
-});
-
-const configServer = configSchema.safeParse(import.meta.env);
-
-if (!configServer.success) {
-  throw new Error("Invalid environment variables: " + z.treeifyError(configServer.error));
+if (!VITE_TURNSTILE_SITE_KEY) {
+  throw new Error("Invalid environment variables: VITE_TURNSTILE_SITE_KEY is required");
 }
 
-const envConfig = configServer.data;
+const envConfig = {
+  VITE_API_ENDPOINT,
+  VITE_TURNSTILE_SITE_KEY,
+};
 
 export default envConfig;

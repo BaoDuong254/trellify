@@ -6,7 +6,6 @@ import MuiCard from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -15,6 +14,7 @@ import { registerUserAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import TurnstileField from "src/components/Form/TurnstileField";
+import { useTurnstile } from "src/hooks/useTurnstile";
 import { authCardSx } from "src/pages/Auth/authLayout";
 import {
   EMAIL_RULE,
@@ -40,31 +40,24 @@ function RegisterForm() {
 
   const navigate = useNavigate();
 
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileKey, setTurnstileKey] = useState(0);
-  const [turnstileArmed, setTurnstileArmed] = useState(false);
-
-  const resetTurnstile = () => {
-    setTurnstileKey((k) => k + 1);
-    setTurnstileToken(null);
-  };
+  const turnstile = useTurnstile();
 
   const submitRegister = (data: RegisterFormData) => {
     const { email, password } = data;
     toast
-      .promise(registerUserAPI({ email, password, turnstileToken: turnstileToken! }), {
+      .promise(registerUserAPI({ email, password, turnstileToken: turnstile.token! }), {
         pending: "Registering is in progress...",
       })
       .then((user) => {
         navigate(`/login?registeredEmail=${user.email}`);
       })
       .catch(() => {
-        resetTurnstile();
+        turnstile.reset();
       });
   };
 
   return (
-    <form onSubmit={handleSubmit(submitRegister)} onFocusCapture={() => setTurnstileArmed(true)}>
+    <form onSubmit={handleSubmit(submitRegister)} {...turnstile.formProps}>
       <MuiCard sx={authCardSx}>
         <Box
           sx={{
@@ -146,11 +139,11 @@ function RegisterForm() {
           </Box>
         </Box>
         <TurnstileField
-          key={turnstileKey}
-          active={turnstileArmed}
-          onSuccess={setTurnstileToken}
-          onExpire={() => setTurnstileToken(null)}
-          onError={() => setTurnstileToken(null)}
+          key={turnstile.widgetKey}
+          active={turnstile.armed}
+          onSuccess={turnstile.setToken}
+          onExpire={turnstile.clearToken}
+          onError={turnstile.clearToken}
         />
         <CardActions sx={{ padding: "0 1em 1em 1em" }}>
           <Button
@@ -160,7 +153,7 @@ function RegisterForm() {
             size='large'
             fullWidth
             className='interceptor-loading'
-            disabled={!turnstileToken}
+            disabled={!turnstile.token}
           >
             Register
           </Button>

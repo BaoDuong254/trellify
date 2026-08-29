@@ -6,14 +6,6 @@ export const authPageSx: SxProps<Theme> = {
   minHeight: "100vh",
   alignItems: "center",
   justifyContent: "flex-start",
-  backgroundImage: "url(/images/login-bg-mobile.webp)",
-  backgroundRepeat: "no-repeat",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  boxShadow: "inset 0 0 0 2000px rgba(0, 0, 0, 0.2)",
-  "@media (min-width: 601px)": {
-    backgroundImage: "url(/images/login-bg.webp)",
-  },
 };
 
 export const authCardSx: SxProps<Theme> = {
