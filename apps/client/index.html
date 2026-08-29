@@ -28,14 +28,24 @@
           U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
       }
 
-      #auth-bg {
+      @font-face {
+        font-family: "Roboto Metrics Fallback";
+        src: local("Arial");
+        ascent-override: 92.77%;
+        descent-override: 24.41%;
+        line-gap-override: 0%;
+      }
+
+      #auth-bg,
+      #auth-skeleton {
         display: none;
       }
+
       html.auth-shell #auth-bg {
         display: block;
         position: fixed;
         inset: 0;
-        z-index: -1;
+        z-index: -2;
         background-color: #1565c0;
         background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(/images/login-bg-mobile.webp);
         background-repeat: no-repeat;
@@ -47,11 +57,106 @@
           background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(/images/login-bg.webp);
         }
       }
+
+      html.auth-shell {
+        --auth-paper: #fff;
+        --auth-accent: #1976d2;
+        --auth-text-secondary: rgba(0, 0, 0, 0.6);
+        --auth-placeholder: rgba(0, 0, 0, 0.08);
+      }
+      html.auth-shell[data-mui-color-scheme="dark"] {
+        --auth-paper: #121212;
+        --auth-accent: #90caf9;
+        --auth-text-secondary: rgba(255, 255, 255, 0.7);
+        --auth-placeholder: rgba(255, 255, 255, 0.09);
+      }
+
+      html.auth-shell:not(.app-ready) #auth-skeleton {
+        display: block;
+        position: fixed;
+        top: 96px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: -1;
+        width: 380px;
+        max-width: calc(100% - 32px);
+        overflow: hidden;
+        border-radius: 4px;
+        background-color: var(--auth-paper);
+        box-shadow:
+          0 2px 1px -1px rgba(0, 0, 0, 0.2),
+          0 1px 1px 0 rgba(0, 0, 0, 0.14),
+          0 1px 3px 0 rgba(0, 0, 0, 0.12);
+      }
+      #auth-skeleton .sk-avatars {
+        margin: 16px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+      #auth-skeleton .sk-avatars span {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--auth-accent);
+      }
+      #auth-skeleton .sk-author {
+        margin: 16px 0 0;
+        font-family: "Roboto Variable", "Roboto Metrics Fallback", "Arial", sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        text-align: center;
+        color: var(--auth-text-secondary);
+      }
+      #auth-skeleton .sk-bar {
+        border-radius: 4px;
+        background-color: var(--auth-placeholder);
+      }
+      #auth-skeleton .sk-field {
+        margin: 16px 16px 0;
+        height: 56px;
+      }
+      #auth-skeleton .sk-link {
+        margin: 8px 16px 0 auto;
+        width: 110px;
+        height: 20px;
+      }
+      #auth-skeleton .sk-widget {
+        margin: 16px auto 8px;
+        width: 300px;
+        max-width: calc(100% - 32px);
+        height: 65px;
+      }
+      #auth-skeleton .sk-action {
+        margin: 0 16px;
+        height: 42px;
+      }
+      #auth-skeleton .sk-foot {
+        margin: 16px auto 0;
+        width: 150px;
+        height: 21px;
+      }
+      #auth-skeleton .sk-foot-link {
+        margin: 4px auto 16px;
+        width: 120px;
+        height: 21px;
+      }
     </style>
 
     <link rel="preconnect" href="https://challenges.cloudflare.com" crossorigin />
 
     <script>
+      try {
+        var muiMode = localStorage.getItem("mui-mode") || "system";
+        var muiScheme =
+          muiMode === "system"
+            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : muiMode;
+        document.documentElement.setAttribute("data-mui-color-scheme", muiScheme);
+      } catch (e) {}
       if (/^\/(login|register|forgot-password|reset-password)\b/.test(location.pathname)) {
         document.documentElement.className = "auth-shell";
         var isNarrow = window.matchMedia("(max-width: 600px)").matches;
@@ -120,6 +225,17 @@
   </head>
   <body>
     <div id="auth-bg"></div>
+    <div id="auth-skeleton" aria-hidden="true">
+      <div class="sk-avatars"><span></span><span></span></div>
+      <p class="sk-author">Author: BaoGiaDuong</p>
+      <div class="sk-bar sk-field"></div>
+      <div class="sk-bar sk-field"></div>
+      <div class="sk-bar sk-link"></div>
+      <div class="sk-bar sk-widget"></div>
+      <div class="sk-bar sk-action"></div>
+      <div class="sk-bar sk-foot"></div>
+      <div class="sk-bar sk-foot-link"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
