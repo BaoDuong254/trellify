@@ -50,12 +50,14 @@ Runs against an isolated docker-compose stack built from the production Dockerfi
 ```bash
 pnpm loadtest:up      # build + start server/worker/mongo/redis (loadtest:up:multi = 3 replicas behind nginx)
 pnpm loadtest:seed    # seed users/boards/cards, mint JWTs into k6/data/users.json
-pnpm k6:smoke         # gate — 1 VU through every flow; if this fails, later numbers are meaningless
-pnpm k6:load          # main run; also k6:baseline/stress/spike/soak/capacity/socket
+pnpm k6 smoke         # gate — 1 VU through every flow; if this fails, later numbers are meaningless
+pnpm k6 mixed load    # main run; `pnpm k6` with no args prompts for scenario and profile
 pnpm loadtest:down    # removes volumes too, so re-seed afterwards
 ```
 
-`k6/README.md` documents the profiles, thresholds, and the Prometheus remote-write path (`pnpm k6:prom`).
+`pnpm k6 <scenario> <profile>` is the single entrypoint for every run — scenarios are `smoke`, `mixed`, `board-read`, `board-write`, `auth`, `socket-fanout`; profiles are `smoke`, `baseline`, `load`, `stress`, `spike`, `soak`, `capacity`. `--prom` pushes to Prometheus, `--ts` writes a time-series file for `pnpm k6:peak-rps`, and any other flag is forwarded to `k6 run`.
+
+`k6/README.md` documents the profiles, thresholds, and the Prometheus remote-write path.
 
 ## Monorepo Layout
 

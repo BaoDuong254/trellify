@@ -308,21 +308,25 @@ Load tests run with [k6](https://k6.io/) against an isolated docker-compose stac
 ```bash
 pnpm loadtest:up      # start the isolated stack
 pnpm loadtest:seed    # seed users, boards and cards
-pnpm k6:smoke         # gate - all checks must pass
-pnpm k6:load          # the main run
+pnpm k6 smoke         # gate - all checks must pass
+pnpm k6 mixed load    # the main run
 pnpm loadtest:down    # tear it all down
 ```
 
-| Script                           | Purpose                                       |
-| -------------------------------- | --------------------------------------------- |
-| `loadtest:up[:multi]`            | Start the stack, 1 replica or 3 behind nginx  |
-| `loadtest:down[:multi]`          | Remove containers and volumes                 |
-| `loadtest:seed`                  | Seed data and mint JWTs for the virtual users |
-| `k6:baseline`                    | Low concurrency, intrinsic per-endpoint cost  |
-| `k6:load`                        | Main scenario at 50 VUs                       |
-| `k6:capacity`                    | Open model, finds the actual request ceiling  |
-| `k6:socket`                      | Socket.io broadcast fan-out cost              |
-| `k6:stress` `k6:spike` `k6:soak` | Other load shapes                             |
+`pnpm k6` with no arguments prompts for the scenario and profile; passing them runs straight away.
+
+| Script                  | Purpose                                       |
+| ----------------------- | --------------------------------------------- |
+| `loadtest:up[:multi]`   | Start the stack, 1 replica or 3 behind nginx  |
+| `loadtest:down[:multi]` | Remove containers and volumes                 |
+| `loadtest:seed`         | Seed data and mint JWTs for the virtual users |
+| `k6`                    | Run any scenario against any profile          |
+| `k6:peak-rps`           | Peak RPS from a `--ts` time-series file       |
+| `k6:traffic-mix`        | Derive the real traffic mix from Prometheus   |
+
+Scenarios: `smoke`, `mixed`, `board-read`, `board-write`, `auth`, `socket-fanout`.
+Profiles: `smoke`, `baseline`, `load`, `stress`, `spike`, `soak`, `capacity`.
+Flags: `--prom` pushes to Prometheus, `--ts` writes a time-series file for `pnpm k6:peak-rps`.
 
 Full instructions and configuration: [`k6/README.md`](k6/README.md).
 

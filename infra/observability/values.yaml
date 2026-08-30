@@ -63,8 +63,6 @@ grafana:
       memory: 512Mi
     limits:
       memory: 1Gi
-  env:
-    GOMEMLIMIT: "768MiB"
 
 kube-state-metrics:
   resources:

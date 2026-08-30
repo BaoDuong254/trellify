@@ -19,12 +19,12 @@ If `k6 version` fails right after installing, open a new terminal — an existin
 ```powershell
 pnpm loadtest:up      # build the production image, start server/worker/mongo/redis
 pnpm loadtest:seed    # create users/boards/cards, mint JWTs into k6/data/users.json
-pnpm k6:smoke         # gate: 1 VU through every flow, all checks must pass
-pnpm k6:load          # the main run
+pnpm k6 smoke         # gate: 1 VU through every flow, all checks must pass
+pnpm k6 mixed load    # the main run
 pnpm loadtest:down    # remove containers and volumes
 ```
 
-`pnpm k6:smoke` is a gate. If it fails, stop — the payloads or the auth setup are wrong, and every later number is meaningless.
+`pnpm k6 smoke` is a gate. If it fails, stop — the payloads or the auth setup are wrong, and every later number is meaningless.
 
 `loadtest:down` removes the volumes too, so re-seed after it. Otherwise `users.json` points at documents that no longer exist and every request returns 403 or 404.
 
@@ -37,33 +37,51 @@ pnpm loadtest:down    # remove containers and volumes
 | `loadtest:down` / `loadtest:down:multi` | Stop and delete containers plus volumes               | seconds             |
 | `loadtest:seed`                         | Seed users, boards, cards; write `k6/data/users.json` | ~90s at defaults    |
 | `loadtest:clean`                        | Delete every `k6-` prefixed document, no re-seed      | seconds             |
-| `k6:smoke`                              | 1 VU through all flows once                           | ~10s                |
-| `k6:baseline`                           | Low concurrency, intrinsic per-endpoint cost          | ~90s                |
-| `k6:load`                               | Main scenario, 50 VUs                                 | ~5 min              |
-| `k6:stress`                             | Ramp to 200 VUs                                       | ~12 min             |
-| `k6:spike`                              | Sudden jump to 200 VUs                                | ~3 min              |
-| `k6:soak`                               | 20 VUs held for 30 minutes                            | 30 min              |
-| `k6:capacity`                           | Open model, finds the breaking point and aborts       | up to 15 min        |
-| `k6:socket`                             | Socket.io fan-out cost                                | ~2 min              |
-| `k6:prom`                               | `k6:load` with results pushed to Prometheus           | ~5 min              |
+| `k6`                                    | Run any scenario against any profile                  | 10s to 30 min       |
+| `k6:peak-rps`                           | Peak RPS from a time-series output file               | seconds             |
 | `k6:traffic-mix`                        | Derive the real traffic mix from Prometheus           | seconds             |
+
+## Running a test
+
+One command covers every combination. Called bare it asks for each choice; called with arguments it runs straight away, so it stays copy-pasteable into an issue or a CI job.
+
+```powershell
+pnpm k6                        # prompts for scenario, profile, and the two flags
+pnpm k6 smoke                  # scenario alone; profile defaults to load
+pnpm k6 mixed load             # scenario and profile
+pnpm k6 board-read stress
+pnpm k6 mixed load --prom      # push to Prometheus using k6/prometheus.env
+pnpm k6 mixed load --ts        # also write a time-series file, see Peak RPS
+pnpm k6 mixed load -e VUS=100  # any other flag goes straight to k6
+pnpm k6 --help
+```
+
+The scenario and profile must come first; everything from the first `-` onward is forwarded to `k6 run` untouched, so `-e THINK_TIME=0` and `--out csv=...` work as they always did.
+
+The command it builds is printed before it runs, so what actually executed is always visible.
+
+If stdin is not a terminal and no scenario was given, it prints usage and exits 1 rather than waiting for input that will never come — piping into it or running it from CI fails fast instead of hanging.
 
 ## Scenarios
 
-| File                         | Covers                                                       |
-| ---------------------------- | ------------------------------------------------------------ |
-| `scenarios/smoke.js`         | All three flows once, sequentially                           |
-| `scenarios/mixed.js`         | Main scenario: read 70% / write 25% / auth 5% in parallel    |
-| `scenarios/board-read.js`    | `GET /boards` and `GET /boards/:id`                          |
-| `scenarios/board-write.js`   | Create columns and cards, update, comment, move, delete      |
-| `scenarios/auth.js`          | `login`, `refresh_token`, `logout`                           |
-| `scenarios/socket-fanout.js` | Holds Socket.io viewers while writers mutate the same boards |
+| Name            | File                         | Covers                                                       |
+| --------------- | ---------------------------- | ------------------------------------------------------------ |
+| `smoke`         | `scenarios/smoke.js`         | All three flows once, sequentially                           |
+| `mixed`         | `scenarios/mixed.js`         | Main scenario: read 70% / write 25% / auth 5% in parallel    |
+| `board-read`    | `scenarios/board-read.js`    | `GET /boards` and `GET /boards/:id`                          |
+| `board-write`   | `scenarios/board-write.js`   | Create columns and cards, update, comment, move, delete      |
+| `auth`          | `scenarios/auth.js`          | `login`, `refresh_token`, `logout`                           |
+| `socket-fanout` | `scenarios/socket-fanout.js` | Holds Socket.io viewers while writers mutate the same boards |
+
+`smoke` and `socket-fanout` declare their own load shape inside the script instead of calling `scenariosFor()`, so a profile does not change how they run — `pnpm k6` does not ask for one, and passing one prints a note saying it was ignored.
+
+`mixed.js` reports each flow separately through `http_req_duration{group:read}` and friends, but those are latencies measured while all three flows compete for the same server. The single-flow scenarios run one flow on its own, which is what shows that flow's own ceiling.
 
 The write flow creates and deletes its own columns and cards each iteration, so many VUs can share a board without corrupting card order, and the database does not grow without bound.
 
 ## Profiles
 
-Select with `-e PROFILE=<name>`, or use the matching `pnpm k6:*` script.
+Pass as the second argument to `pnpm k6`, or set `-e PROFILE=<name>` directly.
 
 | Profile    | Executor               | Shape                                      |
 | ---------- | ---------------------- | ------------------------------------------ |
@@ -75,7 +93,7 @@ Select with `-e PROFILE=<name>`, or use the matching `pnpm k6:*` script.
 | `soak`     | `constant-vus`         | 20 VUs, 30 min                             |
 | `capacity` | `ramping-arrival-rate` | 50 to 400 iterations/s, aborts at the knee |
 
-For `capacity`, `rate` is iterations per second, not requests. Read the real request rate from `http_reqs` in the summary.
+For `capacity`, `rate` is iterations per second, not requests. The request rate is `http_reqs` in the summary, but that figure is an average over the whole run — see [Peak RPS](#peak-rps).
 
 ## Environment variables
 
@@ -90,12 +108,13 @@ For `capacity`, `rate` is iterations per second, not requests. Read the real req
 | `TEST_ID`              | `local-<timestamp>`     | Tags every metric, useful for comparing runs in Grafana                                               |
 | `USERS_PATH`           | `../data/users.json`    | Seeded user file                                                                                      |
 | `SUMMARY_DIR`          | `k6/results`            | Where the summary is written                                                                          |
+| `RUN_NAME`             | derived by `pnpm k6`    | Base name of the summary files; the runner sets it, override only to name a run yourself              |
 | `VERBOSE`              | unset                   | Print response bodies for failed checks                                                               |
 | `TURNSTILE_TOKEN`      | `loadtest`              | Dummy token sent to the login endpoint; the stack runs the Cloudflare test secret so any value passes |
 | `LOADTEST_PORT`        | `3000`                  | Host port the stack publishes                                                                         |
-| `SOCKET_VIEWERS`       | `25`                    | Socket.io connections held open by `k6:socket`                                                        |
+| `SOCKET_VIEWERS`       | `25`                    | Socket.io connections held open by `socket-fanout`                                                    |
 | `SOCKET_BOARDS`        | `5`                     | Boards viewers and writers converge on                                                                |
-| `SOCKET_WRITERS`       | `12`                    | Writing VUs during `k6:socket`                                                                        |
+| `SOCKET_WRITERS`       | `12`                    | Writing VUs during `socket-fanout`                                                                    |
 | `SOCKET_HOLD`          | `300`                   | Seconds to hold connections                                                                           |
 | `SEED_USERS`           | `50`                    | Users to seed                                                                                         |
 | `SEED_BOARDS_PER_USER` | `15`                    | Small boards per user; needs to exceed 12 for pagination to engage                                    |
@@ -114,14 +133,54 @@ $env:SEED_USERS = "10"; pnpm loadtest:seed
 | File                  | Used by                              | Contents                                                                                                                                                  |
 | --------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `loadtest.env`        | both compose stacks, `loadtest:seed` | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token. |
-| `prometheus.env`      | `k6:prom`                            | Remote write endpoint and trend stats                                                                                                                     |
+| `prometheus.env`      | `pnpm k6 --prom`                     | Remote write endpoint and trend stats                                                                                                                     |
 | `nginx/loadtest.conf` | `loadtest:up:multi`                  | Load balancer in front of the 3 replicas                                                                                                                  |
 
 Seed sizing is not in `loadtest.env` on purpose — it comes from `SEED_*` environment variables so CI can seed a small dataset without editing the file.
 
 ## Output
 
-Each run writes `k6/results/<profile>.json` and `<profile>.html`. Both are gitignored. Open the HTML file in a browser.
+Each run writes `k6/results/<name>.json` and `<name>.html`. Both are gitignored. Open the HTML file in a browser.
+
+`pnpm k6` derives `<name>` so two runs can never overwrite each other:
+
+| Scenario                     | Name                   | Example             |
+| ---------------------------- | ---------------------- | ------------------- |
+| Profile changes the run      | `<scenario>-<profile>` | `board-read-stress` |
+| Scenario fixes its own shape | `<scenario>`           | `smoke`             |
+
+So `pnpm k6 mixed load` writes `k6/results/mixed-load.*`, not `load.*` — the older per-profile names are gone. Override with `-e RUN_NAME=...` to label a run yourself.
+
+### Peak RPS
+
+**`http_reqs.rate` in the summary is not the peak.** It is `count` divided by the whole run duration, so every ramp-up and ramp-down second is averaged in with the plateau. Two runs from the same codebase show how misleading that is:
+
+| Profile    | Peak VUs | `http_reqs.rate` | Why                                         |
+| ---------- | -------- | ---------------- | ------------------------------------------- |
+| `baseline` | 4        | 147.5            | 3 VUs, no ramp, think time forced to 0      |
+| `load`     | 51       | 103.4            | 50 VUs, but 1 min ramping up and 1 min down |
+
+`baseline` looks faster than `load` at a twelfth of the concurrency. The two numbers are not comparable, and neither is a peak.
+
+The summary has no time dimension at all, so the peak has to come from the time-series output. `--ts` writes one next to the summary:
+
+```powershell
+pnpm k6 mixed load --ts
+pnpm k6:peak-rps k6/results/mixed-load-ts.json.gz
+```
+
+A `.gz` suffix makes k6 gzip the file; `k6:peak-rps` reads both forms and streams them, so a multi-hundred-MB soak run is fine. It buckets `http_reqs` by second, drops the two partial seconds at the edges, and reports:
+
+| Figure              | Meaning                                                              |
+| ------------------- | -------------------------------------------------------------------- |
+| `peak 1s`           | Highest single second. Scheduling noise, do not quote it             |
+| `peak sustained Ns` | Highest N-second sliding average. **This is the number to quote**    |
+| `plateau (median)`  | Median of the seconds at or above half the peak, i.e. the hold phase |
+| `summary avg`       | The same figure the summary reports, printed for contrast            |
+
+It also breaks the peak down per scenario, and reports `dropped_iterations` when k6 could not start iterations fast enough — in that case the run measures the load generator, not the server.
+
+Pointing it at a summary file by mistake gives an explanation rather than a parse error.
 
 ## One replica or three
 
@@ -169,7 +228,7 @@ curl http://localhost:9464/metrics
 | `http_request_duration_seconds`    | Latency by route pattern (`/boards/:id`, never a real id)                                                                            |
 | `board_broadcast_duration_seconds` | Broadcast cost, invisible to clients because it runs after the response is sent                                                      |
 | `board_broadcast_local_recipients` | Viewers on the instance that handled the write — **not** cluster-wide fan-out                                                        |
-| `socketio_connected_sockets`       | Confirms viewers actually joined during `k6:socket`                                                                                  |
+| `socketio_connected_sockets`       | Confirms viewers actually joined during `socket-fanout`                                                                              |
 | `worker_job_duration_seconds`      | Whether BullMQ jobs are backing up                                                                                                   |
 | `mongodb_indexes_ready`            | 1 when every expected index exists; 0 means queries are falling back to collection scans                                             |
 
@@ -198,7 +257,7 @@ Edit `config/thresholds.js` to change them.
 
 ```powershell
 kubectl port-forward -n observability svc/kps-prometheus 9090:9090
-pnpm k6:prom
+pnpm k6 mixed load --prom
 ```
 
 Then query `k6_http_req_duration_seconds{testid="..."}` in Grafana, or import the official "k6 Prometheus" dashboard.

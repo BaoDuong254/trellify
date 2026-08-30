@@ -92,9 +92,10 @@ export function buildSummary(data) {
   const profile = profileName();
   const rows = rowsFor(data.metrics);
   const directory = __ENV.SUMMARY_DIR || "k6/results";
+  const name = __ENV.RUN_NAME || profile;
   return {
     stdout: renderText(rows, profile),
-    [`${directory}/${profile}.json`]: JSON.stringify(data, null, 2),
-    [`${directory}/${profile}.html`]: renderHtml(rows, profile),
+    [`${directory}/${name}.json`]: JSON.stringify(data, null, 2),
+    [`${directory}/${name}.html`]: renderHtml(rows, profile),
   };
 }
