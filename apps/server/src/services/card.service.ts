@@ -6,9 +6,21 @@ import { CardCommentType, CreateNewCardType, UpdateCardType } from "@workspace/s
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { CloudinaryProvider } from "src/providers/cloudinary.provider";
+import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
 
-const createNew = async (requestBody: CreateNewCardType) => {
+const assertCardAccess = async (userId: string, cardId: string) => {
+  const card = await cardModel.findOneById(new ObjectId(cardId));
+  if (!card) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Card not found!");
+  }
+  await boardService.assertBoardAccess(userId, String(card.boardId));
+  return card;
+};
+
+const createNew = async (userId: string, requestBody: CreateNewCardType) => {
+  await boardService.assertBoardAccess(userId, requestBody.boardId);
+
   const newCard = {
     ...requestBody,
   };
@@ -21,11 +33,14 @@ const createNew = async (requestBody: CreateNewCardType) => {
 };
 
 const update = async (
+  userId: string,
   cardId: string,
   requestBody: UpdateCardType,
   cardCoverFile?: Express.Multer.File,
   userInfo?: { _id: string; email: string }
 ) => {
+  await assertCardAccess(userId, cardId);
+
   const updatedData = {
     ...requestBody,
     updatedAt: new Date(),
@@ -54,12 +69,8 @@ const update = async (
   return updatedCard;
 };
 
-const deleteItem = async (cardId: string) => {
-  const targetCard = await cardModel.findOneById(new ObjectId(cardId));
-
-  if (!targetCard) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Card not found!");
-  }
+const deleteItem = async (userId: string, cardId: string) => {
+  const targetCard = await assertCardAccess(userId, cardId);
 
   await cardModel.deleteOneById(cardId);
   await columnModel.pullCardOrderIds(targetCard);

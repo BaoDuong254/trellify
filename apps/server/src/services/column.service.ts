@@ -6,9 +6,21 @@ import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas
 import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
+import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
 
-const createNew = async (requestBody: CreateNewColumnType) => {
+const assertColumnAccess = async (userId: string, columnId: string) => {
+  const column = await columnModel.findOneById(new ObjectId(columnId));
+  if (!column) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Column not found!");
+  }
+  await boardService.assertBoardAccess(userId, String(column.boardId));
+  return column;
+};
+
+const createNew = async (userId: string, requestBody: CreateNewColumnType) => {
+  await boardService.assertBoardAccess(userId, requestBody.boardId);
+
   const newColumn = {
     ...requestBody,
   };
@@ -21,18 +33,16 @@ const createNew = async (requestBody: CreateNewColumnType) => {
   return newlyCreatedColumn;
 };
 
-const update = async (columnId: string, requestBody: UpdateColumnType) => {
+const update = async (userId: string, columnId: string, requestBody: UpdateColumnType) => {
+  await assertColumnAccess(userId, columnId);
+
   const updateData = { ...requestBody, updatedAt: new Date() };
   const updatedColumn = await columnModel.update(columnId, updateData);
   return updatedColumn;
 };
 
-const deleteItem = async (columnId: string) => {
-  const targetColumn = await columnModel.findOneById(new ObjectId(columnId));
-
-  if (!targetColumn) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Column not found!");
-  }
+const deleteItem = async (userId: string, columnId: string) => {
+  const targetColumn = await assertColumnAccess(userId, columnId);
 
   await columnModel.deleteOneById(columnId);
 

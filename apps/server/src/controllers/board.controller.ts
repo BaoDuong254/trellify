@@ -10,11 +10,12 @@ import { BOARD_UPDATE_REASONS } from "@workspace/shared/utils/socket-events";
 
 import { boardService } from "src/services/board.service";
 import { broadcastBoardUpdate, evictUserFromBoardRoom } from "src/sockets/board.broadcast";
+import { actorId } from "src/utils/request-user";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
-    const createdBoard = await boardService.createNew(userId!, request.body as CreateNewBoardType);
+    const userId = actorId(request);
+    const createdBoard = await boardService.createNew(userId, request.body as CreateNewBoardType);
     response.status(StatusCodes.CREATED).json({
       statusCode: StatusCodes.CREATED,
       message: "Board created successfully",
@@ -27,9 +28,9 @@ const createNew = async (request: ExpressRequest, response: ExpressResponse, nex
 
 const getDetails = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const userId = actorId(request);
     const boardId = (request.params.id as string) ?? "";
-    const boardDetails = await boardService.getDetails(userId!, boardId);
+    const boardDetails = await boardService.getDetails(userId, boardId);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Board details fetched successfully",
@@ -43,7 +44,7 @@ const getDetails = async (request: ExpressRequest, response: ExpressResponse, ne
 const update = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
     const boardId = (request.params.id as string) ?? "";
-    const updatedBoard = await boardService.update(boardId, request.body as UpdateBoardType);
+    const updatedBoard = await boardService.update(actorId(request), boardId, request.body as UpdateBoardType);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Board details fetched successfully",
@@ -57,7 +58,10 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
 
 const moveCardToDifferentColumn = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const result = await boardService.moveCardToDifferentColumn(request.body as MoveCardToDifferentColumnType);
+    const result = await boardService.moveCardToDifferentColumn(
+      actorId(request),
+      request.body as MoveCardToDifferentColumnType
+    );
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Board details fetched successfully",
@@ -71,12 +75,12 @@ const moveCardToDifferentColumn = async (request: ExpressRequest, response: Expr
 
 const getBoards = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const userId = actorId(request);
     const { page, itemsPerPage } = request.query;
     const titleSearch = request.query["q[title]"] as string | undefined;
     const queryFilters = titleSearch ? { title: titleSearch } : undefined;
     const boards = await boardService.getBoards(
-      userId!,
+      userId,
       page as string | undefined,
       itemsPerPage as string | undefined,
       queryFilters
@@ -93,10 +97,10 @@ const getBoards = async (request: ExpressRequest, response: ExpressResponse, nex
 
 const removeMember = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const actorId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const actor = actorId(request);
     const boardId = (request.params.id as string) ?? "";
     const targetUserId = (request.params.userId as string) ?? "";
-    const result = await boardService.removeMember(actorId!, boardId, targetUserId);
+    const result = await boardService.removeMember(actor, boardId, targetUserId);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Member removed successfully",

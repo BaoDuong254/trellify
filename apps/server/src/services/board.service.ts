@@ -112,13 +112,34 @@ const getBoardSnapshot = async (boardId: string) => {
   return groupCardsIntoColumns(boardDetails);
 };
 
-const update = async (boardId: string, requestBody: UpdateBoardType) => {
+const update = async (userId: string, boardId: string, requestBody: UpdateBoardType) => {
+  await assertBoardAccess(userId, boardId);
+
   const updateData = { ...requestBody, updatedAt: new Date() };
   const updatedBoard = await boardModel.update(boardId, updateData);
   return updatedBoard;
 };
 
-const moveCardToDifferentColumn = async (requestBody: MoveCardToDifferentColumnType) => {
+const moveCardToDifferentColumn = async (userId: string, requestBody: MoveCardToDifferentColumnType) => {
+  const [previousColumn, nextColumn, card] = await Promise.all([
+    columnModel.findOneById(new ObjectId(requestBody.prevColumnId)),
+    columnModel.findOneById(new ObjectId(requestBody.nextColumnId)),
+    cardModel.findOneById(new ObjectId(requestBody.currentCardId)),
+  ]);
+
+  if (!previousColumn || !nextColumn || !card) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+  }
+
+  // Both columns and the card have to live on the same board, otherwise a member
+  // of one board could drag a card out of a board they have no access to.
+  const boardId = String(previousColumn.boardId);
+  if (String(nextColumn.boardId) !== boardId || String(card.boardId) !== boardId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Error.BoardAccessDenied");
+  }
+
+  await assertBoardAccess(userId, boardId);
+
   await columnModel.update(requestBody.prevColumnId, {
     cardOrderIds: requestBody.prevCardOrderIds,
     updatedAt: new Date(),
@@ -133,9 +154,7 @@ const moveCardToDifferentColumn = async (requestBody: MoveCardToDifferentColumnT
     columnId: requestBody.nextColumnId,
   });
 
-  const nextColumn = await columnModel.findOneById(new ObjectId(requestBody.nextColumnId));
-
-  return { updateResult: "Successfully!", boardId: nextColumn?.boardId?.toString() };
+  return { updateResult: "Successfully!", boardId };
 };
 
 const getBoards = async (
