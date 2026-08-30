@@ -4,7 +4,9 @@ FROM node:24.12.0-alpine AS builder
 # Set workdir to monorepo root
 WORKDIR /workspace
 
-RUN corepack enable
+# renovate: datasource=npm depName=pnpm
+ARG PNPM_VERSION=11.5.2
+RUN npm install -g pnpm@${PNPM_VERSION}
 ENV LEFTHOOK=0
 
 # Copy workspace configuration files
@@ -44,7 +46,9 @@ RUN pnpm run apps:build
 # Production stage
 FROM node:24.12.0-alpine
 
-RUN corepack enable
+# renovate: datasource=npm depName=pnpm
+ARG PNPM_VERSION=11.5.2
+RUN npm install -g pnpm@${PNPM_VERSION} && npm cache clean --force
 ENV NODE_ENV=production
 
 # Set workdir to monorepo root for proper workspace resolution
