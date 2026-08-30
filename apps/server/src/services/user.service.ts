@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import bcryptjs from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
-import { ObjectId } from "mongodb";
+import { MongoServerError, ObjectId } from "mongodb";
 import ms, { StringValue } from "ms";
 import { v4 as uuidv4 } from "uuid";
 
@@ -39,7 +39,15 @@ const createNew = async (requestBody: UserRegistrationType) => {
     displayName: nameFromEmail!,
     verifyToken: uuidv4(),
   };
-  const createdUser = await userModel.createNew(newUserData);
+  let createdUser: Awaited<ReturnType<typeof userModel.createNew>>;
+  try {
+    createdUser = await userModel.createNew(newUserData);
+  } catch (error) {
+    if (error instanceof MongoServerError && error.code === 11_000) {
+      throw new ApiError(StatusCodes.CONFLICT, "User with this email already exists");
+    }
+    throw error;
+  }
   const newlyCreatedUser = await userModel.findOneById(createdUser.insertedId.toString());
 
   await userQueue.add(

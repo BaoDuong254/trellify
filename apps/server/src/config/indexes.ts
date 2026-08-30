@@ -22,7 +22,11 @@ const INDEX_PLAN: IndexPlan[] = [
   { collection: columnModel.COLUMN_COLLECTION_NAME, spec: { boardId: 1 } },
   { collection: boardModel.BOARD_COLLECTION_NAME, spec: { ownerIds: 1, _destroy: 1 } },
   { collection: boardModel.BOARD_COLLECTION_NAME, spec: { memberIds: 1, _destroy: 1 } },
-  { collection: userModel.USER_COLLECTION_NAME, spec: { email: 1 }, options: { unique: true } },
+  {
+    collection: userModel.USER_COLLECTION_NAME,
+    spec: { email: 1 },
+    options: { unique: true, partialFilterExpression: { _destroy: false } },
+  },
   {
     collection: userModel.USER_COLLECTION_NAME,
     spec: { verifyToken: 1 },

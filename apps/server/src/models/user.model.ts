@@ -30,7 +30,7 @@ const findOneById = async (userId: string) => {
 };
 
 const findOneByEmail = async (emailValue: string) => {
-  const result = await GET_DB().collection(USER_COLLECTION_NAME).findOne({ email: emailValue });
+  const result = await GET_DB().collection(USER_COLLECTION_NAME).findOne({ email: emailValue, _destroy: false });
   return result;
 };
 

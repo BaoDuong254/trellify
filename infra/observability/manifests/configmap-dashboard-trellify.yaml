@@ -671,7 +671,7 @@ data:
           "targets": [
             {
               "refId": "A",
-              "expr": "min(mongodb_indexes_ready)",
+              "expr": "min(mongodb_indexes_ready{job=\"trellify-server\"})",
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
