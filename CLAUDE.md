@@ -27,6 +27,9 @@ pnpm typecheck
 pnpm knip
 pnpm knip:production
 
+# CSP hashes for the client's inline scripts — pre-commit AND CI
+bash scripts/check-csp-hashes.sh
+
 # Production build (order matters — packages export from dist/)
 pnpm pkg:build
 pnpm apps:build
@@ -36,7 +39,23 @@ pnpm start:prod
 pnpm cz
 ```
 
-There is no automated test suite. API endpoints are exercised via the Postman collection at `postman/collections/Trellify.postman_collection.json`. CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → pkg:build → apps:build → SonarCloud; there is no test step to add to.
+There is no unit/integration test suite and no test step to add to. Correctness is exercised three ways instead: the Postman collection (`postman/collections/Trellify.postman_collection.json`), the k6 load tests (below), and CI.
+
+CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → CSP hash check → pkg:build → apps:build → SonarCloud. There is no `typecheck` step — `apps:build` (`tsc -b` / `tsc --project tsconfig.build.json`) is what catches type errors in CI.
+
+### Load testing (k6)
+
+Runs against an isolated docker-compose stack built from the production Dockerfile, with its own MongoDB and Redis — it never touches real data. Requires Docker and `k6` on PATH.
+
+```bash
+pnpm loadtest:up      # build + start server/worker/mongo/redis (loadtest:up:multi = 3 replicas behind nginx)
+pnpm loadtest:seed    # seed users/boards/cards, mint JWTs into k6/data/users.json
+pnpm k6:smoke         # gate — 1 VU through every flow; if this fails, later numbers are meaningless
+pnpm k6:load          # main run; also k6:baseline/stress/spike/soak/capacity/socket
+pnpm loadtest:down    # removes volumes too, so re-seed afterwards
+```
+
+`k6/README.md` documents the profiles, thresholds, and the Prometheus remote-write path (`pnpm k6:prom`).
 
 ## Monorepo Layout
 
@@ -47,6 +66,8 @@ pnpm workspaces + Turbo:
 - `packages/shared` — Zod schemas, socket event constants, logger (`@workspace/shared`)
 - `packages/ui` — shadcn/ui + Tailwind primitives (`@workspace/ui`). Scaffolded but **not currently consumed by the client** — the client is MUI-based. Don't reach for it when building client UI unless explicitly asked.
 - `packages/eslint` / `packages/typescript` — shared configs
+- `infra/` — Kubernetes manifests reconciled by ArgoCD (see Deployment)
+- `k6/` — load-test scenarios, profiles, and helpers (excluded from knip)
 
 `@workspace/shared` is consumed through built subpath exports only: `@workspace/shared/schemas/*` and `@workspace/shared/utils/*` (no root import). Because it resolves to `dist/`, run `pnpm pkg:build` after changing shared code if apps start reporting stale or missing exports.
 
@@ -64,13 +85,15 @@ Internal packages skip the catalog and use `"workspace:*"`. `.npmrc` sets `save-
 
 Strict layered pattern: **Controller → Service → Model → Database**
 
-- **Controllers** (`src/controllers/`) — thin HTTP handlers; call a service, send the response, pass errors to `next()`. No business logic.
+- **Controllers** (`src/controllers/`) — thin HTTP handlers; call a service, send the response, pass errors to `next()`. No business logic. Get the authenticated user with `actorId(request)` from `src/utils/request-user.ts` — never read `request.jwtDecoded` inline.
 - **Services** (`src/services/`) — all business logic; throw `ApiError` (`src/utils/api-error.ts`)
 - **Models** (`src/models/`) — MongoDB access only; validate with Zod before insert/update; always filter `_destroy: false`
 - **Validations** (`src/validations/`) — Zod middleware applied at the route level, using schemas from `@workspace/shared/schemas/*`
-- **Providers** (`src/providers/`) — external service wrappers: Brevo (email), Cloudinary (uploads), JWT, Redis, Socket.io instance holder
+- **Providers** (`src/providers/`) — external service wrappers: Brevo (email), Cloudinary (uploads), JWT, Redis, Socket.io instance holder, Prometheus registry
 
 MongoDB **native driver**, not Mongoose. Soft delete only — set `_destroy: true`, never hard-delete, never expose `_destroy` to the frontend. Prefer aggregation pipelines over N+1 queries.
+
+Indexes are declarative: `ENSURE_INDEXES` in `src/config/indexes.ts` runs at startup against a single `INDEX_PLAN` array. Adding a new query pattern means adding its index there, not creating one by hand in the database.
 
 Error messages are i18n keys (e.g. `"Error.BoardNotFound"`). Never expose stack traces in production.
 
@@ -85,7 +108,11 @@ Error messages are i18n keys (e.g. `"Error.BoardNotFound"`). Never expose stack 
 
 `src/worker.ts` is a **separate process** from the API server. Queues live in `src/queues/<domain>/` with a consistent four-file shape: `*.queue.ts` (producer), `*.worker.ts` (consumer), `*.processor.ts` (job logic), `*.interface.ts` (payload types). Queue names go in `src/queues/queue.constants.ts` and are namespaced by `QUEUE_PREFIX`. Redis is also used directly for rate limiting (`src/utils/rate-limiter.ts`).
 
-Both entrypoints register `async-exit-hook` shutdown sequences (queue/adapter/Redis/Mongo) — extend those when adding a long-lived resource.
+Both entrypoints register `async-exit-hook` shutdown sequences (metrics server/queue/adapter/Redis/Mongo) — extend those when adding a long-lived resource.
+
+### Observability
+
+Both the API server and the worker expose a Prometheus endpoint on a **second HTTP server** at `METRICS_PORT` (9464), separate from the app port — `startMetricsServer()` in `src/providers/metrics.provider.ts`. All custom metrics are declared in that one file against a single `Registry`; add new ones there and export them rather than creating a registry elsewhere. `src/middlewares/metrics.middleware.ts` records latency for every request, including ones that never match a route.
 
 ## Frontend Architecture
 
@@ -100,6 +127,22 @@ Both entrypoints register `async-exit-hook` shutdown sequences (queue/adapter/Re
 Auth token refresh convention: the API returns **410 Gone** (not 401) for an expired access token. `http.ts` intercepts 410, refreshes once through a shared `refreshTokenPromise`, and replays the original request; a 401 means logout. Keep those two status codes distinct.
 
 Drag-and-drop uses `@dnd-kit`; Markdown editing uses `@uiw/react-md-editor`; bot protection uses Cloudflare Turnstile (client widget + `src/middlewares/turnstile.middleware.ts` on the server).
+
+`VITE_API_ENDPOINT` is deliberately **empty in production builds** — client and API share one host, so the browser calls `/api/v1/...` on its own origin and the Ingress routes it. Nothing in the bundle may hardcode a backend URL.
+
+### CSP and inline scripts
+
+`apps/client/nginx/security-headers.conf` pins a `script-src` allowlist of sha256 hashes for the inline `<script>` blocks in `apps/client/index.html`. Editing any inline script without updating those hashes ships a CSP that blocks the script and breaks the page — `scripts/check-csp-hashes.sh` (pre-commit and CI) fails with the exact hashes to paste in.
+
+## Deployment
+
+Production is a single-node k3s cluster; every manifest lives in `infra/` and **ArgoCD reconciles the cluster to `main`**. Nothing is applied by hand — changing production means committing to `infra/`, and a `kubectl` change is reverted by `selfHeal` within seconds. Rollback is `git revert` of the bump commit.
+
+Pushing to `main` triggers `.github/workflows/build-k8s-images.yml`: it builds both images to `ghcr.io/baoduong254/trellify-{server,client}:sha-<short>`, then a second job runs `kustomize edit set image` in `infra/trellify/overlays/prod` and pushes a `chore(deploy): ... [skip ci]` commit. The `[skip ci]` marker is what stops that commit from triggering another build — don't remove it. `latest` is published but never deployed; the overlay always pins the immutable sha tag.
+
+`infra/README.md` is the reference for the cluster: platform vs. application ArgoCD projects, SealedSecrets (and the master key that must be backed up outside the repo), the three Ingresses, the NetworkPolicy, and the MongoDB → R2 backup CronJob. Read it before touching anything under `infra/`.
+
+`docker-compose*.yml` at the root are the legacy Compose deployment and the load-test stacks — not the production path.
 
 ## Critical Rules
 
@@ -117,14 +160,18 @@ Drag-and-drop uses `@dnd-kit`; Markdown editing uses `@uiw/react-md-editor`; bot
 
 Copy the `.env.example` in both `apps/server/` and `apps/client/` to `.env`. Both apps validate env with Zod at startup (`apps/server/src/config/environment.ts`, `apps/client/src/config/env.ts`) and **throw on the first invalid or missing variable** — add any new variable to the schema and to `.env.example` together.
 
-Server: `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGODB_URI`, `DATABASE_NAME`, `REDIS_URL`, `QUEUE_PREFIX`, `WORKER_CONCURRENCY`, `ACCESS_TOKEN_*` / `REFRESH_TOKEN_*` / `COOKIE_MAX_AGE`, `BREVO_API_KEY`, `ADMIN_EMAIL_*`, `CLOUDINARY_*`, `TURNSTILE_SECRET_KEY`.
+Server: `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGODB_URI`, `DATABASE_NAME`, `REDIS_URL`, `QUEUE_PREFIX`, `WORKER_CONCURRENCY`, `WORKER_HEALTH_PORT`, `METRICS_PORT`, `ACCESS_TOKEN_*` / `REFRESH_TOKEN_*` / `COOKIE_MAX_AGE`, `BREVO_API_KEY`, `ADMIN_EMAIL_*`, `CLOUDINARY_*`, `TURNSTILE_SECRET_KEY`.
 
-Client: `VITE_API_ENDPOINT` (server origin, e.g. `http://localhost:3000`), `VITE_TURNSTILE_SITE_KEY` (dev test key: `1x00000000000000000000AA`).
+Client: `VITE_API_ENDPOINT` (server origin in dev, e.g. `http://localhost:3000`; empty in production), `VITE_TURNSTILE_SITE_KEY` (dev test key: `1x00000000000000000000AA`).
+
+In production these come from `infra/trellify/base/configmap-server.yaml` (non-sensitive) and SealedSecrets (everything else) — a new server variable needs adding in both places.
 
 ## Git Conventions
 
-Conventional Commits (`feat(scope): description`), enforced by commitlint on `commit-msg`. Hooks are managed by **lefthook** (`lefthook.yaml`) — pre-commit runs lockfile check, knip, prettier, and `lint:fix`. Branch naming: `feature/*`, `bugfix/*`, `hotfix/*` off `main`. Releases are automated by release-please.
+Conventional Commits (`feat(scope): description`), enforced by commitlint on `commit-msg`. Hooks are managed by **lefthook** (`lefthook.yaml`) — pre-commit runs lockfile check, CSP hash check, knip, prettier, and `lint:fix`. Branch naming: `feature/*`, `bugfix/*`, `hotfix/*` off `main`. Releases are automated by release-please.
 
-## Related Instruction Files
+## Further Reading
 
-`.github/copilot-instructions.md` carries the same architecture and critical rules in longer form; `.github/instructions/*.instructions.md` hold detailed React, TypeScript/ES2022, and Node.js conventions. Keep this file consistent with them when rules change.
+- `README.md` — setup, feature list, Postman usage, git workflow
+- `infra/README.md` — cluster architecture, ArgoCD, secrets, backups, common kubectl operations
+- `k6/README.md` — load-test scenarios, profiles, thresholds, Prometheus integration

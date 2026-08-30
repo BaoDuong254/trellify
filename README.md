@@ -22,6 +22,7 @@ A full-stack project management platform with real-time collaboration, drag-and-
     - [Legacy: Docker Compose deployment](#legacy-docker-compose-deployment)
   - [📮 Testing with Postman](#-testing-with-postman)
     - [Setup](#setup)
+  - [⚡ Performance Testing](#-performance-testing)
   - [🔄 Git Workflow](#-git-workflow)
     - [Commit Message Convention](#commit-message-convention)
     - [Hooks](#hooks)
@@ -299,6 +300,31 @@ The project includes a Postman collection with pre-configured requests.
    - Select "Trellify" environment in Postman
    - Update variables if needed:
      - `host`: `http://localhost:3000`
+
+## ⚡ Performance Testing
+
+Load tests run with [k6](https://k6.io/) against an isolated docker-compose stack built from the production Dockerfile, with its own MongoDB and Redis. No real data is touched.
+
+```bash
+pnpm loadtest:up      # start the isolated stack
+pnpm loadtest:seed    # seed users, boards and cards
+pnpm k6:smoke         # gate - all checks must pass
+pnpm k6:load          # the main run
+pnpm loadtest:down    # tear it all down
+```
+
+| Script                           | Purpose                                       |
+| -------------------------------- | --------------------------------------------- |
+| `loadtest:up[:multi]`            | Start the stack, 1 replica or 3 behind nginx  |
+| `loadtest:down[:multi]`          | Remove containers and volumes                 |
+| `loadtest:seed`                  | Seed data and mint JWTs for the virtual users |
+| `k6:baseline`                    | Low concurrency, intrinsic per-endpoint cost  |
+| `k6:load`                        | Main scenario at 50 VUs                       |
+| `k6:capacity`                    | Open model, finds the actual request ceiling  |
+| `k6:socket`                      | Socket.io broadcast fan-out cost              |
+| `k6:stress` `k6:spike` `k6:soak` | Other load shapes                             |
+
+Full instructions and configuration: [`k6/README.md`](k6/README.md).
 
 ## 🔄 Git Workflow
 

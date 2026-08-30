@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: trellify
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [trellify-server, trellify-worker]
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s

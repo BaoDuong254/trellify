@@ -49,6 +49,11 @@ const configSchema = z.object({
     .int("WORKER_HEALTH_PORT must be an integer")
     .positive("WORKER_HEALTH_PORT must be a positive integer")
     .default(3001),
+  METRICS_PORT: z.coerce
+    .number("METRICS_PORT must be a number")
+    .int("METRICS_PORT must be an integer")
+    .positive("METRICS_PORT must be a positive integer")
+    .default(9464),
   TURNSTILE_SECRET_KEY: z.string().min(1, "TURNSTILE_SECRET_KEY is required"),
 });
 

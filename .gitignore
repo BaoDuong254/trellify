@@ -98,3 +98,9 @@ kubeconfig
 credentials.json
 cert.pem
 sealed-secrets-master*.yaml
+
+# k6 load testing
+k6/data/*
+!k6/data/.gitkeep
+k6/results/*
+!k6/results/.gitkeep

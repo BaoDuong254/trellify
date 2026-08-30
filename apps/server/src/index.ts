@@ -14,7 +14,10 @@ import { socketRoom } from "@workspace/shared/utils/socket-events";
 import { corsOptions } from "src/config/cors";
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
+import { ENSURE_INDEXES } from "src/config/indexes";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
+import { metricsMiddleware } from "src/middlewares/metrics.middleware";
+import { connectedSockets, startMetricsServer } from "src/providers/metrics.provider";
 import { closeRedisClient } from "src/providers/redis.provider";
 import { closeSocketAdapter, setIo, setupSocketAdapter } from "src/providers/socket.provider";
 import { userQueue } from "src/queues/user/user.queue";
@@ -45,6 +48,9 @@ const START_SERVER = async (): Promise<void> => {
     });
   });
 
+  // Record latency for every request, including ones that never match a route
+  app.use(metricsMiddleware);
+
   // Setup cookie parser
   app.use(cookieParser());
 
@@ -72,6 +78,9 @@ const START_SERVER = async (): Promise<void> => {
   // Error handling middleware
   app.use(errorHandlingMiddleware);
 
+  // Start metrics server for Prometheus scraping
+  const metricsServer = startMetricsServer(environmentConfig.METRICS_PORT, "Server");
+
   // Create HTTP server and setup Socket.io
   const server = http.createServer(app);
   const io: AppServer = new Server(server, {
@@ -85,10 +94,12 @@ const START_SERVER = async (): Promise<void> => {
 
   io.on("connection", (socket) => {
     logger.info(chalk.greenBright(`New client connected: ${socket.id} (${socket.data.user._id})`));
+    connectedSockets.inc();
     void socket.join(socketRoom.user(socket.data.user._id));
     registerBoardSocketHandlers(io, socket);
 
     socket.on("disconnect", (reason) => {
+      connectedSockets.dec();
       logger.info(chalk.yellowBright(`Client disconnected: ${socket.id} (${reason})`));
     });
   });
@@ -101,18 +112,20 @@ const START_SERVER = async (): Promise<void> => {
   // Handle graceful shutdown
   exitHook((done) => {
     void (async () => {
-      logger.info("4. Draining HTTP and Socket.io connections...");
+      logger.info("4. Closing metrics server...");
+      await new Promise<void>((resolve) => metricsServer.close(() => resolve()));
+      logger.info("5. Draining HTTP and Socket.io connections...");
       await Promise.race([
         new Promise<void>((resolve) => io.close(() => resolve())),
         new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
       ]);
-      logger.info("5. Closing BullMQ queue...");
+      logger.info("6. Closing BullMQ queue...");
       await userQueue.close();
-      logger.info("6. Closing Socket.io Redis adapter...");
+      logger.info("7. Closing Socket.io Redis adapter...");
       await closeSocketAdapter();
-      logger.info("7. Closing Redis client...");
+      logger.info("8. Closing Redis client...");
       await closeRedisClient();
-      logger.info("8. Closing MongoDB connection...");
+      logger.info("9. Closing MongoDB connection...");
       await CLOSE_DB();
       logger.info(chalk.bgBlueBright("Shutting down server..."));
       done();
@@ -125,6 +138,7 @@ void (async () => {
     logger.info("1. Connecting to MongoDB Cloud Atlas...");
     await CONNECT_DB();
     logger.info("2. Connected to MongoDB Cloud Atlas!");
+    await ENSURE_INDEXES();
     logger.info("3. Starting Express server...");
     await START_SERVER();
   } catch (error) {

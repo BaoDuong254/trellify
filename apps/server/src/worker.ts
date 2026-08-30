@@ -7,6 +7,7 @@ import logger from "@workspace/shared/utils/logger";
 
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
+import { startMetricsServer, workerJobDuration } from "src/providers/metrics.provider";
 import { createUserWorker } from "src/queues/user/user.worker";
 
 const START_WORKER = (): void => {
@@ -23,14 +24,31 @@ const START_WORKER = (): void => {
   });
   healthServer.listen(environmentConfig.WORKER_HEALTH_PORT);
 
+  const metricsServer = startMetricsServer(environmentConfig.METRICS_PORT, "Worker");
+
+  userWorker.on("completed", (job) => {
+    workerJobDuration.observe(
+      { job: job.name, outcome: "completed" },
+      job.finishedOn ? (job.finishedOn - job.processedOn!) / 1000 : 0
+    );
+  });
+  userWorker.on("failed", (job) => {
+    if (!job) return;
+    workerJobDuration.observe(
+      { job: job.name, outcome: "failed" },
+      job.finishedOn ? (job.finishedOn - job.processedOn!) / 1000 : 0
+    );
+  });
+
   logger.info(chalk.bgBlueBright(`Worker is running with concurrency=${environmentConfig.WORKER_CONCURRENCY}`));
   logger.info(`Health endpoint listening on :${environmentConfig.WORKER_HEALTH_PORT}/healthz`);
 
   // Handle graceful shutdown
   exitHook((done) => {
     void (async () => {
-      logger.info("4. Closing health endpoint...");
+      logger.info("4. Closing health and metrics endpoints...");
       await new Promise<void>((resolve) => healthServer.close(() => resolve()));
+      await new Promise<void>((resolve) => metricsServer.close(() => resolve()));
       logger.info("5. Closing BullMQ worker...");
       await userWorker.close();
       logger.info("6. Closing MongoDB connection...");

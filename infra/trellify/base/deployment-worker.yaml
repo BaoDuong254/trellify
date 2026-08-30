@@ -26,6 +26,8 @@ spec:
           ports:
             - name: health
               containerPort: 3001
+            - name: metrics
+              containerPort: 9464
           envFrom:
             - configMapRef:
                 name: trellify-server-config

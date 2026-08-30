@@ -51,15 +51,15 @@ Traffic path for a browser request: Cloudflare edge → `cloudflared` tunnel pod
 
 ## Directory Map
 
-| Path              | Managed by                                | Contents                                                                                  |
-| ----------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `argocd/`         | applied once by hand, self-managing after | App-of-apps: `bootstrap/root-app.yaml` → `projects/` + `apps/`, plus ArgoCD's own Ingress |
-| `cloudflared/`    | `platform-cloudflared`                    | Tunnel Deployment + config routing `*.duonggiabao.com` into ingress-nginx                 |
-| `ingress-nginx/`  | `platform-ingress-nginx`                  | Helm values for the `ingress-nginx` chart, pinned at `4.15.1`                             |
-| `sealed-secrets/` | `platform-sealed-secrets`                 | Helm values for the `sealed-secrets` controller, pinned at `2.19.2`                       |
-| `observability/`  | `platform-observability` (+ `-extras`)    | `kube-prometheus-stack` `88.5.2` values, plus the Grafana Ingress and its SealedSecret    |
-| `storage/`        | `platform-storage`                        | The `local-path-retain` StorageClass (`reclaimPolicy: Retain`)                            |
-| `trellify/`       | `trellify-prod`                           | The application itself - Kustomize `base/` + `overlays/prod/`                             |
+| Path              | Managed by                                | Contents                                                                                                                                                       |
+| ----------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `argocd/`         | applied once by hand, self-managing after | App-of-apps: `bootstrap/root-app.yaml` → `projects/` + `apps/`, plus ArgoCD's own Ingress                                                                      |
+| `cloudflared/`    | `platform-cloudflared`                    | Tunnel Deployment + config routing `*.duonggiabao.com` into ingress-nginx                                                                                      |
+| `ingress-nginx/`  | `platform-ingress-nginx`                  | Helm values for the `ingress-nginx` chart, pinned at `4.15.1`                                                                                                  |
+| `sealed-secrets/` | `platform-sealed-secrets`                 | Helm values for the `sealed-secrets` controller, pinned at `2.19.2`                                                                                            |
+| `observability/`  | `platform-observability` (+ `-extras`)    | `kube-prometheus-stack` `88.5.2` values, plus the Grafana Ingress and its SealedSecret. `enableRemoteWriteReceiver` is on so local k6 runs can push results in |
+| `storage/`        | `platform-storage`                        | The `local-path-retain` StorageClass (`reclaimPolicy: Retain`)                                                                                                 |
+| `trellify/`       | `trellify-prod`                           | The application itself - Kustomize `base/` + `overlays/prod/`                                                                                                  |
 
 ## How ArgoCD Manages This
 
@@ -115,25 +115,25 @@ Expect the `platform-*` applications to go healthy first, then `trellify-prod`.
 
 [`trellify/base/`](trellify/base/kustomization.yaml) holds environment-agnostic manifests; [`trellify/overlays/prod/`](trellify/overlays/prod/kustomization.yaml) adds the production SealedSecrets, patches the ingress host and the MongoDB URI, and pins the image tags.
 
-| Workload           | Replicas        | Image                                 | Notes                                                                 |
-| ------------------ | --------------- | ------------------------------------- | --------------------------------------------------------------------- |
-| `trellify-server`  | 3, HPA up to 6  | `ghcr.io/baoduong254/trellify-server` | PodDisruptionBudget keeps `minAvailable: 2`; HPA targets 70% CPU      |
-| `trellify-worker`  | 1               | same image as the server              | Runs `dist/worker.js` - the BullMQ consumer                           |
-| `trellify-client`  | 2               | `ghcr.io/baoduong254/trellify-client` | nginx serving the built Vite bundle                                   |
-| `trellify-mongodb` | 1 (StatefulSet) | `mongo:8.0`                           | 20Gi PVC on `local-path-retain`, standalone (`directConnection=true`) |
-| `trellify-redis`   | 1 (StatefulSet) | `redis:8-alpine`                      | 8Gi PVC on `local-path-retain`                                        |
+| Workload           | Replicas        | Image                                 | Notes                                                                                                                                         |
+| ------------------ | --------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trellify-server`  | 3, HPA up to 6  | `ghcr.io/baoduong254/trellify-server` | PodDisruptionBudget keeps `minAvailable: 2`; HPA targets 70% CPU. Prometheus metrics on port 9464, scraped through `base/servicemonitor.yaml` |
+| `trellify-worker`  | 1               | same image as the server              | Runs `dist/worker.js` - the BullMQ consumer. Metrics on port 9464 via the headless `trellify-worker-metrics` Service                          |
+| `trellify-client`  | 2               | `ghcr.io/baoduong254/trellify-client` | nginx serving the built Vite bundle                                                                                                           |
+| `trellify-mongodb` | 1 (StatefulSet) | `mongo:8.0`                           | 20Gi PVC on `local-path-retain`, standalone (`directConnection=true`)                                                                         |
+| `trellify-redis`   | 1 (StatefulSet) | `redis:8-alpine`                      | 8Gi PVC on `local-path-retain`                                                                                                                |
 
 **The HPA and ArgoCD would otherwise fight.** The HPA writes `spec.replicas` on `trellify-server`; ArgoCD's `selfHeal` reads that as drift from Git and writes it back - scaling would oscillate forever. [`trellify-prod.yaml`](argocd/apps/trellify-prod.yaml) resolves it with `ignoreDifferences` on `/spec/replicas` for that one Deployment.
 
 **Three Ingresses share one host**, because each path needs different nginx behaviour ([`base/ingress.yaml`](trellify/base/ingress.yaml)):
 
-| Ingress        | Path         | Why it is separate                                                                 |
-| -------------- | ------------ | ---------------------------------------------------------------------------------- |
-| `trellify-web` | `/`          | Plain static serving                                                               |
-| `trellify-api` | `/api`       | Rate limited - 20 rps with a burst multiplier of 2, rejecting with `429`           |
-| `trellify-ws`  | `/socket.io` | 1-hour read/send timeouts and cookie affinity, so a WebSocket is not cut every 60s |
+| Ingress        | Path         | Why it is separate                                                                                                                                                                                             |
+| -------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trellify-web` | `/`          | Plain static serving                                                                                                                                                                                           |
+| `trellify-api` | `/api`       | Rate limited - 20 rps **per client IP** with a burst multiplier of 2, rejecting with `429`. Per-IP because ingress-nginx resolves the real client from `CF-Connecting-IP`; it is not a cap on total throughput |
+| `trellify-ws`  | `/socket.io` | 1-hour read/send timeouts and cookie affinity, so a WebSocket is not cut every 60s                                                                                                                             |
 
-[`base/networkpolicy.yaml`](trellify/base/networkpolicy.yaml) starts from `default-deny-ingress` across the whole namespace and opens exactly three paths: ingress-nginx → server/client, server/worker → Redis, and server/worker (plus any Job pod, for the backup CronJob) → MongoDB.
+[`base/networkpolicy.yaml`](trellify/base/networkpolicy.yaml) starts from `default-deny-ingress` across the whole namespace and opens exactly four paths: ingress-nginx → server/client, server/worker → Redis, server/worker (plus any Job pod, for the backup CronJob) → MongoDB, and observability → the metrics port on server/worker. That last one is easy to forget and fails silently - without it the Prometheus target simply never appears.
 
 ## Configuration and Secrets
 

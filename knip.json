@@ -1,11 +1,12 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "tags": ["-lintignore"],
-  "ignore": [".claude/**"],
+  "ignore": [".claude/**", "k6/**"],
   "ignoreDependencies": ["@commitlint/cli", "eslint-import-resolver-typescript"],
   "workspaces": {
     "apps/server": {
-      "entry": ["src/index.ts!", "src/worker.ts!"]
+      "entry": ["src/index.ts!", "src/worker.ts!", "scripts/seed-loadtest.ts!"]
     }
-  }
+  },
+  "ignoreBinaries": ["k6"]
 }

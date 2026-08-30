@@ -1,0 +1,76 @@
+name: trellify-loadtest
+
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    command: ["--quiet", "--logpath", "/dev/null"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - trellify-loadtest
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - trellify-loadtest
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    image: trellify-loadtest-server:latest
+    restart: unless-stopped
+    ports:
+      - "${LOADTEST_PORT:-3000}:3000"
+      - "9464:9464"
+    env_file:
+      - ./k6/loadtest.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/v1/status"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - trellify-loadtest
+
+  worker:
+    image: trellify-loadtest-server:latest
+    command: ["node", "dist/worker.js"]
+    restart: unless-stopped
+    env_file:
+      - ./k6/loadtest.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - trellify-loadtest
+
+networks:
+  trellify-loadtest:
+    driver: bridge

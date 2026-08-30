@@ -8,5 +8,5 @@
       "generated/*": ["./generated/*"]
     }
   },
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "coverage"]
+  "exclude": ["node_modules", "test", "scripts", "dist", "**/*spec.ts", "coverage"]
 }

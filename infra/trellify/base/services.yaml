@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: trellify-server
+  labels:
+    app: trellify-server
 spec:
   selector:
     app: trellify-server
@@ -9,6 +11,9 @@ spec:
     - name: http
       port: 3000
       targetPort: http
+    - name: metrics
+      port: 9464
+      targetPort: metrics
 ---
 apiVersion: v1
 kind: Service
@@ -21,3 +26,18 @@ spec:
     - name: http
       port: 80
       targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trellify-worker-metrics
+  labels:
+    app: trellify-worker
+spec:
+  clusterIP: None
+  selector:
+    app: trellify-worker
+  ports:
+    - name: metrics
+      port: 9464
+      targetPort: metrics

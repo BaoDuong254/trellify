@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@getbrevo/brevo": "catalog:",
+    "@prometheus-io/client": "catalog:",
     "@socket.io/redis-adapter": "catalog:",
     "@workspace/shared": "workspace:*",
     "async-exit-hook": "catalog:",

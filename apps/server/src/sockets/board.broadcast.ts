@@ -9,6 +9,11 @@ import {
   socketRoom,
 } from "@workspace/shared/utils/socket-events";
 
+import {
+  boardBroadcastDuration,
+  boardBroadcastFailures,
+  boardBroadcastLocalRecipients,
+} from "src/providers/metrics.provider";
 import { getIo } from "src/providers/socket.provider";
 import { boardService } from "src/services/board.service";
 
@@ -30,15 +35,25 @@ export const broadcastBoardUpdate = (request: ExpressRequest, rawBoardId: unknow
   const actorId = typeof request.jwtDecoded === "object" ? String(request.jwtDecoded?._id ?? "") : "";
 
   void (async (): Promise<void> => {
+    const stopTimer = boardBroadcastDuration.startTimer({ reason });
     try {
       const board = await boardService.getBoardSnapshot(boardId);
       if (!board) return;
 
-      io.to(socketRoom.board(boardId))
+      const room = socketRoom.board(boardId);
+
+      const localRoom = io.of("/").adapter.rooms.get(room);
+      const localRecipients = localRoom ? localRoom.size - (localRoom.has(actorSocketId) ? 1 : 0) : 0;
+      boardBroadcastLocalRecipients.observe(localRecipients);
+
+      io.to(room)
         .except(actorSocketId)
         .emit(SOCKET_SERVER_EVENTS.BOARD_UPDATED, { boardId, reason, actorId, actorSocketId, board });
     } catch (error) {
+      boardBroadcastFailures.inc();
       logger.error(`Failed to broadcast board update for ${boardId}: ${(error as Error).message}`);
+    } finally {
+      stopTimer();
     }
   })();
 };
