@@ -207,7 +207,10 @@
       }
       gtag("js", new Date());
 
-      gtag("config", "G-LYYXW52FTF");
+      gtag("config", "G-LYYXW52FTF", {
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false,
+      });
 
       addEventListener("load", function () {
         var loadGtag = function () {
