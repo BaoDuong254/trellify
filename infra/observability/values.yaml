@@ -62,7 +62,12 @@ grafana:
       cpu: 50m
       memory: 512Mi
     limits:
-      memory: 1Gi
+      memory: 2Gi
+  env:
+    GOGC: "50"
+  grafana.ini:
+    dataproxy:
+      response_limit: "52428800"
 
 kube-state-metrics:
   resources:
