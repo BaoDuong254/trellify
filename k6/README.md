@@ -130,11 +130,11 @@ $env:SEED_USERS = "10"; pnpm loadtest:seed
 
 ## Configuration files
 
-| File                  | Used by                              | Contents                                                                                                                                                  |
-| --------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `loadtest.env`        | both compose stacks, `loadtest:seed` | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token. |
-| `prometheus.env`      | `pnpm k6 --prom`                     | Remote write endpoint and trend stats                                                                                                                     |
-| `nginx/loadtest.conf` | `loadtest:up:multi`                  | Load balancer in front of the 3 replicas                                                                                                                  |
+| File                  | Used by                              | Contents                                                                                                                                                                                                                                                                                          |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loadtest.env`        | both compose stacks, `loadtest:seed` | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token.                                                                                                                                         |
+| `prometheus.env`      | `pnpm k6 --prom`                     | Remote write endpoint, trend stats, push interval. `K6_PROMETHEUS_RW_TREND_STATS` has to include `avg` and `med`: the Grafana dashboard defaults its `Trend Metrics Query` variable to one of them, and a stat the run never pushed leaves that variable empty, which blanks every latency panel. |
+| `nginx/loadtest.conf` | `loadtest:up:multi`                  | Load balancer in front of the 3 replicas                                                                                                                                                                                                                                                          |
 
 Seed sizing is not in `loadtest.env` on purpose — it comes from `SEED_*` environment variables so CI can seed a small dataset without editing the file.
 
@@ -181,6 +181,12 @@ A `.gz` suffix makes k6 gzip the file; `k6:peak-rps` reads both forms and stream
 It also breaks the peak down per scenario, and reports `dropped_iterations` when k6 could not start iterations fast enough — in that case the run measures the load generator, not the server.
 
 Pointing it at a summary file by mistake gives an explanation rather than a parse error.
+
+### Grafana is not the source of truth for the peak
+
+The k6 dashboard reads its `Peak RPS` stat from `sum(irate(k6_http_reqs_total[$__rate_interval]))` reduced by `Max`. That sums a two-point rate estimate over every series `http_reqs` carries a tag for, and `Max` then picks whichever step came out noisiest, so the panel reads high. One `mixed load` run whose best single second was 193 rps showed 239 rps there, and the raw samples rule that out: no 15-second window in the run went above 147 rps, and 15s was the push interval at the time.
+
+`k6:peak-rps` buckets the raw samples instead of re-deriving a rate from a counter, so it is the number of record. Read Grafana for the shape of a run; quote `peak sustained 10s` from `peak-rps`.
 
 ## One replica or three
 
@@ -260,6 +266,10 @@ kubectl port-forward -n observability svc/kps-prometheus 9090:9090
 pnpm k6 mixed load --prom
 ```
 
-Then query `k6_http_req_duration_seconds{testid="..."}` in Grafana, or import the official "k6 Prometheus" dashboard.
+Then query `k6_http_req_duration_p95{testid="..."}` in Grafana, or import the official "k6 Prometheus" dashboard.
+
+Two things to set after importing it. Point **Test ID** at the run you care about rather than `All`, which merges every run in the window. Then pick a value in the **Trend Metrics Query** dropdown, usually `p95`: it is the `$quantile_stat` variable behind `HTTP Request Duration`, `HTTP Latency Timings`, `HTTP Latency Stats` and `Requests by URL`, and while it is empty all four read `No data`. The dashboard is not in Git, but Grafana runs with persistence, so both choices survive a pod restart.
+
+`HTTP request failures` reading `No data` means nothing failed. It filters on `expected_response="false"`, and Prometheus has no series to show a zero for when no sample ever matched.
 
 `pnpm k6:traffic-mix` reads the other direction — it queries the route distribution Prometheus has recorded and prints suggested weights for `mixed.js`. It only returns anything useful once the application metrics have been running in production for a few days.
