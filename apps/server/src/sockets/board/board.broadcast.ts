@@ -1,6 +1,7 @@
 import { Request as ExpressRequest } from "express";
 import { ObjectId } from "mongodb";
 
+import type { UserInvitedToBoardPayloadType } from "@workspace/shared/schemas/socket.schema";
 import logger from "@workspace/shared/utils/logger";
 import {
   type BoardUpdateReason,
@@ -15,9 +16,9 @@ import {
   boardBroadcastLocalRecipients,
   boardBroadcastSkipped,
 } from "src/providers/metrics.provider";
-import { getIo } from "src/providers/socket.provider";
 import { boardService } from "src/services/board.service";
-import { hasOtherBoardViewers, removeBoardViewer } from "src/sockets/board.viewers";
+import { hasOtherBoardViewers, removeBoardViewer } from "src/sockets/board/board.viewers";
+import { getIo } from "src/sockets/socket.server";
 import type { AppServer } from "src/types/socket.type";
 
 const resolveBoardId = (boardId: unknown): string | undefined => {
@@ -108,4 +109,8 @@ export const evictUserFromBoardRoom = async (boardId: string, userId: string): P
       logger.error(`Failed to evict ${userId} from board ${boardId}: ${(error as Error).message}`);
     }
   })();
+};
+
+export const notifyUserInvitedToBoard = (invitation: UserInvitedToBoardPayloadType): void => {
+  getIo()?.to(socketRoom.user(invitation.inviteeId)).emit(SOCKET_SERVER_EVENTS.USER_INVITED_TO_BOARD, invitation);
 };

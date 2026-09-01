@@ -5,7 +5,7 @@ import { CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/car
 import { BOARD_UPDATE_REASONS } from "@workspace/shared/utils/socket-events";
 
 import { cardService } from "src/services/card.service";
-import { broadcastBoardUpdate } from "src/sockets/board.broadcast";
+import { broadcastBoardUpdate } from "src/sockets/board/board.broadcast";
 import { actorId } from "src/utils/request-user";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {

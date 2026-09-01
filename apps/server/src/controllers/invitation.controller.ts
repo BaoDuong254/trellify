@@ -3,11 +3,10 @@ import { StatusCodes } from "http-status-codes";
 
 import { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
 import { BOARD_INVITATION_STATUS } from "@workspace/shared/utils/constants";
-import { BOARD_UPDATE_REASONS, SOCKET_SERVER_EVENTS, socketRoom } from "@workspace/shared/utils/socket-events";
+import { BOARD_UPDATE_REASONS } from "@workspace/shared/utils/socket-events";
 
-import { getIo } from "src/providers/socket.provider";
 import { invitationService } from "src/services/invitation.service";
-import { broadcastBoardUpdate } from "src/sockets/board.broadcast";
+import { broadcastBoardUpdate, notifyUserInvitedToBoard } from "src/sockets/board/board.broadcast";
 
 const createNewBoardInvitation = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
@@ -22,11 +21,7 @@ const createNewBoardInvitation = async (request: ExpressRequest, response: Expre
       message: "Invitation created successfully",
       data: resultInvitation,
     });
-    // Delivered straight to the invitee instead of broadcast to every connected
-    // client, and it no longer depends on the inviter's tab staying open.
-    getIo()
-      ?.to(socketRoom.user(resultInvitation.inviteeId))
-      .emit(SOCKET_SERVER_EVENTS.USER_INVITED_TO_BOARD, resultInvitation);
+    notifyUserInvitedToBoard(resultInvitation);
   } catch (error) {
     next(error);
   }

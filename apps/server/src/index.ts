@@ -6,10 +6,8 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import morgan from "morgan";
-import { Server } from "socket.io";
 
 import logger from "@workspace/shared/utils/logger";
-import { socketRoom } from "@workspace/shared/utils/socket-events";
 
 import { corsOptions } from "src/config/cors";
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
@@ -17,15 +15,12 @@ import environmentConfig from "src/config/environment";
 import { ENSURE_INDEXES } from "src/config/indexes";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
 import { metricsMiddleware } from "src/middlewares/metrics.middleware";
-import { connectedSockets, startMetricsServer } from "src/providers/metrics.provider";
+import { startMetricsServer } from "src/providers/metrics.provider";
 import { closeRedisClient } from "src/providers/redis.provider";
-import { closeSocketAdapter, setIo, setupSocketAdapter } from "src/providers/socket.provider";
 import { userQueue } from "src/queues/user/user.queue";
 import { APIs_V1 } from "src/routes/v1";
-import { registerSocketAuth } from "src/sockets/auth.socket";
-import { registerBoardSocketHandlers } from "src/sockets/board.socket";
-import { registerViewerRegistryRecovery } from "src/sockets/board.viewers";
-import type { AppServer } from "src/types/socket.type";
+import { startSockets } from "src/sockets";
+import { closeSocketAdapter } from "src/sockets/socket.server";
 
 const START_SERVER = async (): Promise<void> => {
   // Create Express app
@@ -84,27 +79,7 @@ const START_SERVER = async (): Promise<void> => {
 
   // Create HTTP server and setup Socket.io
   const server = http.createServer(app);
-  const io: AppServer = new Server(server, {
-    cors: corsOptions,
-  });
-  setIo(io);
-  await setupSocketAdapter(io);
-  registerViewerRegistryRecovery(io);
-
-  // Register authentication middleware for Socket.io
-  registerSocketAuth(io);
-
-  io.on("connection", (socket) => {
-    logger.info(chalk.greenBright(`New client connected: ${socket.id} (${socket.data.user._id})`));
-    connectedSockets.inc();
-    void socket.join(socketRoom.user(socket.data.user._id));
-    registerBoardSocketHandlers(io, socket);
-
-    socket.on("disconnect", (reason) => {
-      connectedSockets.dec();
-      logger.info(chalk.yellowBright(`Client disconnected: ${socket.id} (${reason})`));
-    });
-  });
+  const io = await startSockets(server);
 
   // Start the server
   server.listen(port, () => {

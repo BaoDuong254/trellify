@@ -9,7 +9,7 @@ import {
 } from "@workspace/shared/utils/socket-events";
 
 import { boardService } from "src/services/board.service";
-import { addBoardViewer, reconcileBoardViewers, removeBoardViewer } from "src/sockets/board.viewers";
+import { addBoardViewer, reconcileBoardViewers, removeBoardViewer } from "src/sockets/board/board.viewers";
 import type { AppServer, AppSocket } from "src/types/socket.type";
 
 const emitBoardPresence = async (io: AppServer, boardId: string, excludeSocketId?: string): Promise<void> => {
