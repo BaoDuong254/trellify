@@ -7,7 +7,7 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 
 const params = (endpoint, group, extraTags) => ({
   headers: JSON_HEADERS,
-  tags: { endpoint, group, ...stepTag(), ...extraTags },
+  tags: { endpoint, group, name: endpoint, ...stepTag(), ...extraTags },
 });
 
 export function status() {

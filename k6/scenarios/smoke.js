@@ -1,6 +1,6 @@
 import { fail } from "k6";
 
-import { API_URL, TEST_ID, userForVU } from "../config/env.js";
+import { API_URL, SYSTEM_TAGS, TEST_ID, userForVU } from "../config/env.js";
 import { thresholdsFor } from "../config/thresholds.js";
 import * as api from "../lib/api.js";
 import { authFlow, readFlow, writeFlow } from "../lib/flows.js";
@@ -8,6 +8,7 @@ import { buildSummary } from "../lib/summary.js";
 
 export const options = {
   tags: { testid: TEST_ID },
+  systemTags: SYSTEM_TAGS,
   scenarios: {
     smoke: { executor: "shared-iterations", vus: 1, iterations: 1, maxDuration: "2m" },
   },

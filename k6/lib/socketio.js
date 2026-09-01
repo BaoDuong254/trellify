@@ -16,7 +16,7 @@ const SIO = { CONNECT: "0", EVENT: "2", ACK: "3" };
 export function openBoardViewer(user, boardId, holdSeconds, onClosed) {
   const socket = new WebSocket(ENGINE_IO_URL, null, {
     headers: { Cookie: `accessToken=${user.accessToken}` },
-    tags: { endpoint: "socket_board", group: "socket" },
+    tags: { endpoint: "socket_board", group: "socket", name: "socket_board" },
   });
 
   let joined = false;

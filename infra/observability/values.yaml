@@ -35,7 +35,7 @@ prometheus:
         cpu: 200m
         memory: 1280Mi
       limits:
-        memory: 1280Mi
+        memory: 2Gi
     storageSpec:
       volumeClaimTemplate:
         spec:

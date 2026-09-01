@@ -394,17 +394,21 @@ ERRO[0164] Stopping output 0 failed  component=output-manager error="marking tim
 
 It fires after every metric has already been collected, so the summary, the HTML report and the `--ts` file are untouched, and the stale markers still land: the run’s series leave Prometheus well inside the five minutes they would otherwise linger. Prometheus logs no rejection for it and both `prometheus_tsdb_out_of_order_samples_total` and `prometheus_api_remote_write_invalid_labels_samples_total` stay at zero, so one batch of the shutdown write is refused for a reason the receiver never surfaces. Not worth chasing. Drop `K6_PROMETHEUS_RW_STALE_MARKERS` from `prometheus.env` if the line bothers you more than the five-minute tail does.
 
-Before pushing a `capacity` run, trim the system tags. k6 tags every sample with `url` and `name`, and both carry real board ids, so one ordinary `mixed load` run produces **5,374** distinct label sets for `http_req_duration` where the same run without those two tags produces **12**. The `step` tag adds 14 values on top of whatever that number already is:
+Cardinality is capped in the scripts, not by remembering a flag. k6 tags every sample with `url` and defaults `name` to the request URL, and both carry real board, column and card ids. `SYSTEM_TAGS` in `config/env.js` drops `url` and every scenario applies it through `options.systemTags`, while `lib/api.js` pins `name` to the `endpoint` tag. One ordinary `mixed load` run then produces **12** distinct label sets for `http_req_duration` instead of **5,374**; the `step` tag adds 14 values on top of that.
+
+This is not a theoretical tidy-up. A `mixed capacity` run pushed without those two tags trimmed put **863,636 series** into the cluster's Prometheus head — 90% of a 956,625-series head — across 16,386 distinct `name` values and 15,551 distinct `url` values. At 7 trend stats over ~9 `http_req_*` metrics that is roughly 57 series per label set. Prometheus was OOMKilled at its 1280Mi limit and stayed in CrashLoopBackOff, because every restart replayed the same series back out of the WAL and into the head. Grafana showed `connection refused` on every panel and `kubectl port-forward` dropped mid-run. Recovery meant scaling the Prometheus CR to zero and deleting `wal/` and `chunks_head/` off the PVC.
+
+`K6_SYSTEM_TAGS` still overrides the script value if a run needs a tag back (k6 resolves CLI flag > env var > script options):
 
 ```powershell
-$env:K6_SYSTEM_TAGS = "proto,status,method,group,scenario,expected_response"
-pnpm k6 mixed capacity --prom
+$env:K6_SYSTEM_TAGS = "proto,status,method,name,group,scenario,check,error_code,expected_response,url"
 ```
 
-This is a precaution, not a diagnosis: the cluster's Prometheus carries around 512k head series of which kubelet and apiserver are the large live contributors, and two k6 runs accounted for roughly 3% of it. Whether `url` and `name` survive into Prometheus at all is worth confirming rather than assuming:
+Confirm what actually reaches Prometheus rather than assuming — no `url` label, and `name` holding an endpoint rather than a URL with an ObjectId in it:
 
 ```powershell
 curl -sG http://localhost:9090/api/v1/series --data-urlencode 'match[]=k6_http_reqs_total'
+curl -s http://localhost:9090/api/v1/status/tsdb   # headStats.numSeries before and after a run
 ```
 
 `pnpm k6:traffic-mix` reads the other direction — it queries the route distribution Prometheus has recorded and prints suggested weights for `mixed.js`. It only returns anything useful once the application metrics have been running in production for a few days.

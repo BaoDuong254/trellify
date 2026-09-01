@@ -6,6 +6,18 @@ export const WS_URL = BASE_URL.replace(/^http/, "ws");
 export const TURNSTILE_TOKEN = __ENV.TURNSTILE_TOKEN || "loadtest";
 export const TEST_ID = __ENV.TEST_ID || `local-${Date.now()}`;
 
+export const SYSTEM_TAGS = [
+  "proto",
+  "status",
+  "method",
+  "name",
+  "group",
+  "scenario",
+  "check",
+  "error_code",
+  "expected_response",
+];
+
 const USERS_PATH = __ENV.USERS_PATH || "../data/users.json";
 
 export const seededUsers = new SharedArray("seeded users", () => JSON.parse(open(USERS_PATH)).users);

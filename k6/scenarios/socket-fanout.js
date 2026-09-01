@@ -1,4 +1,4 @@
-import { TEST_ID, sharedBoards, userForVU } from "../config/env.js";
+import { SYSTEM_TAGS, TEST_ID, sharedBoards, userForVU } from "../config/env.js";
 import { thresholdsFor } from "../config/thresholds.js";
 import { writeFlow } from "../lib/flows.js";
 import { openBoardViewer } from "../lib/socketio.js";
@@ -15,6 +15,7 @@ const fanoutBoards = () => sharedBoards.slice(0, BOARDS);
 
 export const options = {
   tags: { testid: TEST_ID },
+  systemTags: SYSTEM_TAGS,
   scenarios: {
     viewers: {
       executor: "per-vu-iterations",
