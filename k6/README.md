@@ -39,6 +39,7 @@ pnpm loadtest:down    # remove containers and volumes
 | `loadtest:clean`                        | Delete every `k6-` prefixed document, no re-seed      | seconds             |
 | `k6`                                    | Run any scenario against any profile                  | 10s to 30 min       |
 | `k6:peak-rps`                           | Peak RPS from a time-series output file               | seconds             |
+| `k6:watch`                              | Sample server CPU and event loop during a run         | seconds             |
 | `k6:traffic-mix`                        | Derive the real traffic mix from Prometheus           | seconds             |
 
 ## Running a test
@@ -46,12 +47,13 @@ pnpm loadtest:down    # remove containers and volumes
 One command covers every combination. Called bare it asks for each choice; called with arguments it runs straight away, so it stays copy-pasteable into an issue or a CI job.
 
 ```powershell
-pnpm k6                        # prompts for scenario, profile, and the two flags
+pnpm k6                        # prompts for scenario, profile, and the flags
 pnpm k6 smoke                  # scenario alone; profile defaults to load
 pnpm k6 mixed load             # scenario and profile
 pnpm k6 board-read stress
 pnpm k6 mixed load --prom      # push to Prometheus using k6/prometheus.env
 pnpm k6 mixed load --ts        # also write a time-series file, see Peak RPS
+pnpm k6 mixed capacity --watch # also sample server CPU and event loop, see Capacity
 pnpm k6 mixed load -e VUS=100  # any other flag goes straight to k6
 pnpm k6 --help
 ```
@@ -83,17 +85,90 @@ The write flow creates and deletes its own columns and cards each iteration, so 
 
 Pass as the second argument to `pnpm k6`, or set `-e PROFILE=<name>` directly.
 
-| Profile    | Executor               | Shape                                      |
-| ---------- | ---------------------- | ------------------------------------------ |
-| `smoke`    | `constant-vus`         | 1 VU, 30s                                  |
-| `baseline` | `constant-vus`         | 3 VUs, 90s, think time forced to 0         |
-| `load`     | `ramping-vus`          | 0 to 50 VUs over 5 min                     |
-| `stress`   | `ramping-vus`          | Steps to 200 VUs                           |
-| `spike`    | `ramping-vus`          | 10 to 200 VUs in 20s                       |
-| `soak`     | `constant-vus`         | 20 VUs, 30 min                             |
-| `capacity` | `ramping-arrival-rate` | 50 to 400 iterations/s, aborts at the knee |
+| Profile    | Executor               | Shape                                                      |
+| ---------- | ---------------------- | ---------------------------------------------------------- |
+| `smoke`    | `constant-vus`         | 1 VU, 30s                                                  |
+| `baseline` | `constant-vus`         | 3 VUs, 90s, think time forced to 0                         |
+| `load`     | `ramping-vus`          | 0 to 50 VUs over 5 min                                     |
+| `stress`   | `ramping-vus`          | Steps to 200 VUs                                           |
+| `spike`    | `ramping-vus`          | 10 to 200 VUs in 20s                                       |
+| `soak`     | `constant-vus`         | 20 VUs, 30 min                                             |
+| `capacity` | `ramping-arrival-rate` | 12-rung ladder, 25 to 800 iterations/s, aborts at the knee |
 
 For `capacity`, `rate` is iterations per second, not requests. The request rate is `http_reqs` in the summary, but that figure is an average over the whole run — see [Peak RPS](#peak-rps).
+
+### Capacity: finding the knee
+
+`capacity` is the only profile that answers "how much can this take". It offers load in 12 rungs — 45s of warm-up, then per rung a 20s ramp and a 60s hold — and stops at the first rung that breaks. Nothing breaks, and it runs 17 minutes to the 800 it/s ceiling.
+
+**Only the holds are measured.** Every request is tagged with the rung it was issued in (`step:s0` … `step:s11`), and requests issued during a ramp get `step:ramp` instead, so a rung's numbers never mix in traffic from the climb toward it.
+
+That tag is the whole mechanism. Each rung gets its own thresholds:
+
+| Selector                     | Threshold    | Aborts | Why                                                            |
+| ---------------------------- | ------------ | ------ | -------------------------------------------------------------- |
+| `http_req_duration{step:sN}` | `p(95)<2000` | yes    | Latency inside that hold only                                  |
+| `http_req_failed{step:sN}`   | `rate<0.05`  | yes    | Errors inside that hold only                                   |
+| `http_reqs{step:sN}`         | `count>=0`   | no     | Never fails; it exists purely to make k6 surface the submetric |
+
+k6 only puts a tag-scoped submetric into the summary if a threshold was declared on that exact selector, so the third row is what produces the achieved-throughput column. It has to be `count>=0` rather than `count>0`, because every rung the run never reached reports `count: 0` and must still pass.
+
+Each rung's threshold carries its own `delayAbortEval`, set to the moment that rung's hold has collected 30 seconds of samples. `delayAbortEval` counts from the start of the test, so rung 7's threshold is inert until 9m35s and live from then on — that is what turns a run-wide bound into a per-rung one.
+
+The point of all this: **a cumulative threshold on a ladder aborts on the warm-up, not the knee.** The old `capacity` guarded `http_req_duration p(95)<2000` over the whole run, and `k6/results/capacity.json` records what that does — the run died at 64 seconds, still inside the first ramp, having never reached rung 2, with the summary unable to say at what load. Do not reintroduce an untagged `abortOnFail` here.
+
+`dropped_iterations` gets a non-aborting `count<1`. Under an arrival-rate executor a dropped iteration means the VU pool was exhausted because the server slowed down, which is a symptom of the knee rather than a second definition of it — as a FAIL row it tells you the rungs above it measured the load generator, not Trellify.
+
+Read the result from the ladder table the summary prints:
+
+```
+  step   offered      achieved         p(95)   failed
+  s5      65 it/s     241.2 req/s      30.83ms   0.00%   ok
+  s6      88 it/s     321.5 req/s     203.98ms   0.00%   ok
+  s7     118 it/s     371.0 req/s     754.45ms   0.00%   ok
+  s8     158 it/s     351.2 req/s    1379.60ms   0.00%   ok
+  s9     213 it/s     192.1 req/s    2275.78ms   0.00%   FAIL  p(95)<2000
+
+  Peak sustained: 371.0 req/s at 118 it/s offered (s7)
+  Throughput turned over at s7: the rungs above it offered more and delivered less, while still inside the latency budget.
+  Knee at s9 (213 it/s offered): p(95)<2000
+  dropped_iterations 604: above that rung the load generator was the limit, not the server.
+```
+
+**The peak is the highest rung by throughput, not the last rung that passed.** Those are different, and the run above shows why: s8 offered more than s7 and delivered less, but its p(95) of 1380ms was still inside the 2000ms budget, so it passed. The capacity of the system is s7's 371 req/s. A latency threshold is what makes k6 stop; throughput turnover is what tells you where the ceiling was, and the summary says so out loud when the two disagree.
+
+`offered` is iterations/s and `achieved` is requests/s; they are different units because `iterations` is emitted by the executor and cannot carry the `step` tag. **Exit 99 is the success case here** — it means a rung broke. Exit 0 means the ladder topped out without breaking and the ceiling needs raising.
+
+One thing to know before reading a `--ts` file by hand: the `step` tag is attached when a request is **issued**, but its sample is timestamped when the request **completes**. Near the knee that gap is over a second, so a rung's samples appear in the time series slightly later than the rung's own window. That is deliberate — it is what keeps a rung's numbers free of traffic from the ramp below it.
+
+### Which container broke: `--watch`
+
+The ladder measures the server from the outside, so it can say a rung was slow but not why. Add `--watch` and the run also samples `docker stats` and each replica's `/metrics`, then reports both tables against the same rungs:
+
+```powershell
+pnpm k6 mixed capacity --watch
+```
+
+```
+  step    window         server%   mongo%   redis%   loop p99   heap MB
+  s5      47-53s           245.8    172.3      4.2     29.9ms      58.0
+  s6      55-61s           339.6    161.7      5.1    106.8ms      66.5
+  s7      63-69s           324.5    204.0      5.0     36.1ms      82.6
+  s8      71-77s           329.9     93.9      3.3    112.7ms      69.9
+
+  Worst event loop lag was 112.7ms at s8, with server CPU 330% and mongo CPU 94%.
+  The event loop was blocked while Mongo stayed cheap: the bottleneck is inside Node, not the database.
+```
+
+`server%` sums every replica, so 300% means three saturated cores; `loop p99` and `heap MB` are the worst replica in that window. Read it next to the ladder table — in the run above the server tier flattens at about 330% from s6 onward while Mongo falls away, which is what "Node is the ceiling" looks like.
+
+Rung windows come from `k6 inspect` on the same script and the same `-e` flags, so they stay correct when `LADDER_SCALE` or `RATE` changes the shape.
+
+Two caveats. The watcher samples every 3 seconds because `docker stats --no-stream` costs about two seconds a call, and it runs on the same machine as k6 and the stack, so it takes CPU away from the thing it is measuring — treat a `--watch` run as diagnosis, not as the run you quote numbers from. And nothing here reads MongoDB's own metrics; `mongo%` is container CPU, which is enough to rule Mongo in or out but not to explain a slow query.
+
+Run it standalone against a test you start yourself with `pnpm k6:watch --out k6/results/manual-server.ndjson`, stop it with Ctrl+C, or re-read a finished file with `pnpm k6:watch --report <file>`.
+
+`-e RATE=` scales the rung targets but never the durations, so the 12 rungs and their time windows survive it. `-e LADDER_SCALE=0.1` compresses the whole ladder to about 100 seconds for checking wiring; the summary stamps a warning on those numbers because a 6-second hold measures nothing. `-e KNEE_P95=1500` moves the latency budget.
 
 ## Environment variables
 
@@ -102,7 +177,9 @@ For `capacity`, `rate` is iterations per second, not requests. The request rate 
 | `BASE_URL`             | `http://localhost:3000` | API root                                                                                              |
 | `PROFILE`              | `load`                  | Profile name from the table above                                                                     |
 | `VUS`                  | per profile             | Override peak VUs for closed-model profiles                                                           |
-| `RATE`                 | per profile             | Override peak iterations/s for `capacity`                                                             |
+| `RATE`                 | per profile             | Override peak iterations/s for `capacity`. Scales the rung targets, never the durations               |
+| `LADDER_SCALE`         | `1`                     | Compress the `capacity` ladder's durations for a wiring check; `0.1` runs it in ~100s                 |
+| `KNEE_P95`             | `2000`                  | Per-rung latency budget in ms that defines the knee for `capacity`                                    |
 | `DURATION`             | per profile             | Applies to `constant-vus` profiles only                                                               |
 | `THINK_TIME`           | `1`                     | Seconds between steps; forced to 0 for `capacity` and `baseline`                                      |
 | `TEST_ID`              | `local-<timestamp>`     | Tags every metric, useful for comparing runs in Grafana                                               |
@@ -130,11 +207,11 @@ $env:SEED_USERS = "10"; pnpm loadtest:seed
 
 ## Configuration files
 
-| File                  | Used by                              | Contents                                                                                                                                                                                                                                                                                          |
-| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `loadtest.env`        | both compose stacks, `loadtest:seed` | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token.                                                                                                                                         |
-| `prometheus.env`      | `pnpm k6 --prom`                     | Remote write endpoint, trend stats, push interval. `K6_PROMETHEUS_RW_TREND_STATS` has to include `avg` and `med`: the Grafana dashboard defaults its `Trend Metrics Query` variable to one of them, and a stat the run never pushed leaves that variable empty, which blanks every latency panel. |
-| `nginx/loadtest.conf` | `loadtest:up:multi`                  | Load balancer in front of the 3 replicas                                                                                                                                                                                                                                                          |
+| File                  | Used by                              | Contents                                                                                                                                                                                                        |
+| --------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loadtest.env`        | both compose stacks, `loadtest:seed` | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token.                                                       |
+| `prometheus.env`      | `pnpm k6 --prom`                     | Remote write endpoint, trend stats, push interval, stale markers. `K6_PROMETHEUS_RW_TREND_STATS` decides which `k6_http_req_duration_*` series exist, so it has to cover every stat a dashboard panel asks for. |
+| `nginx/loadtest.conf` | `loadtest:up:multi`                  | Load balancer in front of the 3 replicas                                                                                                                                                                        |
 
 Seed sizing is not in `loadtest.env` on purpose — it comes from `SEED_*` environment variables so CI can seed a small dataset without editing the file.
 
@@ -181,6 +258,30 @@ A `.gz` suffix makes k6 gzip the file; `k6:peak-rps` reads both forms and stream
 It also breaks the peak down per scenario, and reports `dropped_iterations` when k6 could not start iterations fast enough — in that case the run measures the load generator, not the server.
 
 Pointing it at a summary file by mistake gives an explanation rather than a parse error.
+
+### Finding the knee in a file you already have
+
+`peak-rps` also builds a rate-versus-latency curve in 10-second windows, so a run that was never a `capacity` run can still be asked where it turned over:
+
+```
+Rate vs latency (10s windows, p(95) from a log histogram, +-2%):
+
+       t      req/s        p(95)   failed
+     30s      294.1      262.3ms    0.00%
+     40s      321.7      491.2ms    0.00%
+     50s      332.8      510.9ms    0.00%
+     60s      317.4      574.6ms    0.00%   <- knee
+     70s      312.2      574.6ms    0.00%
+
+Knee at 60s: p(95) 574.6ms is 6.9x the 83.1ms healthy floor.
+Peak sustained 10s before the knee: 340.9 rps
+```
+
+A window counts as broken when it fails more than 5% of its requests, or when p(95) sits above four times the healthy floor **while throughput has stopped climbing**. That last clause matters: during a ramp, latency rises because load rises, and calling that a knee would put the knee at the start of every `spike` run. The knee is where paying more latency stops buying more throughput. The floor is the median of the lowest quartile of window p(95)s, which survives a profile like `spike` that starts hot. A single bad window is ignored unless the next one is bad too.
+
+The percentiles come from a log-bucket histogram rather than buffered samples, so memory stays flat on a soak — a 27MB stress file runs in a 128MB heap. Accuracy is within 2%; measured against exact percentiles on real windows the worst error was 1.91%.
+
+Pass `--curve` to print every window instead of just the ones around the knee. If nothing broke, only the verdict prints.
 
 ### Grafana is not the source of truth for the peak
 
@@ -253,9 +354,11 @@ http_req_duration{board_size:large}   p(95)<1500
 
 The `auth` bound is deliberately loose: it covers bcrypt at cost 10 plus a round trip to Cloudflare Turnstile, so it measures Trellify and Cloudflare together.
 
-The `capacity` profile replaces all of these with looser bounds and `abortOnFail`, because its job is to find the breaking point rather than guard an SLO.
+The `capacity` profile replaces all of these with per-rung bounds and `abortOnFail`, because its job is to find the breaking point rather than guard an SLO — see [Capacity: finding the knee](#capacity-finding-the-knee).
 
 Edit `config/thresholds.js` to change them.
+
+A crossed threshold exits **99**, which pnpm surfaces as `Command failed with exit code 99`. That is the run working, not a broken script: `stress` and `spike` are built to push past the SLO, so exit 99 is their normal result and exit 0 is the surprise. Read the `FAIL` lines to see which budget went.
 
 ## Prometheus and Grafana
 
@@ -268,8 +371,40 @@ pnpm k6 mixed load --prom
 
 Then query `k6_http_req_duration_p95{testid="..."}` in Grafana, or import the official "k6 Prometheus" dashboard.
 
-Two things to set after importing it. Point **Test ID** at the run you care about rather than `All`, which merges every run in the window. Then pick a value in the **Trend Metrics Query** dropdown, usually `p95`: it is the `$quantile_stat` variable behind `HTTP Request Duration`, `HTTP Latency Timings`, `HTTP Latency Stats` and `Requests by URL`, and while it is empty all four read `No data`. The dashboard is not in Git, but Grafana runs with persistence, so both choices survive a pod restart.
+Point **Test ID** at the run you care about rather than `All`, which merges every run in the window.
+
+Then repair the **Trend Metrics Query** dropdown, which arrives broken. It is the `$quantile_stat` variable behind `HTTP Request Duration`, `HTTP Latency Timings` and `HTTP Latency Stats`, and upstream ships it with **Metric regex** set to `k6_http_req_duration_`. Grafana hands that straight to Prometheus as a label matcher, and PromQL anchors `=~` at both ends, so it matches only a metric named exactly `k6_http_req_duration_` — nothing:
+
+```bash
+curl -sG http://localhost:9090/api/v1/label/__name__/values --data-urlencode 'match[]={__name__=~"k6_http_req_duration_"}'    # []
+curl -sG http://localhost:9090/api/v1/label/__name__/values --data-urlencode 'match[]={__name__=~"k6_http_req_duration_.+"}'  # all seven
+```
+
+The variable resolves to zero options, silently, and the three panels query `k6_http_req_duration_` and read `No data` no matter what Prometheus holds. `Requests by URL` keeps working throughout because it names the stats directly instead of going through the variable, which is how you tell a broken variable apart from missing data.
+
+Fix it in Dashboard settings -> Variables -> `quantile_stat`: set **Metric regex** to `k6_http_req_duration_.+`, run the query to confirm seven values appear, apply, then select `p95`. Leave the **Regex** field below it alone — that one runs in the browser, is not anchored, and already extracts the suffix correctly. The dashboard is not in Git, but Grafana runs with persistence, so the repair survives a pod restart.
 
 `HTTP request failures` reading `No data` means nothing failed. It filters on `expected_response="false"`, and Prometheus has no series to show a zero for when no sample ever matched.
+
+One line of noise to expect at the end of a `--prom` run:
+
+```
+ERRO[0164] Stopping output 0 failed  component=output-manager error="marking time series as stale failed: got status code: 400"
+```
+
+It fires after every metric has already been collected, so the summary, the HTML report and the `--ts` file are untouched, and the stale markers still land: the run’s series leave Prometheus well inside the five minutes they would otherwise linger. Prometheus logs no rejection for it and both `prometheus_tsdb_out_of_order_samples_total` and `prometheus_api_remote_write_invalid_labels_samples_total` stay at zero, so one batch of the shutdown write is refused for a reason the receiver never surfaces. Not worth chasing. Drop `K6_PROMETHEUS_RW_STALE_MARKERS` from `prometheus.env` if the line bothers you more than the five-minute tail does.
+
+Before pushing a `capacity` run, trim the system tags. k6 tags every sample with `url` and `name`, and both carry real board ids, so one ordinary `mixed load` run produces **5,374** distinct label sets for `http_req_duration` where the same run without those two tags produces **12**. The `step` tag adds 14 values on top of whatever that number already is:
+
+```powershell
+$env:K6_SYSTEM_TAGS = "proto,status,method,group,scenario,expected_response"
+pnpm k6 mixed capacity --prom
+```
+
+This is a precaution, not a diagnosis: the cluster's Prometheus carries around 512k head series of which kubelet and apiserver are the large live contributors, and two k6 runs accounted for roughly 3% of it. Whether `url` and `name` survive into Prometheus at all is worth confirming rather than assuming:
+
+```powershell
+curl -sG http://localhost:9090/api/v1/series --data-urlencode 'match[]=k6_http_reqs_total'
+```
 
 `pnpm k6:traffic-mix` reads the other direction — it queries the route distribution Prometheus has recorded and prints suggested weights for `mixed.js`. It only returns anything useful once the application metrics have been running in production for a few days.

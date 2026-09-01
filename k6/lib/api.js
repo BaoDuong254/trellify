@@ -1,12 +1,13 @@
 import http from "k6/http";
 
 import { API_URL, TURNSTILE_TOKEN } from "../config/env.js";
+import { stepTag } from "../config/profiles.js";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
 const params = (endpoint, group, extraTags) => ({
   headers: JSON_HEADERS,
-  tags: { endpoint, group, ...extraTags },
+  tags: { endpoint, group, ...stepTag(), ...extraTags },
 });
 
 export function status() {

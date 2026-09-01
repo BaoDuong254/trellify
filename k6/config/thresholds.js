@@ -1,4 +1,4 @@
-import { isOpenModel } from "./profiles.js";
+import { capacityLadder, isOpenModel } from "./profiles.js";
 
 const BY_GROUP = {
   read: {
@@ -15,15 +15,36 @@ const BY_GROUP = {
   },
 };
 
-// Capacity runs hunt for the breaking point instead of guarding an SLO, so the
-// bounds are deliberately loose and abort the run once the knee is reached.
-const CAPACITY_THRESHOLDS = {
-  http_req_failed: [{ threshold: "rate<0.05", abortOnFail: true, delayAbortEval: "30s" }],
-  http_req_duration: [{ threshold: "p(95)<2000", abortOnFail: true, delayAbortEval: "30s" }],
+const KNEE_FAIL_RATE = 0.05;
+
+const kneeLatencyMs = () => {
+  const parsed = Number(__ENV.KNEE_P95 ?? "2000");
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 2000;
+};
+
+const capacityThresholds = () => {
+  const ladder = capacityLadder();
+  const latency = kneeLatencyMs();
+  const thresholds = {
+    dropped_iterations: ["count<1"],
+    checks: ["rate>0.90"],
+  };
+
+  for (const step of ladder.steps) {
+    const delayAbortEval = `${step.abortAfterSeconds}s`;
+    thresholds[`http_req_duration{step:${step.id}}`] = [
+      { threshold: `p(95)<${latency}`, abortOnFail: true, delayAbortEval },
+    ];
+    thresholds[`http_req_failed{step:${step.id}}`] = [
+      { threshold: `rate<${KNEE_FAIL_RATE}`, abortOnFail: true, delayAbortEval },
+    ];
+    thresholds[`http_reqs{step:${step.id}}`] = ["count>=0"];
+  }
+  return thresholds;
 };
 
 export function thresholdsFor(groups) {
-  if (isOpenModel()) return { ...CAPACITY_THRESHOLDS };
+  if (isOpenModel()) return capacityThresholds();
 
   const thresholds = {
     http_req_failed: ["rate<0.01"],
