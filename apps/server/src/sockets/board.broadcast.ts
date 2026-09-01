@@ -10,7 +10,6 @@ import {
 } from "@workspace/shared/utils/socket-events";
 
 import {
-  boardBroadcastCoalesced,
   boardBroadcastDuration,
   boardBroadcastFailures,
   boardBroadcastLocalRecipients,
@@ -18,20 +17,8 @@ import {
 } from "src/providers/metrics.provider";
 import { getIo } from "src/providers/socket.provider";
 import { boardService } from "src/services/board.service";
+import { hasOtherBoardViewers, removeBoardViewer } from "src/sockets/board.viewers";
 import type { AppServer } from "src/types/socket.type";
-
-const COALESCE_WINDOW_MS = 120;
-
-const hasViewersElsewhere = async (io: AppServer, room: string, actorSocketId: string): Promise<boolean> => {
-  try {
-    const socketIds = await io.of("/").adapter.sockets(new Set([room]));
-    for (const socketId of socketIds) if (socketId !== actorSocketId) return true;
-    return false;
-  } catch (error) {
-    logger.warn(`Could not count viewers of ${room}, broadcasting anyway: ${(error as Error).message}`);
-    return true;
-  }
-};
 
 const resolveBoardId = (boardId: unknown): string | undefined => {
   if (boardId instanceof ObjectId) return boardId.toString();
@@ -40,9 +27,6 @@ const resolveBoardId = (boardId: unknown): string | undefined => {
 };
 
 type BoardUpdate = { reason: BoardUpdateReason; actorId: string; actorSocketId: string };
-
-const openWindows = new Map<string, NodeJS.Timeout>();
-const foldedUpdates = new Map<string, BoardUpdate>();
 
 const sendBoardUpdate = async (io: AppServer, boardId: string, update: BoardUpdate): Promise<void> => {
   const { reason, actorId, actorSocketId } = update;
@@ -53,7 +37,7 @@ const sendBoardUpdate = async (io: AppServer, boardId: string, update: BoardUpda
     const localRecipients = localRoom ? localRoom.size - (localRoom.has(actorSocketId) ? 1 : 0) : 0;
     boardBroadcastLocalRecipients.observe(localRecipients);
 
-    if (localRecipients === 0 && !(await hasViewersElsewhere(io, room, actorSocketId))) {
+    if (localRecipients === 0 && !(await hasOtherBoardViewers(boardId, actorSocketId))) {
       boardBroadcastSkipped.inc({ reason });
       return;
     }
@@ -75,19 +59,22 @@ const sendBoardUpdate = async (io: AppServer, boardId: string, update: BoardUpda
   }
 };
 
-const openWindow = (io: AppServer, boardId: string): void => {
-  const timer = setTimeout(() => {
-    openWindows.delete(boardId);
-    const folded = foldedUpdates.get(boardId);
-    if (folded === undefined) return;
-    foldedUpdates.delete(boardId);
+const inFlight = new Map<string, Promise<void>>();
 
-    void sendBoardUpdate(io, boardId, { ...folded, actorSocketId: "" });
-    openWindow(io, boardId);
-  }, COALESCE_WINDOW_MS);
+const runAfter = async (previous: Promise<void> | undefined, run: () => Promise<void>): Promise<void> => {
+  await previous;
+  await run();
+};
 
-  timer.unref();
-  openWindows.set(boardId, timer);
+const forgetWhenSettled = async (boardId: string, pending: Promise<void>): Promise<void> => {
+  await pending;
+  if (inFlight.get(boardId) === pending) inFlight.delete(boardId);
+};
+
+const enqueueBoardUpdate = (io: AppServer, boardId: string, update: BoardUpdate): void => {
+  const next = runAfter(inFlight.get(boardId), () => sendBoardUpdate(io, boardId, update));
+  inFlight.set(boardId, next);
+  void forgetWhenSettled(boardId, next);
 };
 
 export const broadcastBoardUpdate = (request: ExpressRequest, rawBoardId: unknown, reason: BoardUpdateReason): void => {
@@ -100,16 +87,8 @@ export const broadcastBoardUpdate = (request: ExpressRequest, rawBoardId: unknow
   // excludes a room nobody is in, so the broadcast still reaches every viewer.
   const actorSocketId = typeof socketIdHeader === "string" ? socketIdHeader : "";
   const actorId = typeof request.jwtDecoded === "object" ? String(request.jwtDecoded?._id ?? "") : "";
-  const update: BoardUpdate = { reason, actorId, actorSocketId };
 
-  if (openWindows.has(boardId)) {
-    foldedUpdates.set(boardId, update);
-    boardBroadcastCoalesced.inc({ reason });
-    return;
-  }
-
-  void sendBoardUpdate(io, boardId, update);
-  openWindow(io, boardId);
+  enqueueBoardUpdate(io, boardId, { reason, actorId, actorSocketId });
 };
 
 export const evictUserFromBoardRoom = async (boardId: string, userId: string): Promise<void> => {
@@ -122,6 +101,7 @@ export const evictUserFromBoardRoom = async (boardId: string, userId: string): P
       // Adapter-aware, so this reaches the user's sockets on every scaled instance.
       const sockets = await io.in(socketRoom.user(userId)).fetchSockets();
       for (const socket of sockets) socket.leave(boardRoom);
+      await Promise.all(sockets.map((socket) => removeBoardViewer(boardId, socket.id)));
 
       io.to(socketRoom.user(userId)).emit(SOCKET_SERVER_EVENTS.BOARD_ACCESS_DENIED, { boardId });
     } catch (error) {

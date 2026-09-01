@@ -45,14 +45,7 @@ export const boardBroadcastFailures = new Counter({
 
 export const boardBroadcastSkipped = new Counter({
   name: "board_broadcast_skipped_total",
-  help: "Board updates that skipped the snapshot fetch and emit because nobody in the cluster was viewing the board",
-  labelNames: ["reason"],
-  registers: [metricsRegistry],
-});
-
-export const boardBroadcastCoalesced = new Counter({
-  name: "board_broadcast_coalesced_total",
-  help: "Board updates folded into a later broadcast because another one for the same board was already in flight",
+  help: "Board updates that skipped the snapshot fetch and emit because the viewer registry held nobody but the actor",
   labelNames: ["reason"],
   registers: [metricsRegistry],
 });

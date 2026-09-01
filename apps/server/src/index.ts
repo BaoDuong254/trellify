@@ -24,6 +24,7 @@ import { userQueue } from "src/queues/user/user.queue";
 import { APIs_V1 } from "src/routes/v1";
 import { registerSocketAuth } from "src/sockets/auth.socket";
 import { registerBoardSocketHandlers } from "src/sockets/board.socket";
+import { registerViewerRegistryRecovery } from "src/sockets/board.viewers";
 import type { AppServer } from "src/types/socket.type";
 
 const START_SERVER = async (): Promise<void> => {
@@ -88,6 +89,7 @@ const START_SERVER = async (): Promise<void> => {
   });
   setIo(io);
   await setupSocketAdapter(io);
+  registerViewerRegistryRecovery(io);
 
   // Register authentication middleware for Socket.io
   registerSocketAuth(io);

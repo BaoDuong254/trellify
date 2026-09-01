@@ -19,6 +19,7 @@ export const SOCKET_AUTH_ERRORS = {
 export const SOCKET_ACK_ERRORS = {
   INVALID_PAYLOAD: "Error.InvalidSocketPayload",
   BOARD_ACCESS_DENIED: "Error.BoardAccessDenied",
+  PRESENCE_UNAVAILABLE: "Error.BoardPresenceUnavailable",
 } as const;
 
 export const BOARD_UPDATE_REASONS = {
