@@ -16,6 +16,7 @@
     "k6": "node k6/tools/run.mjs",
     "k6:peak-rps": "node k6/tools/peak-rps.mjs",
     "k6:traffic-mix": "node k6/tools/traffic-mix.mjs",
+    "k6:watch": "node k6/tools/watch-server.mjs",
     "knip": "knip",
     "knip:production": "knip --production",
     "lint": "turbo run lint",
