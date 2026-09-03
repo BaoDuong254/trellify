@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import TrelloIcon from "src/assets/trello.svg?react";
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
@@ -50,17 +50,16 @@ function LoginForm() {
   const submitLogIn = (data: LoginFormData) => {
     const { email, password } = data;
 
-    toast
-      .promise(dispatch(loginUserAPI({ email, password, turnstileToken: turnstile.token! })), {
-        pending: "Logging in...",
-      })
-      .then((res) => {
-        if (res.meta.requestStatus === "fulfilled") {
-          navigate("/");
-        } else {
-          turnstile.reset();
-        }
-      });
+    const toastId = toast.loading("Logging in...");
+    dispatch(loginUserAPI({ email, password, turnstileToken: turnstile.token! })).then((res) => {
+      if (res.meta.requestStatus === "fulfilled") {
+        toast.success("Logged in successfully!", { id: toastId });
+        navigate("/");
+      } else {
+        toast.dismiss(toastId);
+        turnstile.reset();
+      }
+    });
   };
 
   return (

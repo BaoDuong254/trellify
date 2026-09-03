@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { forgotPasswordAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
@@ -32,13 +32,17 @@ function ForgotPasswordForm() {
   const turnstile = useTurnstile();
 
   const submitForgotPassword = (data: ForgotPasswordFormData) => {
-    toast
-      .promise(forgotPasswordAPI({ email: data.email, turnstileToken: turnstile.token! }), {
-        pending: "Sending reset link...",
-        success:
+    const toastId = toast.loading("Sending reset link...");
+    forgotPasswordAPI({ email: data.email, turnstileToken: turnstile.token! })
+      .then(() => {
+        toast.success(
           "If the email is registered, a password reset link has been sent. Please check your inbox and spam folder.",
+          { id: toastId }
+        );
       })
-      .catch(() => {})
+      .catch(() => {
+        toast.dismiss(toastId);
+      })
       .finally(turnstile.reset);
   };
 

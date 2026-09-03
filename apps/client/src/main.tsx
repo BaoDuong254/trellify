@@ -5,10 +5,10 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
 import { persistStore } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
 
+import AppToaster from "src/components/AppToaster/AppToaster.tsx";
 import ErrorBoundary from "src/components/ErrorBoundary/ErrorBoundary.tsx";
 import { store } from "src/redux/store.ts";
 import theme from "src/theme.ts";
@@ -37,7 +37,7 @@ createRoot(rootElement).render(
               <GlobalStyles styles={{ a: { textDecoration: "none" } }} />
               <CssBaseline />
               <App />
-              <ToastContainer position='bottom-left' theme='colored' />
+              <AppToaster />
             </ErrorBoundary>
           </ThemeProvider>
         </BrowserRouter>

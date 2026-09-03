@@ -11,7 +11,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
@@ -42,9 +42,12 @@ function AccountTab() {
   const submitChangeGeneralInformation = (data: AccountTabFormData) => {
     const { displayName } = data;
     if (displayName === currentUser?.displayName) return;
-    toast.promise(dispatch(updateUserAPI({ displayName })), { pending: "Updating..." }).then((res) => {
+    const toastId = toast.loading("Updating...");
+    dispatch(updateUserAPI({ displayName })).then((res) => {
       if (res.meta.requestStatus === "fulfilled") {
-        toast.success("User updated successfully!");
+        toast.success("User updated successfully!", { id: toastId });
+      } else {
+        toast.dismiss(toastId);
       }
     });
   };
@@ -57,16 +60,15 @@ function AccountTab() {
     }
     const reqData = new FormData();
     reqData.append("avatar", e.target?.files?.[0] as File);
-    toast
-      .promise(dispatch(updateUserAPI(reqData as unknown as Parameters<typeof updateUserAPI>[0])), {
-        pending: "Updating...",
-      })
-      .then((res) => {
-        if (res.meta.requestStatus === "fulfilled") {
-          toast.success("User updated successfully!");
-        }
-        e.target.value = "";
-      });
+    const toastId = toast.loading("Updating...");
+    dispatch(updateUserAPI(reqData as unknown as Parameters<typeof updateUserAPI>[0])).then((res) => {
+      if (res.meta.requestStatus === "fulfilled") {
+        toast.success("User updated successfully!", { id: toastId });
+      } else {
+        toast.dismiss(toastId);
+      }
+      e.target.value = "";
+    });
   };
 
   return (

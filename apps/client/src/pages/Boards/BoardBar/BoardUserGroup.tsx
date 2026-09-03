@@ -14,7 +14,7 @@ import { useConfirm } from "material-ui-confirm";
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { removeBoardMemberAPI } from "src/apis";
 import { fetchBoardDetailsAPI } from "src/redux/activeBoard/activeBoardSlice";

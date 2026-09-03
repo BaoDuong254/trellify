@@ -7,7 +7,7 @@ import TextField from "@mui/material/TextField";
 import { cloneDeep } from "lodash";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { createNewColumnAPI } from "src/apis";
 import Column from "src/pages/Boards/BoardContent/ListColumns/Column/Column";

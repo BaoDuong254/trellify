@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import type { UserLoginType, UserUpdateType } from "@workspace/shared/schemas/user.schema";
 

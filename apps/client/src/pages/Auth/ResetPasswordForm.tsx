@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { resetPasswordAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
@@ -44,13 +44,14 @@ function ResetPasswordForm() {
   if (!token) return <Navigate to='/404' />;
 
   const submitResetPassword = (data: ResetPasswordFormData) => {
-    toast
-      .promise(resetPasswordAPI({ token, password: data.password }), {
-        pending: "Resetting password...",
-        success: "Password reset successfully!",
-      })
+    const toastId = toast.loading("Resetting password...");
+    resetPasswordAPI({ token, password: data.password })
       .then(() => {
+        toast.success("Password reset successfully!", { id: toastId });
         navigate("/login");
+      })
+      .catch(() => {
+        toast.dismiss(toastId);
       });
   };
 

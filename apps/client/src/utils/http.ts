@@ -1,5 +1,5 @@
 import axios, { type AxiosError } from "axios";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { SOCKET_ID_HEADER } from "@workspace/shared/utils/socket-events";
 

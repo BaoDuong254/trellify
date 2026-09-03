@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import { useConfirm } from "material-ui-confirm";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import type { AppDispatch } from "src/redux/store";
@@ -47,14 +47,15 @@ function SecurityTab() {
       .then(({ confirmed }) => {
         if (confirmed) {
           const { current_password, new_password } = data;
-          toast
-            .promise(dispatch(updateUserAPI({ current_password, new_password })), { pending: "Updating..." })
-            .then((res) => {
-              if (res.meta.requestStatus === "fulfilled") {
-                toast.success("Successfully changed your password, please login again!");
-                dispatch(logoutUserAPI(false));
-              }
-            });
+          const toastId = toast.loading("Updating...");
+          dispatch(updateUserAPI({ current_password, new_password })).then((res) => {
+            if (res.meta.requestStatus === "fulfilled") {
+              toast.success("Successfully changed your password, please login again!", { id: toastId });
+              dispatch(logoutUserAPI(false));
+            } else {
+              toast.dismiss(toastId);
+            }
+          });
         }
       })
       .catch(() => {});

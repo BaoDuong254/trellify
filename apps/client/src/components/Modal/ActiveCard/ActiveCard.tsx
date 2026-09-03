@@ -31,7 +31,7 @@ import { cloneDeep } from "lodash";
 import { useConfirm } from "material-ui-confirm";
 import { Suspense, lazy } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import type { IncomingCardMemberInfoType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
 import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
@@ -118,12 +118,13 @@ function ActiveCard() {
     }
     const reqData = new FormData();
     reqData.append("cardCover", files[0]);
-    toast.promise(
-      callApiUpdateCard(reqData as unknown as { title?: string; description?: string }).finally(() => {
+    const toastId = toast.loading("Uploading...");
+    callApiUpdateCard(reqData as unknown as { title?: string; description?: string })
+      .catch(() => {})
+      .finally(() => {
         event.target.value = "";
-      }),
-      { pending: "Uploading..." }
-    );
+        toast.dismiss(toastId);
+      });
   };
 
   const onAddCardComment = async (commentToAdd: { userAvatar: string; userDisplayName: string; content: string }) => {

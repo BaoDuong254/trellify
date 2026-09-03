@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { registerUserAPI } from "src/apis";
 import TrelloIcon from "src/assets/trello.svg?react";
@@ -44,15 +44,16 @@ function RegisterForm() {
 
   const submitRegister = (data: RegisterFormData) => {
     const { email, password } = data;
-    toast
-      .promise(registerUserAPI({ email, password, turnstileToken: turnstile.token! }), {
-        pending: "Registering is in progress...",
-      })
+    const toastId = toast.loading("Registering is in progress...");
+    registerUserAPI({ email, password, turnstileToken: turnstile.token! })
       .then((user) => {
         navigate(`/login?registeredEmail=${user.email}`);
       })
       .catch(() => {
         turnstile.reset();
+      })
+      .finally(() => {
+        toast.dismiss(toastId);
       });
   };
 

@@ -1,4 +1,4 @@
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 import type { UpdateCardType } from "@workspace/shared/schemas/card.schema";
@@ -77,17 +77,13 @@ export const deleteCardDetailsAPI = async (cardId: string) => {
 // User APIs
 export const registerUserAPI = async (data: { email: string; password: string; turnstileToken: string }) => {
   const response = await http.post(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/register`, data);
-  toast.success("Account created successfully! Please check and verify your account before logging in!", {
-    theme: "colored",
-  });
+  toast.success("Account created successfully! Please check and verify your account before logging in!");
   return response.data.data;
 };
 
 export const verifyUserAPI = async (data: { email: string; token: string }) => {
   const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/users/verify`, data);
-  toast.success("Account verified successfully! Now you can login to enjoy our services! Have a good day!", {
-    theme: "colored",
-  });
+  toast.success("Account verified successfully! Now you can login to enjoy our services! Have a good day!");
   return response.data.data;
 };
 

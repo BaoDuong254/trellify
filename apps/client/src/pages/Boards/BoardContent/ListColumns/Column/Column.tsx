@@ -22,7 +22,7 @@ import { cloneDeep } from "lodash";
 import { useConfirm } from "material-ui-confirm";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { createNewCardAPI, deleteColumnDetailsAPI, updateColumnDetailsAPI } from "src/apis";
 import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
