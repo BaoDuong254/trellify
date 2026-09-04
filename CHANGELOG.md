@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.0](https://github.com/BaoDuong254/trellify/compare/v1.6.0...v1.7.0) (2026-06-10)
+
+
+### Features
+
+* add knip configuration and prettier plugin for import sorting ([3754cd1](https://github.com/BaoDuong254/trellify/commit/3754cd1b6bab7a51297b09a3c481fde04b840d6e))
+* add SonarCloud integration and update sonar project version handling ([5d68264](https://github.com/BaoDuong254/trellify/commit/5d682642d231ddb6a0d044805fc8bdad2b159514))
+* implement card deletion functionality with API integration ([96a3dee](https://github.com/BaoDuong254/trellify/commit/96a3deef6c8db06788ed51c14ed486dca3b99345))
+
+
+### Bug Fixes
+
+* ensure fetch-depth is set to 0 for code checkout in CI workflow ([a6b69f7](https://github.com/BaoDuong254/trellify/commit/a6b69f7fc1227b795afeb8f859ebdf4e01a98d6e))
+
 ## [1.6.0](https://github.com/BaoDuong254/trellify/compare/v1.5.0...v1.6.0) (2026-06-03)
 
 
