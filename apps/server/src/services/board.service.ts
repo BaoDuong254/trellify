@@ -39,13 +39,33 @@ const groupCardsIntoColumns = (boardDetails: Document) => {
 
 const IS_PUBLIC_BOARD_READ_ALLOWED = false;
 
+type BoardMembership = { ownerIds: unknown[]; memberIds: unknown[]; type?: string };
+
+const membershipCacheKey = (boardId: string): string => `c:v1:board-membership:${boardId}`;
+
+const invalidateBoardMembership = async (boardId: string): Promise<void> => {
+  await invalidate(membershipCacheKey(boardId));
+};
+
+const getMembership = (boardId: string): Promise<BoardMembership | null> =>
+  getOrLoad<BoardMembership>({
+    cacheName: "board-membership",
+    key: membershipCacheKey(boardId),
+    ttlSeconds: environmentConfig.BOARD_MEMBERSHIP_CACHE_TTL_SECONDS,
+    negativeTtlSeconds: environmentConfig.BOARD_MEMBERSHIP_CACHE_TTL_SECONDS,
+    load: async (): Promise<BoardMembership | null> => {
+      const board = await boardModel.findMembership(boardId);
+      if (!board) return null;
+      return { ownerIds: board.ownerIds, memberIds: board.memberIds, type: board.type };
+    },
+  });
+
 const canUserAccessBoard = async (userId: string, boardId: string): Promise<boolean> => {
-  const board = await boardModel.findMembership(boardId);
+  const board = await getMembership(boardId);
   if (!board) return false;
   if (IS_PUBLIC_BOARD_READ_ALLOWED && board.type === BOARD_TYPES.PUBLIC) return true;
 
-  const allowedIds: ObjectId[] = [...board.ownerIds, ...board.memberIds];
-  return allowedIds.some((id) => id.toString() === userId);
+  return [...board.ownerIds, ...board.memberIds].some((id) => String(id) === userId);
 };
 
 const assertBoardAccess = async (userId: string, boardId: string): Promise<void> => {
@@ -55,11 +75,10 @@ const assertBoardAccess = async (userId: string, boardId: string): Promise<void>
 };
 
 const isBoardOwner = async (userId: string, boardId: string): Promise<boolean> => {
-  const board = await boardModel.findMembership(boardId);
+  const board = await getMembership(boardId);
   if (!board) return false;
 
-  const ownerIds: ObjectId[] = [...board.ownerIds];
-  return ownerIds.some((id) => id.toString() === userId);
+  return board.ownerIds.some((id) => String(id) === userId);
 };
 
 const assertBoardOwner = async (userId: string, boardId: string): Promise<void> => {
@@ -94,6 +113,7 @@ const removeMember = async (
   }
 
   await boardModel.pullMemberIds(boardId, targetUserId);
+  await invalidateBoardMembership(boardId);
   await cardModel.pullMemberFromBoardCards(boardId, targetUserId);
   await invitationModel.revokeBoardInvitations(boardId, targetUserId);
 
@@ -136,6 +156,7 @@ const update = async (userId: string, boardId: string, requestBody: UpdateBoardT
 
   const updateData = { ...requestBody, updatedAt: new Date() };
   const updatedBoard = await boardModel.update(boardId, updateData);
+  await invalidateBoardMembership(boardId);
   return updatedBoard;
 };
 
@@ -207,4 +228,5 @@ export const boardService = {
   removeMember,
   getBoardSnapshot,
   invalidateBoardCache,
+  invalidateBoardMembership,
 };

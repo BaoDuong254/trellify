@@ -8,6 +8,7 @@ import { BOARD_INVITATION_STATUS, INVITATION_TYPES } from "@workspace/shared/uti
 import { boardModel } from "src/models/board.model";
 import { invitationModel } from "src/models/invitation.model";
 import { userModel } from "src/models/user.model";
+import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
 import { pickUser } from "src/utils/formatters";
 
@@ -106,6 +107,7 @@ const updateBoardInvitation = async (invitationId: string, status: string, userI
 
   if (updatedInvitation?.boardInvitation.status === BOARD_INVITATION_STATUS.ACCEPTED) {
     await boardModel.pushMemberIds(boardId, userId);
+    await boardService.invalidateBoardMembership(boardId);
   }
 
   return updatedInvitation;

@@ -693,6 +693,179 @@ data:
             "mode": "markdown",
             "content": "**Local recipients is per instance.** Summing `board_broadcast_local_recipients` across pods does *not* give cluster-wide fan-out: each write is counted only on the instance that handled it, and that instance sees only its own viewers.\n\n**Broadcast cost is invisible to clients.** `board_broadcast_duration_seconds` runs after `response.json()`, so it never shows up in request latency - but it consumes the same event loop."
           }
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "Cache outcomes by result",
+          "description": "hit and negative_hit were served from Redis. coalesced_local and coalesced_remote are requests that waited for another request instead of querying MongoDB - the higher those run during a burst, the more the single-flight lock is earning its keep. Sustained error means Redis is unreachable and every read is falling through to MongoDB.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 45
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (cache, result) (rate(cache_requests_total[5m]))",
+              "legendFormat": "{{cache}} {{result}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "Cache loads reaching MongoDB",
+          "description": "Loads that survived coalescing, so this is the real query rate against MongoDB behind the cache. A burst of N concurrent requests for one cold key must move this by 1, not by N - if it tracks the request rate instead, single-flight is not working.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 45
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (cache) (rate(cache_loader_duration_seconds_count[5m]))",
+              "legendFormat": "{{cache}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "type": "stat",
+          "title": "Board cache hit ratio",
+          "description": "Share of board detail reads answered from Redis. A board is invalidated on every write to it, so a busy board legitimately sits low; a ratio near zero across all boards points at a TTL that is too short or at invalidation firing when it should not.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 6,
+            "x": 0,
+            "y": 53
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.3
+                  },
+                  {
+                    "color": "green",
+                    "value": 0.6
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(cache_requests_total{cache=\"board\",result=~\"hit|negative_hit\"}[5m])) / sum(rate(cache_requests_total{cache=\"board\"}[5m]))",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
         }
       ]
     }

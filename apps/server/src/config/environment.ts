@@ -66,6 +66,16 @@ const configSchema = z.object({
     .int("BOARD_CACHE_NEGATIVE_TTL_SECONDS must be an integer")
     .positive("BOARD_CACHE_NEGATIVE_TTL_SECONDS must be a positive integer")
     .default(15),
+  BOARD_MEMBERSHIP_CACHE_TTL_SECONDS: z.coerce
+    .number("BOARD_MEMBERSHIP_CACHE_TTL_SECONDS must be a number")
+    .int("BOARD_MEMBERSHIP_CACHE_TTL_SECONDS must be an integer")
+    .positive("BOARD_MEMBERSHIP_CACHE_TTL_SECONDS must be a positive integer")
+    .default(5),
+  REDIS_COMMAND_TIMEOUT_MS: z.coerce
+    .number("REDIS_COMMAND_TIMEOUT_MS must be a number")
+    .int("REDIS_COMMAND_TIMEOUT_MS must be an integer")
+    .positive("REDIS_COMMAND_TIMEOUT_MS must be a positive integer")
+    .default(2000),
   CACHE_COMMAND_TIMEOUT_MS: z.coerce
     .number("CACHE_COMMAND_TIMEOUT_MS must be a number")
     .int("CACHE_COMMAND_TIMEOUT_MS must be an integer")
