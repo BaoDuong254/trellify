@@ -55,6 +55,22 @@ const configSchema = z.object({
     .positive("METRICS_PORT must be a positive integer")
     .default(9464),
   TURNSTILE_SECRET_KEY: z.string().min(1, "TURNSTILE_SECRET_KEY is required"),
+  CACHE_ENABLED: z.stringbool().default(true),
+  BOARD_CACHE_TTL_SECONDS: z.coerce
+    .number("BOARD_CACHE_TTL_SECONDS must be a number")
+    .int("BOARD_CACHE_TTL_SECONDS must be an integer")
+    .positive("BOARD_CACHE_TTL_SECONDS must be a positive integer")
+    .default(30),
+  BOARD_CACHE_NEGATIVE_TTL_SECONDS: z.coerce
+    .number("BOARD_CACHE_NEGATIVE_TTL_SECONDS must be a number")
+    .int("BOARD_CACHE_NEGATIVE_TTL_SECONDS must be an integer")
+    .positive("BOARD_CACHE_NEGATIVE_TTL_SECONDS must be a positive integer")
+    .default(15),
+  CACHE_COMMAND_TIMEOUT_MS: z.coerce
+    .number("CACHE_COMMAND_TIMEOUT_MS must be a number")
+    .int("CACHE_COMMAND_TIMEOUT_MS must be an integer")
+    .positive("CACHE_COMMAND_TIMEOUT_MS must be a positive integer")
+    .default(1000),
 });
 
 const configServer = configSchema.safeParse(process.env);

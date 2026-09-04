@@ -9,10 +9,12 @@ import {
 } from "@workspace/shared/schemas/board.schema";
 import { BOARD_TYPES, DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
 
+import environmentConfig from "src/config/environment";
 import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { invitationModel } from "src/models/invitation.model";
+import { getOrLoad, invalidate } from "src/providers/cache.provider";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
 
@@ -33,14 +35,6 @@ const groupCardsIntoColumns = (boardDetails: Document) => {
   }
   delete resultBoard.cards;
   return resultBoard;
-};
-
-const getDetails = async (userId: string, boardId: string) => {
-  const boardDetails = await boardModel.getDetails(userId, boardId);
-  if (!boardDetails) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
-  }
-  return groupCardsIntoColumns(boardDetails);
 };
 
 const IS_PUBLIC_BOARD_READ_ALLOWED = false;
@@ -110,6 +104,31 @@ const getBoardSnapshot = async (boardId: string) => {
   const boardDetails = await boardModel.getDetailsById(boardId);
   if (!boardDetails) return null;
   return groupCardsIntoColumns(boardDetails);
+};
+
+const boardCacheKey = (boardId: string): string => `c:v1:board:${boardId}`;
+
+const invalidateBoardCache = async (boardId: string): Promise<void> => {
+  await invalidate(boardCacheKey(boardId));
+};
+
+const getDetails = async (userId: string, boardId: string) => {
+  if (!(await canUserAccessBoard(userId, boardId))) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+  }
+
+  const board = await getOrLoad<Document>({
+    cacheName: "board",
+    key: boardCacheKey(boardId),
+    ttlSeconds: environmentConfig.BOARD_CACHE_TTL_SECONDS,
+    negativeTtlSeconds: environmentConfig.BOARD_CACHE_NEGATIVE_TTL_SECONDS,
+    load: () => getBoardSnapshot(boardId),
+  });
+
+  if (!board) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+  }
+  return board;
 };
 
 const update = async (userId: string, boardId: string, requestBody: UpdateBoardType) => {
@@ -187,4 +206,5 @@ export const boardService = {
   assertBoardOwner,
   removeMember,
   getBoardSnapshot,
+  invalidateBoardCache,
 };

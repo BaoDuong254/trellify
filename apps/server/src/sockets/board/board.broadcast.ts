@@ -79,9 +79,13 @@ const enqueueBoardUpdate = (io: AppServer, boardId: string, update: BoardUpdate)
 };
 
 export const broadcastBoardUpdate = (request: ExpressRequest, rawBoardId: unknown, reason: BoardUpdateReason): void => {
-  const io = getIo();
   const boardId = resolveBoardId(rawBoardId);
-  if (!io || !boardId) return;
+  if (!boardId) return;
+
+  void boardService.invalidateBoardCache(boardId);
+
+  const io = getIo();
+  if (!io) return;
 
   const socketIdHeader = request.headers[SOCKET_ID_HEADER];
   // Empty string when the caller has no socket (Postman, curl). `.except("")`

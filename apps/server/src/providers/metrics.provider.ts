@@ -50,6 +50,21 @@ export const boardBroadcastSkipped = new Counter({
   registers: [metricsRegistry],
 });
 
+export const cacheRequests = new Counter({
+  name: "cache_requests_total",
+  help: "Read-through cache lookups by cache name and outcome: hit, negative_hit, miss, coalesced_local, coalesced_remote, wait_timeout, error or disabled",
+  labelNames: ["cache", "result"],
+  registers: [metricsRegistry],
+});
+
+export const cacheLoaderDuration = new Histogram({
+  name: "cache_loader_duration_seconds",
+  help: "Time spent in the cache loader, meaning the query that actually reached the database. Its count is the number of loads that survived single-flight coalescing.",
+  labelNames: ["cache"],
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+  registers: [metricsRegistry],
+});
+
 export const indexesReady = new Gauge({
   name: "mongodb_indexes_ready",
   help: "1 when every expected MongoDB index exists, 0 when at least one failed to be created",

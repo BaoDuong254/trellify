@@ -31,14 +31,8 @@ const findOneById = async (id: ObjectId) => {
   return board;
 };
 
-const aggregateBoardDetails = async (boardId: string, userId?: string) => {
+const getDetailsById = async (boardId: string) => {
   const queryConditions: Array<Record<string, unknown>> = [{ _id: new ObjectId(boardId) }, { _destroy: false }];
-
-  if (userId) {
-    queryConditions.push({
-      $or: [{ ownerIds: { $all: [new ObjectId(userId)] } }, { memberIds: { $all: [new ObjectId(userId)] } }],
-    });
-  }
 
   const board = await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
@@ -81,14 +75,6 @@ const aggregateBoardDetails = async (boardId: string, userId?: string) => {
     ])
     .toArray();
   return board[0] || null;
-};
-
-const getDetails = async (userId: string, boardId: string) => {
-  return await aggregateBoardDetails(boardId, userId);
-};
-
-const getDetailsById = async (boardId: string) => {
-  return await aggregateBoardDetails(boardId);
 };
 
 const findMembership = async (boardId: string) => {
@@ -197,7 +183,6 @@ export const boardModel = {
   BOARD_COLLECTION_NAME,
   createNew,
   findOneById,
-  getDetails,
   getDetailsById,
   findMembership,
   pushColumnOrderIds,

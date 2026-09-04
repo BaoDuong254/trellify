@@ -118,6 +118,21 @@ Error messages are i18n keys (e.g. `"Error.BoardNotFound"`). Never expose stack 
 - The client echoes its socket id on every Axios request in the `x-socket-id` header (`SOCKET_ID_HEADER`); the broadcast uses `.except(actorSocketId)` so the originating tab doesn't double-apply its own change. Preserve this header plumbing when touching the HTTP client or broadcast helper.
 - A Redis adapter (`@socket.io/redis-adapter`) backs Socket.io so broadcasts fan out across scaled instances — use adapter-aware APIs (`io.in(...).fetchSockets()`) rather than assuming a single process.
 
+### Read-through cache (Redis)
+
+`src/providers/cache.provider.ts` is the only cache engine - a generic `getOrLoad({ cacheName, key, ttlSeconds, negativeTtlSeconds, load })` plus `invalidate(key)`. It coalesces concurrent misses in two layers: a process-local in-flight `Map`, then a Redis lock (`SET sf:<key> <token> PX 10000 NX`) so only one replica of the 3-6 runs the loader while the others poll the value key and return what the leader stored. A miss that finds no board caches the JSON literal `null` under a shorter TTL, so a flood of requests for an id that does not exist cannot keep reaching Mongo. TTLs carry +-10% jitter so entries created together do not expire together.
+
+Rules that keep it safe:
+
+- **Every failure path reads through.** Any Redis error or timeout logs a warning, increments `cache_requests_total{result="error"}` and runs the loader. The shared ioredis client is built with no options, so `enableOfflineQueue` is on and a command issued during an outage would hang instead of rejecting - that is why every Redis call is wrapped in a `CACHE_COMMAND_TIMEOUT_MS` race. Set that budget above the p99 command latency _including a reconnect_: too tight and the cache silently fails open on every request while still looking healthy.
+- **Never serve authorization from the cache.** `boardService.getDetails` calls `canUserAccessBoard` (a fresh indexed `findMembership`) before touching the cache, even though the cached snapshot already contains `ownerIds`/`memberIds`. Reading membership from the entry would let a removed member keep access until the TTL expires. Stale board _content_ is acceptable; stale permissions are not.
+- **The broadcast path must never read the cache.** `sendBoardUpdate` calls `boardService.getBoardSnapshot`, which always goes to Mongo. The client replaces its whole board with that payload, so emitting a stale snapshot rolls the board backwards and leaves it there.
+- **Invalidation has exactly one site**: `broadcastBoardUpdate` drops `c:v1:board:<id>` before the `getIo()` guard, which covers every board/column/card/invitation mutation. Add a mutation that does not broadcast and it will serve stale reads until the TTL. `PUT /v1/users/update` is the known one - `displayName`/`avatar` are embedded through the `owners`/`members` lookups, so a profile edit shows up a TTL late.
+- Cache only the value _after_ `groupCardsIntoColumns`. That helper compares BSON `ObjectId`s (`card.columnId.equals(...)`), which JSON round-tripping destroys; the grouped result only carries ids, so it survives.
+- Cache keys are `c:v1:<domain>:<id>` and locks `sf:c:v1:<domain>:<id>`. The `v1` segment is a payload-shape version - bump it when the snapshot shape changes so a new deploy cannot read old entries. TTLs are mandatory here, unlike the `bv:` viewer keys where they are forbidden.
+
+Watch `cache_requests_total{cache,result}` and `cache_loader_duration_seconds`. The histogram count is the number of loads that actually reached the database, so a burst of N concurrent requests for a cold key should move it by 1.
+
 ### Background jobs (BullMQ + Redis)
 
 `src/worker.ts` is a **separate process** from the API server. Queues live in `src/queues/<domain>/` with a consistent four-file shape: `*.queue.ts` (producer), `*.worker.ts` (consumer), `*.processor.ts` (job logic), `*.interface.ts` (payload types). Queue names go in `src/queues/queue.constants.ts` and are namespaced by `QUEUE_PREFIX`. Redis is also used directly for rate limiting (`src/utils/rate-limiter.ts`).
@@ -174,7 +189,7 @@ Pushing to `main` triggers `.github/workflows/build-k8s-images.yml`: it builds b
 
 Copy the `.env.example` in both `apps/server/` and `apps/client/` to `.env`. Both apps validate env with Zod at startup (`apps/server/src/config/environment.ts`, `apps/client/src/config/env.ts`) and **throw on the first invalid or missing variable** — add any new variable to the schema and to `.env.example` together.
 
-Server: `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGODB_URI`, `DATABASE_NAME`, `REDIS_URL`, `QUEUE_PREFIX`, `WORKER_CONCURRENCY`, `WORKER_HEALTH_PORT`, `METRICS_PORT`, `ACCESS_TOKEN_*` / `REFRESH_TOKEN_*` / `COOKIE_MAX_AGE`, `BREVO_API_KEY`, `ADMIN_EMAIL_*`, `CLOUDINARY_*`, `TURNSTILE_SECRET_KEY`.
+Server: `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGODB_URI`, `DATABASE_NAME`, `REDIS_URL`, `QUEUE_PREFIX`, `WORKER_CONCURRENCY`, `WORKER_HEALTH_PORT`, `METRICS_PORT`, `ACCESS_TOKEN_*` / `REFRESH_TOKEN_*` / `COOKIE_MAX_AGE`, `BREVO_API_KEY`, `ADMIN_EMAIL_*`, `CLOUDINARY_*`, `TURNSTILE_SECRET_KEY`, `CACHE_ENABLED`, `CACHE_COMMAND_TIMEOUT_MS`, `BOARD_CACHE_TTL_SECONDS`, `BOARD_CACHE_NEGATIVE_TTL_SECONDS`.
 
 Client: `VITE_API_ENDPOINT` (server origin in dev, e.g. `http://localhost:3000`; empty in production), `VITE_TURNSTILE_SITE_KEY` (dev test key: `1x00000000000000000000AA`).
 
