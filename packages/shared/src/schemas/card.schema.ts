@@ -71,6 +71,10 @@ const CARD_COMMENT_SCHEMA = z.object({
   commentedAt: z.date({ error: "Error.CommentedAtMustBeDate" }),
 });
 
+export const CARD_ID_PARAMS_SCHEMA = z.object({
+  id: z.string({ error: "Error.CardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+});
+
 export type CreateNewCardType = z.infer<typeof CREATE_NEW_CARD_SCHEMA>;
 export type UpdateCardType = z.infer<typeof UPDATE_CARD_SCHEMA>;
 export type CardCommentType = z.infer<typeof CARD_COMMENT_SCHEMA>;

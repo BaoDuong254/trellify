@@ -3,13 +3,19 @@ import { ObjectId } from "mongodb";
 
 import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 
+import { COLUMN_BLOOM } from "src/config/bloom";
 import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
+import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
 import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
 
 const assertColumnAccess = async (userId: string, columnId: string) => {
+  if (!(await isPossiblyPresent(COLUMN_BLOOM, columnId))) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Column not found!");
+  }
+
   const column = await columnModel.findOneById(new ObjectId(columnId));
   if (!column) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Column not found!");
@@ -25,6 +31,7 @@ const createNew = async (userId: string, requestBody: CreateNewColumnType) => {
     ...requestBody,
   };
   const createdColumn = await columnModel.createNew(newColumn);
+  await addItem(COLUMN_BLOOM, String(createdColumn.insertedId));
   const newlyCreatedColumn = await columnModel.findOneById(createdColumn.insertedId);
   if (newlyCreatedColumn) {
     newlyCreatedColumn.cards = [];

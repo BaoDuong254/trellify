@@ -36,6 +36,12 @@ export const INVITATION_CREATE_SCHEMA = z.object({
   boardId: z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
 });
 
+export const INVITATION_ID_PARAMS_SCHEMA = z.object({
+  invitationId: z
+    .string({ error: "Error.InvitationIdMustBeString" })
+    .regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+});
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const INVITATION_CREATE_SERVICE_SCHEMA = INVITATION_COLLECTION_SCHEMA.pick({
   inviterId: true,

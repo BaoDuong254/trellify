@@ -1,4 +1,4 @@
-import { Document, ObjectId, UpdateFilter } from "mongodb";
+import { Document, FindCursor, ObjectId, UpdateFilter } from "mongodb";
 
 import {
   CARD_COLLECTION_SCHEMA,
@@ -29,6 +29,13 @@ const createNew = async (data: CreateNewCardType) => {
   const createdCard = await GET_DB().collection(CARD_COLLECTION_NAME).insertOne(newCardToAdd);
   return createdCard;
 };
+
+const findAllIds = (): FindCursor<{ _id: ObjectId }> =>
+  GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .find({}, { projection: { _id: 1 } }) as unknown as FindCursor<{ _id: ObjectId }>;
+
+const countAll = async (): Promise<number> => GET_DB().collection(CARD_COLLECTION_NAME).countDocuments({});
 
 const findOneById = async (id: ObjectId) => {
   const card = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ _id: id });
@@ -104,6 +111,8 @@ const pullMemberFromBoardCards = async (boardId: string, userId: string) => {
 export const cardModel = {
   CARD_COLLECTION_NAME,
   createNew,
+  findAllIds,
+  countAll,
   findOneById,
   update,
   deleteOneById,

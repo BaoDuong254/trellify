@@ -1,7 +1,11 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import { CREATE_NEW_COLUMN_SCHEMA, UPDATE_COLUMN_SCHEMA } from "@workspace/shared/schemas/column.schema";
+import {
+  COLUMN_ID_PARAMS_SCHEMA,
+  CREATE_NEW_COLUMN_SCHEMA,
+  UPDATE_COLUMN_SCHEMA,
+} from "@workspace/shared/schemas/column.schema";
 
 import ApiError from "src/utils/api-error";
 
@@ -18,6 +22,7 @@ const createNew = async (request: ExpressRequest, _response: ExpressResponse, ne
 
 const update = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {
+    await COLUMN_ID_PARAMS_SCHEMA.parseAsync(request.params);
     await UPDATE_COLUMN_SCHEMA.parseAsync(request.body);
     next();
   } catch (error) {
@@ -29,7 +34,7 @@ const update = async (request: ExpressRequest, _response: ExpressResponse, next:
 
 const deleteItem = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {
-    await UPDATE_COLUMN_SCHEMA.parseAsync(request.params);
+    await COLUMN_ID_PARAMS_SCHEMA.parseAsync(request.params);
     next();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

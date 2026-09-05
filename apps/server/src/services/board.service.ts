@@ -9,42 +9,16 @@ import {
 } from "@workspace/shared/schemas/board.schema";
 import { BOARD_TYPES, DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
 
+import { BOARD_BLOOM, CARD_BLOOM, COLUMN_BLOOM } from "src/config/bloom";
 import environmentConfig from "src/config/environment";
 import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { invitationModel } from "src/models/invitation.model";
-import {
-  BloomFilter,
-  addItem,
-  buildFilter,
-  isPossiblyPresent,
-  registerBloomRecovery,
-} from "src/providers/bloom.provider";
+import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
 import { getOrLoad, invalidate } from "src/providers/cache.provider";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
-
-const BOARD_BLOOM: BloomFilter = {
-  name: "board",
-  key: "bf:v1:boards",
-  capacity: 100_000,
-  errorRate: 0.001,
-};
-
-const streamBoardIds = async function* (): AsyncGenerator<string> {
-  for await (const board of boardModel.findAllIds()) {
-    yield String(board._id);
-  }
-};
-
-const ensureBoardBloomFilter = async (): Promise<void> => {
-  await buildFilter(BOARD_BLOOM, streamBoardIds, boardModel.countAll);
-};
-
-const registerBoardBloomRecovery = (): void => {
-  registerBloomRecovery(ensureBoardBloomFilter);
-};
 
 const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
   const newBoard = {
@@ -124,6 +98,10 @@ const removeMember = async (
   boardId: string,
   targetUserId: string
 ): Promise<{ removeResult: string }> => {
+  if (!(await isPossiblyPresent(BOARD_BLOOM, boardId))) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+  }
+
   const board = await boardModel.findMembership(boardId);
   if (!board) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
@@ -193,6 +171,15 @@ const update = async (userId: string, boardId: string, requestBody: UpdateBoardT
 };
 
 const moveCardToDifferentColumn = async (userId: string, requestBody: MoveCardToDifferentColumnType) => {
+  const [mayHavePreviousColumn, mayHaveNextColumn, mayHaveCard] = await Promise.all([
+    isPossiblyPresent(COLUMN_BLOOM, requestBody.prevColumnId),
+    isPossiblyPresent(COLUMN_BLOOM, requestBody.nextColumnId),
+    isPossiblyPresent(CARD_BLOOM, requestBody.currentCardId),
+  ]);
+  if (!mayHavePreviousColumn || !mayHaveNextColumn || !mayHaveCard) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Error.BoardNotFound");
+  }
+
   const [previousColumn, nextColumn, card] = await Promise.all([
     columnModel.findOneById(new ObjectId(requestBody.prevColumnId)),
     columnModel.findOneById(new ObjectId(requestBody.nextColumnId)),
@@ -261,6 +248,4 @@ export const boardService = {
   getBoardSnapshot,
   invalidateBoardCache,
   invalidateBoardMembership,
-  ensureBoardBloomFilter,
-  registerBoardBloomRecovery,
 };

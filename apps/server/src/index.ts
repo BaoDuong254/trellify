@@ -9,6 +9,7 @@ import morgan from "morgan";
 
 import logger from "@workspace/shared/utils/logger";
 
+import { ENSURE_BLOOM_FILTERS, REGISTER_BLOOM_RECOVERY } from "src/config/bloom";
 import { corsOptions } from "src/config/cors";
 import { CLOSE_DB, CONNECT_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
@@ -19,7 +20,6 @@ import { startMetricsServer } from "src/providers/metrics.provider";
 import { closeRedisClient } from "src/providers/redis.provider";
 import { userQueue } from "src/queues/user/user.queue";
 import { APIs_V1 } from "src/routes/v1";
-import { boardService } from "src/services/board.service";
 import { startSockets } from "src/sockets";
 import { closeSocketAdapter } from "src/sockets/socket.server";
 
@@ -87,6 +87,10 @@ const START_SERVER = async (): Promise<void> => {
     logger.info(chalk.bgBlueBright(`Server is running at http://localhost:${port}`));
   });
 
+  // Register Bloom filter recovery and ensure Bloom filters are initialized
+  REGISTER_BLOOM_RECOVERY();
+  void ENSURE_BLOOM_FILTERS();
+
   // Handle graceful shutdown
   exitHook((done) => {
     void (async () => {
@@ -117,8 +121,6 @@ void (async () => {
     await CONNECT_DB();
     logger.info("2. Connected to MongoDB Cloud Atlas!");
     await ENSURE_INDEXES();
-    await boardService.ensureBoardBloomFilter();
-    boardService.registerBoardBloomRecovery();
     logger.info("3. Starting Express server...");
     await START_SERVER();
   } catch (error) {

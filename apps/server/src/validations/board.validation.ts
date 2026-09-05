@@ -35,6 +35,7 @@ const getDetails = async (request: ExpressRequest, _response: ExpressResponse, n
 
 const update = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {
+    await BOARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
     await UPDATE_BOARD_SCHEMA.parseAsync(request.body);
     next();
   } catch (error) {

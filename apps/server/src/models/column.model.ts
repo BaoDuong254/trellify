@@ -1,4 +1,4 @@
-import { Document, ObjectId, UpdateFilter } from "mongodb";
+import { Document, FindCursor, ObjectId, UpdateFilter } from "mongodb";
 
 import {
   COLUMN_COLLECTION_SCHEMA,
@@ -25,6 +25,13 @@ const createNew = async (data: CreateNewColumnType) => {
   const createdColumn = await GET_DB().collection(COLUMN_COLLECTION_NAME).insertOne(newColumnToAdd);
   return createdColumn;
 };
+
+const findAllIds = (): FindCursor<{ _id: ObjectId }> =>
+  GET_DB()
+    .collection(COLUMN_COLLECTION_NAME)
+    .find({}, { projection: { _id: 1 } }) as unknown as FindCursor<{ _id: ObjectId }>;
+
+const countAll = async (): Promise<number> => GET_DB().collection(COLUMN_COLLECTION_NAME).countDocuments({});
 
 const findOneById = async (id: ObjectId) => {
   const column = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ _id: id });
@@ -76,6 +83,8 @@ const pullCardOrderIds = async (card) => {
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   createNew,
+  findAllIds,
+  countAll,
   findOneById,
   pushCardOrderIds,
   update,

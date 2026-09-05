@@ -136,18 +136,30 @@ Watch `cache_requests_total{cache,result}` and `cache_loader_duration_seconds`. 
 
 ### Bloom filter (cache penetration)
 
-Negative caching only stops a repeated bad id. A flood of _distinct_ random ObjectIds defeats it entirely - every request is a fresh key, so every request reaches Mongo and leaves a negative entry behind. `src/providers/bloom.provider.ts` closes that: `isPossiblyPresent` answers "this id was never created" in one Redis round trip, before `getOrLoad` and before Mongo. It sits in `board.service.getMembership`, the choke point every board read, socket `JOIN_BOARD` and card/column write already passes through, so returning `null` there produces the same 404 a missing board always produced.
+Negative caching only stops a repeated bad id. A flood of _distinct_ random ObjectIds defeats it entirely - every request is a fresh key, so every request reaches Mongo and leaves a negative entry behind. `src/providers/bloom.provider.ts` is the generic engine (`isPossiblyPresent`, `addItem`, `buildFilter`); `src/config/bloom.ts` holds the three filter descriptors and `ENSURE_BLOOM_FILTERS`, the way `src/config/indexes.ts` holds `INDEX_PLAN`.
+
+| filter | key             | capacity  | guards                                                           |
+| ------ | --------------- | --------- | ---------------------------------------------------------------- |
+| board  | `bf:v1:boards`  | 100_000   | `board.service.getMembership`, `removeMember`                    |
+| column | `bf:v1:columns` | 200_000   | `column.service.assertColumnAccess`, `moveCardToDifferentColumn` |
+| card   | `bf:v1:cards`   | 1_000_000 | `card.service.assertCardAccess`, `moveCardToDifferentColumn`     |
+
+**A probe only helps where it runs before the first Mongo read.** Board reads and `POST /cards|/columns` were covered by the board filter alone because they call `assertBoardAccess` first, but `assertCardAccess`/`assertColumnAccess` must read the card or column to _find_ its `boardId` - by the time the board filter runs, the query has already happened. That is why cards and columns need filters of their own, and why the probe goes above the `findOneById`, never below it. `moveCardToDifferentColumn` checks all three ids before its `Promise.all`; it was the worst endpoint at 3 reads per request.
+
+Every `:id` route param is validated against `OBJECT_ID_RULE` before any of this (`*_ID_PARAMS_SCHEMA` in `packages/shared/src/schemas/`). Do not lean on the filter for that: a malformed id reaching `new ObjectId()` throws a `BSONError` and returns 500, and the filter only masks it while it happens to be loaded.
 
 `BF.*` is a Redis 8 built-in, but **only when the modules are loaded**. The image ships `redisbloom.so` and its `docker-entrypoint.sh` appends a `--loadmodule` flag per module - and `infra/trellify/base/redis/statefulset.yaml` overrides `command:`, which skips that entrypoint entirely. That is why `redis.conf` carries an explicit `loadmodule /usr/local/lib/redis/modules/redisbloom.so`; delete that line and every probe fails open, silently losing the protection while everything still looks healthy. The loadtest composes set no `command:`, so they get the modules from the entrypoint instead.
 
-A false negative here is not a slow read, it is a **permanent 404 on a real board**. Four rules keep that impossible:
+A false negative here is not a slow read, it is a **permanent 404 on a row that exists**. Four rules keep that impossible:
 
-- **A missing filter key must read as "might exist."** `BF.EXISTS` on an absent key returns 0, meaning "definitely not present" - so a flushed or half-built filter would 404 every board. Both scripts wrap the call in `EXISTS` and treat an absent filter as fail open. Any Redis error or timeout does the same.
-- **`BF.ADD` must never create the filter.** On a missing key it would silently build a default-sized filter holding only that one id, and every _other_ board would then read as absent. `ADD_IF_BUILT_SCRIPT` makes adding to a missing filter a no-op.
-- **The build is atomic.** `buildFilter` reserves `bf:v1:boards:building`, fills it, then `RENAME`s over the live key, so no reader ever sees a partially filled filter. One replica wins the `sf:bf:v1:boards` lock; the rest fail open until the rename lands.
-- **Never put a TTL on `bf:v1:boards`** - same rule as the `bv:` viewer keys, and for the same reason: an expired key reads back as "absent", which here means a 404 rather than a skipped broadcast.
+- **A missing filter key must read as "might exist."** `BF.EXISTS` on an absent key returns 0, meaning "definitely not present" - so a flushed or half-built filter would 404 everything. Both scripts wrap the call in `EXISTS` and treat an absent filter as fail open. Any Redis error or timeout does the same.
+- **`BF.ADD` must never create the filter.** On a missing key it would silently build a default-sized filter holding only that one id, and every _other_ id would then read as absent. `ADD_IF_BUILT_SCRIPT` makes adding to a missing filter a no-op.
+- **The build is atomic.** `buildFilter` reserves `<key>:building`, fills it, then `RENAME`s over the live key, so no reader ever sees a partially filled filter. One replica wins the `sf:<key>` lock; the rest fail open until the rename lands.
+- **Never put a TTL on a `bf:` key** - same rule as the `bv:` viewer keys, and for the same reason: an expired key reads back as "absent", which here means a 404 rather than a skipped broadcast.
 
-Ids written **outside** `boardService.createNew` - a Mongo restore, a migration, a seed script - are invisible to the filter and would 404 forever. Startup therefore compares `BF.CARD` against `boardModel.countAll()` and rebuilds when the filter holds fewer ids than the collection; `registerBloomRecovery` re-runs the same check on every Redis reconnect. After restoring the database, expect one rebuild on the next pod start, or drop `bf:v1:boards` to fail open immediately. The filter deliberately holds **every** board id including soft-deleted ones: a deleted board falls through to the negative cache and still 404s, and keeping the set append-only is what makes a structure that cannot delete safe here.
+`ENSURE_BLOOM_FILTERS` runs **after `server.listen`, unawaited**, so startup time never scales with collection size; until it finishes the probes fail open. `addItem` runs inside `createNew` for all three domains and is awaited before the response, otherwise a client could read its own new row back as a 404.
+
+Ids written **outside** those `createNew` paths - a Mongo restore, a migration, the loadtest seed script - are invisible to the filter and would 404 forever. `buildFilter` therefore compares `BF.CARD` against `countAll()` and rebuilds when the filter holds fewer ids than the collection; `REGISTER_BLOOM_RECOVERY` re-runs it on every Redis reconnect. **That check is only sound for boards.** Cards and columns are hard-deleted (`deleteOneById`, `deleteManyByColumnId`), so `held` drifts above `expected` and the comparison goes blind - delete most of a collection, then bulk-import into it, and the new ids stay absent. There is no cheap way to detect that, so it is a runbook item instead: **after restoring the database or importing out of band, run `DEL bf:v1:boards bf:v1:columns bf:v1:cards`** - an absent filter fails open and the next start rebuilds it.
 
 `BLOOM_FILTER_ENABLED=false` is the kill switch and restores exactly the previous behaviour. Watch `bloom_filter_checks_total{filter,result}` - `absent` is work avoided, a rising `error` means Redis is unhealthy and every probe is reading through - and `bloom_filter_items`, which is 0 whenever no filter is loaded.
 
@@ -206,7 +218,7 @@ Pushing to `main` triggers `.github/workflows/build-k8s-images.yml`: it builds b
 
 **Type safety** — no `any` (use `unknown`); explicit return types everywhere; no `as` assertions unless unavoidable.
 
-**Validation** — every Zod schema lives in `packages/shared/src/schemas/`; validate at both the route level (middleware) and the model level (before DB writes).
+**Validation** — every Zod schema lives in `packages/shared/src/schemas/`; validate at both the route level (middleware) and the model level (before DB writes). A route that takes an id in `request.params` validates it too, not just the body — an unvalidated id reaches `new ObjectId()` and turns a 404 into a 500.
 
 **Dead code** — knip runs on pre-commit and in CI. An exported symbol nobody imports, or a dependency nobody uses, will fail the build; delete it or wire it up rather than leaving it dangling.
 

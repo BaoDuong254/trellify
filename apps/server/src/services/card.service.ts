@@ -3,13 +3,19 @@ import { ObjectId } from "mongodb";
 
 import { CardCommentType, CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
 
+import { CARD_BLOOM } from "src/config/bloom";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
+import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
 import { CloudinaryProvider } from "src/providers/cloudinary.provider";
 import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
 
 const assertCardAccess = async (userId: string, cardId: string) => {
+  if (!(await isPossiblyPresent(CARD_BLOOM, cardId))) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Card not found!");
+  }
+
   const card = await cardModel.findOneById(new ObjectId(cardId));
   if (!card) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Card not found!");
@@ -25,6 +31,7 @@ const createNew = async (userId: string, requestBody: CreateNewCardType) => {
     ...requestBody,
   };
   const createdCard = await cardModel.createNew(newCard);
+  await addItem(CARD_BLOOM, String(createdCard.insertedId));
   const newlyCreatedCard = await cardModel.findOneById(createdCard.insertedId);
   if (newlyCreatedCard) {
     await columnModel.pushCardOrderIds(newlyCreatedCard);

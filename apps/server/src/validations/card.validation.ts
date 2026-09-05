@@ -1,7 +1,11 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import { CREATE_NEW_CARD_SCHEMA, UPDATE_CARD_SCHEMA } from "@workspace/shared/schemas/card.schema";
+import {
+  CARD_ID_PARAMS_SCHEMA,
+  CREATE_NEW_CARD_SCHEMA,
+  UPDATE_CARD_SCHEMA,
+} from "@workspace/shared/schemas/card.schema";
 
 import ApiError from "src/utils/api-error";
 
@@ -18,6 +22,7 @@ const createNew = async (request: ExpressRequest, _response: ExpressResponse, ne
 
 const update = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {
+    await CARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
     await UPDATE_CARD_SCHEMA.parseAsync(request.body);
     next();
   } catch (error) {
@@ -29,7 +34,7 @@ const update = async (request: ExpressRequest, _response: ExpressResponse, next:
 
 const deleteItem = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {
-    await UPDATE_CARD_SCHEMA.parseAsync(request.params);
+    await CARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
     next();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

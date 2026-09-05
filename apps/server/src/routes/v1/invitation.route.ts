@@ -16,6 +16,12 @@ router
 
 router.route("/").get(authMiddleware.isAuthorized, invitationController.getInvitations);
 
-router.route("/board/:invitationId").put(authMiddleware.isAuthorized, invitationController.updateBoardInvitation);
+router
+  .route("/board/:invitationId")
+  .put(
+    authMiddleware.isAuthorized,
+    invitationValidation.updateBoardInvitation,
+    invitationController.updateBoardInvitation
+  );
 
 export const invitationRoute = router;
