@@ -61,6 +61,10 @@ export const MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA = z.object({
     .default([]),
 });
 
+export const BOARD_ID_PARAMS_SCHEMA = z.object({
+  id: z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
+});
+
 export const REMOVE_BOARD_MEMBER_PARAMS_SCHEMA = z.object({
   id: z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
   userId: z.string({ error: "Error.UserIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),

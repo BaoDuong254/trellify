@@ -19,6 +19,7 @@ import { startMetricsServer } from "src/providers/metrics.provider";
 import { closeRedisClient } from "src/providers/redis.provider";
 import { userQueue } from "src/queues/user/user.queue";
 import { APIs_V1 } from "src/routes/v1";
+import { boardService } from "src/services/board.service";
 import { startSockets } from "src/sockets";
 import { closeSocketAdapter } from "src/sockets/socket.server";
 
@@ -116,6 +117,8 @@ void (async () => {
     await CONNECT_DB();
     logger.info("2. Connected to MongoDB Cloud Atlas!");
     await ENSURE_INDEXES();
+    await boardService.ensureBoardBloomFilter();
+    boardService.registerBoardBloomRecovery();
     logger.info("3. Starting Express server...");
     await START_SERVER();
   } catch (error) {

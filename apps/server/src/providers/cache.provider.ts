@@ -14,7 +14,7 @@ const LEADER_POLL_INTERVAL_MS = 20;
 const LEADER_WAIT_TIMEOUT_MS = 3000;
 const TTL_JITTER_RATIO = 0.1;
 
-const RELEASE_LOCK_SCRIPT = `
+export const RELEASE_LOCK_SCRIPT = `
 if redis.call("get", KEYS[1]) == ARGV[1] then
   return redis.call("del", KEYS[1])
 end
@@ -42,7 +42,7 @@ const jitteredTtl = (ttlSeconds: number): number => {
   return Math.max(1, Math.round(ttlSeconds * spread));
 };
 
-const withTimeout = async <T>(operation: Promise<T>): Promise<T> => {
+export const withTimeout = async <T>(operation: Promise<T>): Promise<T> => {
   let timer: NodeJS.Timeout | undefined;
   const expiry = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => reject(new Error("Redis command timed out")), environmentConfig.CACHE_COMMAND_TIMEOUT_MS);

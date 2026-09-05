@@ -76,6 +76,7 @@ const configSchema = z.object({
     .int("REDIS_COMMAND_TIMEOUT_MS must be an integer")
     .positive("REDIS_COMMAND_TIMEOUT_MS must be a positive integer")
     .default(2000),
+  BLOOM_FILTER_ENABLED: z.stringbool().default(true),
   CACHE_COMMAND_TIMEOUT_MS: z.coerce
     .number("CACHE_COMMAND_TIMEOUT_MS must be a number")
     .int("CACHE_COMMAND_TIMEOUT_MS must be an integer")

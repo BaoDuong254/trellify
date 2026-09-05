@@ -9,3 +9,4 @@ data:
     maxmemory 200mb
     maxmemory-policy noeviction
     maxclients 1000
+    loadmodule /usr/local/lib/redis/modules/redisbloom.so

@@ -14,9 +14,37 @@ import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { invitationModel } from "src/models/invitation.model";
+import {
+  BloomFilter,
+  addItem,
+  buildFilter,
+  isPossiblyPresent,
+  registerBloomRecovery,
+} from "src/providers/bloom.provider";
 import { getOrLoad, invalidate } from "src/providers/cache.provider";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
+
+const BOARD_BLOOM: BloomFilter = {
+  name: "board",
+  key: "bf:v1:boards",
+  capacity: 100_000,
+  errorRate: 0.001,
+};
+
+const streamBoardIds = async function* (): AsyncGenerator<string> {
+  for await (const board of boardModel.findAllIds()) {
+    yield String(board._id);
+  }
+};
+
+const ensureBoardBloomFilter = async (): Promise<void> => {
+  await buildFilter(BOARD_BLOOM, streamBoardIds, boardModel.countAll);
+};
+
+const registerBoardBloomRecovery = (): void => {
+  registerBloomRecovery(ensureBoardBloomFilter);
+};
 
 const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
   const newBoard = {
@@ -24,6 +52,7 @@ const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
     slug: slugify(requestBody.title),
   };
   const createdBoard = await boardModel.createNew(userId, newBoard);
+  await addItem(BOARD_BLOOM, String(createdBoard.insertedId));
   const newlyCreatedBoard = await boardModel.findOneById(createdBoard.insertedId);
   return newlyCreatedBoard;
 };
@@ -47,8 +76,10 @@ const invalidateBoardMembership = async (boardId: string): Promise<void> => {
   await invalidate(membershipCacheKey(boardId));
 };
 
-const getMembership = (boardId: string): Promise<BoardMembership | null> =>
-  getOrLoad<BoardMembership>({
+const getMembership = async (boardId: string): Promise<BoardMembership | null> => {
+  if (!(await isPossiblyPresent(BOARD_BLOOM, boardId))) return null;
+
+  return getOrLoad<BoardMembership>({
     cacheName: "board-membership",
     key: membershipCacheKey(boardId),
     ttlSeconds: environmentConfig.BOARD_MEMBERSHIP_CACHE_TTL_SECONDS,
@@ -59,6 +90,7 @@ const getMembership = (boardId: string): Promise<BoardMembership | null> =>
       return { ownerIds: board.ownerIds, memberIds: board.memberIds, type: board.type };
     },
   });
+};
 
 const canUserAccessBoard = async (userId: string, boardId: string): Promise<boolean> => {
   const board = await getMembership(boardId);
@@ -229,4 +261,6 @@ export const boardService = {
   getBoardSnapshot,
   invalidateBoardCache,
   invalidateBoardMembership,
+  ensureBoardBloomFilter,
+  registerBoardBloomRecovery,
 };

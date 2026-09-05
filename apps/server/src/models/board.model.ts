@@ -1,4 +1,4 @@
-import { Document, ObjectId, UpdateFilter } from "mongodb";
+import { Document, FindCursor, ObjectId, UpdateFilter } from "mongodb";
 
 import { BOARD_COLLECTION_SCHEMA, CreateNewBoardType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
 
@@ -76,6 +76,13 @@ const getDetailsById = async (boardId: string) => {
     .toArray();
   return board[0] || null;
 };
+
+const findAllIds = (): FindCursor<{ _id: ObjectId }> =>
+  GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .find({}, { projection: { _id: 1 } }) as unknown as FindCursor<{ _id: ObjectId }>;
+
+const countAll = async (): Promise<number> => GET_DB().collection(BOARD_COLLECTION_NAME).countDocuments({});
 
 const findMembership = async (boardId: string) => {
   return await GET_DB()
@@ -184,6 +191,8 @@ export const boardModel = {
   createNew,
   findOneById,
   getDetailsById,
+  findAllIds,
+  countAll,
   findMembership,
   pushColumnOrderIds,
   update,

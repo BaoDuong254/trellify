@@ -13,7 +13,7 @@ router
 
 router
   .route("/:id")
-  .get(authMiddleware.isAuthorized, boardController.getDetails)
+  .get(authMiddleware.isAuthorized, boardValidation.getDetails, boardController.getDetails)
   .put(authMiddleware.isAuthorized, boardValidation.update, boardController.update);
 
 router

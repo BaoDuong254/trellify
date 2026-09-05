@@ -35,6 +35,19 @@ export function readFlow(user) {
   readFlowDuration.add(Date.now() - startedAt);
 }
 
+const HEX = "0123456789abcdef";
+
+const randomObjectId = () => {
+  let id = "";
+  for (let index = 0; index < 24; index += 1) id += HEX[Math.floor(Math.random() * 16)];
+  return id;
+};
+
+export function penetrationFlow(user) {
+  attachSession(user);
+  expectStatus(api.getMissingBoardDetails(randomObjectId()), 404, "board_details_missing");
+}
+
 export function writeFlow(user, board) {
   const startedAt = Date.now();
   attachSession(user);

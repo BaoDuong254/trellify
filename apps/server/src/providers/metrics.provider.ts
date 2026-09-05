@@ -65,6 +65,20 @@ export const cacheLoaderDuration = new Histogram({
   registers: [metricsRegistry],
 });
 
+export const bloomFilterChecks = new Counter({
+  name: "bloom_filter_checks_total",
+  help: "Bloom filter membership probes by filter and outcome: absent means the id was rejected before any database read, present means it fell through to the cache, skipped means the filter was disabled or not yet built, error means the probe failed and read through",
+  labelNames: ["filter", "result"],
+  registers: [metricsRegistry],
+});
+
+export const bloomFilterItems = new Gauge({
+  name: "bloom_filter_items",
+  help: "Number of ids inserted while building the filter, 0 when the filter is absent so probes fail open",
+  labelNames: ["filter"],
+  registers: [metricsRegistry],
+});
+
 export const indexesReady = new Gauge({
   name: "mongodb_indexes_ready",
   help: "1 when every expected MongoDB index exists, 0 when at least one failed to be created",

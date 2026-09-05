@@ -8,6 +8,10 @@ const SCENARIOS = {
   "board-read": { file: "k6/scenarios/board-read.js", covers: "Read flow alone" },
   "board-write": { file: "k6/scenarios/board-write.js", covers: "Write flow alone" },
   auth: { file: "k6/scenarios/auth.js", covers: "Auth flow alone" },
+  "board-penetration": {
+    file: "k6/scenarios/board-penetration.js",
+    covers: "Cache penetration: random nonexistent board ids, expects 404",
+  },
   "socket-fanout": { file: "k6/scenarios/socket-fanout.js", profile: "socket", covers: "Socket.io fan-out cost" },
 };
 

@@ -2,6 +2,7 @@ import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } 
 import { StatusCodes } from "http-status-codes";
 
 import {
+  BOARD_ID_PARAMS_SCHEMA,
   CREATE_NEW_BOARD_SCHEMA,
   MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA,
   REMOVE_BOARD_MEMBER_PARAMS_SCHEMA,
@@ -13,6 +14,17 @@ import ApiError from "src/utils/api-error";
 const createNew = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
   try {
     await CREATE_NEW_BOARD_SCHEMA.parseAsync(request.body);
+    next();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
+    next(customError);
+  }
+};
+
+const getDetails = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
+  try {
+    await BOARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
     next();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -56,6 +68,7 @@ const removeMember = async (request: ExpressRequest, _response: ExpressResponse,
 
 export const boardValidation = {
   createNew,
+  getDetails,
   update,
   moveCardToDifferentColumn,
   removeMember,

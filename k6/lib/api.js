@@ -22,6 +22,10 @@ export function getBoardDetails(boardId, boardSize = "small") {
   return http.get(`${API_URL}/boards/${boardId}`, params("board_details", "read", { board_size: boardSize }));
 }
 
+export function getMissingBoardDetails(boardId) {
+  return http.get(`${API_URL}/boards/${boardId}`, params("board_details_missing", "penetration"));
+}
+
 export function createBoard(title, description) {
   return http.post(
     `${API_URL}/boards`,
