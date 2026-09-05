@@ -2,7 +2,7 @@ name: trellify-loadtest
 
 services:
   mongo:
-    image: mongo:8.0
+    image: mongo:8.3
     restart: unless-stopped
     ports:
       - "27018:27017"

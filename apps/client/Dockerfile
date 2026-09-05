@@ -5,7 +5,7 @@ FROM node:24.12.0-alpine AS builder
 WORKDIR /workspace
 
 # renovate: datasource=npm depName=pnpm
-ARG PNPM_VERSION=11.5.2
+ARG PNPM_VERSION=11.25.0
 RUN npm install -g pnpm@${PNPM_VERSION}
 ENV LEFTHOOK=0
 

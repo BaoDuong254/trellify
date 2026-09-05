@@ -32,7 +32,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 11.5.2
+          version: 11.25.0
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -86,7 +86,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v8.1.0
+        uses: SonarSource/sonarqube-scan-action@v8.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
