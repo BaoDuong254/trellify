@@ -25,7 +25,7 @@ jobs:
 
       - name: Checkout for sonar version update
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
 
@@ -67,7 +67,7 @@ jobs:
 
       - name: Checkout repository for sync
         if: steps.check_version_pr.outputs.has_open_version_pr != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
