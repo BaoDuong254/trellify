@@ -19,7 +19,7 @@ catalog:
   "@emotion/styled": 11.14.1
   "@eslint-react/eslint-plugin": 5.8.13
   "@eslint/js": 10.0.1
-  "@getbrevo/brevo": 5.0.4
+  "@getbrevo/brevo": 6.0.3
   "@mui/icons-material": 9.0.1
   "@mui/lab": 7.0.1-beta.25
   "@mui/material": 9.0.1
@@ -50,8 +50,8 @@ catalog:
   async-exit-hook: 2.0.1
   axios: 1.17.0
   bcryptjs: 3.0.3
-  bullmq: 5.78.0
-  chalk: 5.6.2
+  bullmq: 6.3.4
+  chalk: 6.0.0
   class-variance-authority: 0.7.1
   cloudinary: 2.10.0
   clsx: 2.1.1
@@ -77,11 +77,11 @@ catalog:
   eslint-plugin-react-refresh: 0.5.3
   eslint-plugin-security: 4.0.1
   eslint-plugin-tsdoc: 0.5.2
-  eslint-plugin-unicorn: 73.0.0
+  eslint-plugin-unicorn: 74.0.0
   express: 5.2.1
   globals: 17.6.0
   http-status-codes: 2.3.0
-  ioredis: 5.11.1
+  ioredis: 6.0.0
   lefthook: 2.1.10
   lodash: 4.18.1
   material-ui-confirm: 4.0.0
