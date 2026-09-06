@@ -233,7 +233,7 @@ Server: `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGODB_URI`, `DATABASE_NAME`, `REDIS
 
 Client: `VITE_API_ENDPOINT` (server origin in dev, e.g. `http://localhost:3000`; empty in production), `VITE_TURNSTILE_SITE_KEY` (dev test key: `1x00000000000000000000AA`).
 
-In production these come from `infra/trellify/base/configmap-server.yaml` (non-sensitive) and SealedSecrets (everything else) — a new server variable needs adding in both places.
+In production these come from `infra/trellify/base/config-server.env` (non-sensitive) and SealedSecrets (everything else) — a new server variable needs adding in both places. That file is turned into a hash-suffixed ConfigMap by `configMapGenerator`; never convert it back to a plain ConfigMap manifest, or a config-only change stops rolling pods and silently never takes effect.
 
 ## Git Conventions
 

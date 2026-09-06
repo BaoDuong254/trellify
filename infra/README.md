@@ -15,6 +15,7 @@ The cluster is a single-node [k3s](https://docs.k3s.io/) install on an Ubuntu VM
   - [Application Layout](#application-layout)
   - [Configuration and Secrets](#configuration-and-secrets)
   - [Deployment Flow](#deployment-flow)
+  - [Alerting](#alerting)
   - [Common Operations](#common-operations)
 
 ## Architecture
@@ -137,7 +138,13 @@ Expect the `platform-*` applications to go healthy first, then `trellify-prod`.
 
 ## Configuration and Secrets
 
-Non-sensitive configuration is plain text in [`base/configmap-server.yaml`](trellify/base/configmap-server.yaml) - ports, `CLIENT_URL`, token lifetimes, the Cloudinary cloud name. Read it to see what the server expects at runtime.
+Non-sensitive configuration lives in [`base/config-server.env`](trellify/base/config-server.env) - ports, `CLIENT_URL`, token lifetimes, cache TTLs, rate limit ceilings, the Cloudinary cloud name. Redis server config lives in [`base/redis/redis.conf`](trellify/base/redis/redis.conf).
+
+Both are turned into ConfigMaps by **`configMapGenerator`** in [`base/kustomization.yaml`](trellify/base/kustomization.yaml), which appends a hash of the content to the ConfigMap name and rewrites every reference to it. **Never move them back to plain ConfigMap manifests.** A plain ConfigMap changes content without changing the pod template, so nothing rolls out: the mounted file or env var keeps its old value until something unrelated happens to restart the pod. That is not theoretical - the `loadmodule redisbloom.so` line sat correctly in `/etc/redis/redis.conf` inside a running pod for days while `redis-server`, started before the change, had never read it. Bloom filter protection was silently absent the whole time and nothing reported it.
+
+The same trap applies to env vars, which are only read when a container starts. Adding a key rides along fine when the deploy also bumps the image tag, but a config-only change would never take effect. The hash suffix is what makes both cases roll out.
+
+MongoDB deliberately does **not** read `DATABASE_NAME` from that ConfigMap - it carries a literal `MONGO_APP_DB` instead, so tuning an unrelated server env var does not restart the database. Keep the two values in sync.
 
 Everything sensitive is a **SealedSecret**: encrypted with the cluster's public key, safe to commit to a public repo, decryptable only by the controller running in this cluster.
 
@@ -147,6 +154,7 @@ Everything sensitive is a **SealedSecret**: encrypted with the cluster's public 
 | [`sealedsecret-mongodb.yaml`](trellify/overlays/prod/sealedsecret-mongodb.yaml) | `trellify-mongodb-auth`   |
 | [`sealedsecret-redis.yaml`](trellify/overlays/prod/sealedsecret-redis.yaml)     | `trellify-redis-auth`     |
 | [`sealedsecret-r2.yaml`](trellify/overlays/prod/sealedsecret-r2.yaml)           | `trellify-r2-backup`      |
+| `observability/manifests/sealedsecret-alertmanager-telegram.yaml`               | `alertmanager-telegram`   |
 
 To add or rotate a value, generate the Secret locally, seal it, and commit the sealed output:
 
@@ -221,6 +229,33 @@ Three details worth knowing:
 - **`[skip ci]` is what stops the loop.** The bump commit lands on `main`, the same branch the build workflow watches. That marker keeps GitHub from starting a second run, which would build a new tag, which would commit again, forever.
 - **`latest` exists but is never what gets deployed.** The overlay always pins the `sha-<short>` tag, so whatever is running traces back to exactly one commit - and a rollback is a Git operation, not a registry operation.
 - **The client is built with an empty `VITE_API_ENDPOINT`.** The client and API share one host, so the browser calls `/api/v1/...` on its own origin and the Ingress routes it. Nothing in the bundle hardcodes a backend URL.
+
+## Alerting
+
+Prometheus evaluates [`base/prometheusrule.yaml`](trellify/base/prometheusrule.yaml), five rules that all detect the same class of problem: a guard that has failed **open**. The cache, the bloom filters and the rate limiter are all built to keep serving when Redis misbehaves, so a failure never shows up as an error to a user - it shows up as protection quietly not being there.
+
+`TrellifyBloomProbeErrors` is the fastest signal, because `isPossiblyPresent` counts an error on every probe. `TrellifyBloomFilterMissing` deliberately uses `absent()`: `bloom_filter_items` is a labelled gauge and `prom-client` only creates the series after the first `set()`, so when the build throws before that point there is no series at all and a plain `== 0` would never match.
+
+Alertmanager routes on the `service: trellify` label to a Telegram receiver. The root route deliberately points at the `null` receiver: `defaultRules` from kube-prometheus-stack is on, and on a single node cluster those Kubernetes alerts are loud enough to make the channel useless if they are forwarded.
+
+The bot token and chat id are read from files mounted by the operator at `/etc/alertmanager/secrets/alertmanager-telegram/`, so neither appears in `values.yaml`:
+
+```bash
+kubectl create secret generic alertmanager-telegram   --namespace observability   --from-literal=bot-token='<BotFather token>'   --from-literal=chat-id='<chat id>'   --dry-run=client -o yaml | kubeseal --format yaml     --controller-namespace sealed-secrets     --controller-name sealed-secrets-controller > infra/observability/manifests/sealedsecret-alertmanager-telegram.yaml
+```
+
+Commit and sync that **before** syncing `values.yaml`, or Alertmanager crashloops on a missing secret volume.
+
+> **Note**
+> `platform-observability` and `platform-observability-extras` have no `syncPolicy.automated`. Changes to the chart values, the dashboard or that SealedSecret need a manual Sync in the ArgoCD UI. Only `trellify-prod` reconciles on its own.
+
+To prove the whole chain end to end, unload the module and open a few boards:
+
+```bash
+kubectl -n trellify exec sts/trellify-redis --   sh -c 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning MODULE UNLOAD bf'
+# TrellifyBloomProbeErrors fires after ~5 minutes and Telegram receives it
+kubectl -n trellify rollout restart statefulset/trellify-redis
+```
 
 ## Common Operations
 

@@ -866,6 +866,228 @@ data:
               }
             }
           ]
+        },
+        {
+          "id": 16,
+          "type": "timeseries",
+          "title": "Bloom filter outcomes",
+          "description": "absent is a lookup rejected before any database read, so it is work avoided. present fell through to the cache and is normal traffic. Sustained error means the probe itself is failing - Redis is unreachable or the redisbloom module is not loaded - and every request is reaching MongoDB unprotected while everything else still looks healthy.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 61
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (filter, result) (rate(bloom_filter_checks_total[5m]))",
+              "legendFormat": "{{filter}} {{result}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 17,
+          "type": "timeseries",
+          "title": "Bloom filter items",
+          "description": "Ids held by each filter, taken as max across replicas so a pod that has just started and not built yet does not drag the line down. These must track the MongoDB document counts. A drop to zero means the filter was lost and cache penetration protection is gone.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 61
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max by (filter) (bloom_filter_items)",
+              "legendFormat": "{{filter}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 18,
+          "type": "timeseries",
+          "title": "Rate limit decisions",
+          "description": "limited is a request that received a 429. A sustained level means either abuse or a ceiling set too low for real usage. unavailable is the dangerous one: Redis was unreachable so checkRateLimit failed open and no limit is being enforced at all.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 69
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (bucket, result) (rate(rate_limit_decisions_total[5m]))",
+              "legendFormat": "{{bucket}} {{result}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 19,
+          "type": "stat",
+          "title": "Bloom protection",
+          "description": "The smallest of the three filters. Zero means at least one filter holds nothing, so penetration protection is off for that domain. Probes fail open in that state, meaning no board wrongly 404s, but a flood of random ids would reach MongoDB unchecked.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 69
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "min(max by (filter) (bloom_filter_items))",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
         }
       ]
     }

@@ -5,7 +5,6 @@ namespace: trellify
 
 resources:
   - namespace.yaml
-  - configmap-server.yaml
   - deployment-server.yaml
   - deployment-worker.yaml
   - deployment-client.yaml
@@ -15,13 +14,21 @@ resources:
   - hpa-server.yaml
   - networkpolicy.yaml
   - servicemonitor.yaml
-  - redis/configmap.yaml
+  - prometheusrule.yaml
   - redis/statefulset.yaml
   - redis/services.yaml
   - mongodb/init-configmap.yaml
   - mongodb/statefulset.yaml
   - mongodb/services.yaml
   - mongodb/backup-cronjob.yaml
+
+configMapGenerator:
+  - name: trellify-server-config
+    envs:
+      - config-server.env
+  - name: trellify-redis-config
+    files:
+      - redis.conf=redis/redis.conf
 
 labels:
   - pairs:

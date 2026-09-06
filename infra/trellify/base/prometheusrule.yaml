@@ -1,0 +1,72 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: trellify
+spec:
+  groups:
+    - name: trellify-protection
+      interval: 60s
+      rules:
+        - alert: TrellifyBloomProbeErrors
+          expr: sum(rate(bloom_filter_checks_total{result="error"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+            service: trellify
+          annotations:
+            summary: Bloom filter probes are failing, every lookup reaches MongoDB
+            description: >-
+              isPossiblyPresent is erroring on every probe, so the cache penetration guard is
+              open and a flood of random ids would reach MongoDB unchecked. Usually the
+              redisbloom module is not loaded or Redis is unreachable. Check
+              "kubectl -n trellify exec sts/trellify-redis -- sh -c 'redis-cli -a $REDIS_PASSWORD --no-auth-warning MODULE LIST'"
+              for a "bf" entry.
+
+        - alert: TrellifyBloomFilterMissing
+          expr: absent(bloom_filter_items) or max by (filter) (bloom_filter_items) == 0
+          for: 15m
+          labels:
+            severity: critical
+            service: trellify
+          annotations:
+            summary: A bloom filter holds no ids, cache penetration protection is off
+            description: >-
+              The filter was never built or was dropped. Probes fail open so nothing returns a
+              wrong 404, but the protection is absent. absent() is deliberate here - when the
+              build throws before its first set(), the gauge series never gets created at all.
+
+        - alert: TrellifyRateLimitNotEnforced
+          expr: sum(rate(rate_limit_decisions_total{result="unavailable"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: Rate limiting is failing open, write limits are not applied
+            description: >-
+              checkRateLimit could not reach Redis and is letting every request through by
+              design. Write and invite ceilings are not being enforced while this fires.
+
+        - alert: TrellifyCacheErrors
+          expr: sum(rate(cache_requests_total{result="error"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: Read-through cache is erroring and falling through to MongoDB
+            description: >-
+              Every cache lookup is reading through. MongoDB is carrying the full read load.
+
+        - alert: TrellifyRateLimitSpike
+          expr: sum by (bucket) (rate(rate_limit_decisions_total{result="limited"}[5m])) > 1
+          for: 10m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: Sustained 429s on the {{ $labels.bucket }} bucket
+            description: >-
+              Either a client is hammering writes, or the ceiling is set too low for real usage.
+              Tune WRITE_RATE_LIMIT_PER_MINUTE or INVITE_RATE_LIMIT_PER_MINUTE in
+              config-server.env if this is legitimate traffic.

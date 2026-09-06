@@ -36,7 +36,7 @@ spec:
             - name: MONGO_APP_PASSWORD
               valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: password } }
             - name: MONGO_APP_DB
-              valueFrom: { configMapKeyRef: { name: trellify-server-config, key: DATABASE_NAME } }
+              value: "trellify"
           ports:
             - name: mongo
               containerPort: 27017

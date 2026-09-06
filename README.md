@@ -266,7 +266,7 @@ All three public paths share one host: `/` goes to the client, `/api` to the ser
 | `SONAR_TOKEN`                   | SonarCloud scan in the CI workflow              |
 
 > **Important**
-> Runtime configuration for the cluster does **not** come from these secrets — it comes from `infra/trellify/base/configmap-server.yaml` and the SealedSecrets in `infra/trellify/overlays/prod/`. When you add a new environment variable, update those as well, or the pod fails Zod validation at startup and never becomes ready.
+> Runtime configuration for the cluster does **not** come from these secrets — it comes from `infra/trellify/base/config-server.env` and the SealedSecrets in `infra/trellify/overlays/prod/`. When you add a new environment variable, update those as well, or the pod fails Zod validation at startup and never becomes ready.
 
 ### Legacy: Docker Compose deployment
 
