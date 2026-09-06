@@ -1,29 +1,8 @@
-import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
-
 import { INVITATION_CREATE_SCHEMA, INVITATION_ID_PARAMS_SCHEMA } from "@workspace/shared/schemas/invitation.schema";
 
-import ApiError from "src/utils/api-error";
-
-const createNewBoardInvitation = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await INVITATION_CREATE_SCHEMA.parseAsync(request.body);
-    next();
-  } catch (error) {
-    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error as string).message));
-  }
-};
-
-const updateBoardInvitation = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await INVITATION_ID_PARAMS_SCHEMA.parseAsync(request.params);
-    next();
-  } catch (error) {
-    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error as string).message));
-  }
-};
+import { validateRequest } from "src/utils/validate-request";
 
 export const invitationValidation = {
-  createNewBoardInvitation,
-  updateBoardInvitation,
+  createNewBoardInvitation: validateRequest({ body: INVITATION_CREATE_SCHEMA }),
+  updateBoardInvitation: validateRequest({ params: INVITATION_ID_PARAMS_SCHEMA }),
 };

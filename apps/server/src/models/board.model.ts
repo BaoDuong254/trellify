@@ -44,6 +44,7 @@ const getDetailsById = async (boardId: string) => {
           localField: "_id",
           foreignField: "boardId",
           as: "columns",
+          pipeline: [{ $match: { _destroy: false } }],
         },
       },
       {
@@ -52,6 +53,7 @@ const getDetailsById = async (boardId: string) => {
           localField: "_id",
           foreignField: "boardId",
           as: "cards",
+          pipeline: [{ $match: { _destroy: false } }],
         },
       },
       {

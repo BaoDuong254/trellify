@@ -16,6 +16,8 @@ const createNewBoardInvitation = async (
   requestBody: InvitationCreateType,
   inviterId: string
 ): Promise<UserInvitedToBoardPayloadType> => {
+  await boardService.assertBoardAccess(inviterId, requestBody.boardId);
+
   const inviter = await userModel.findOneById(inviterId);
   const invitee = await userModel.findOneByEmail(requestBody.inviteeEmail);
   const board = await boardModel.findOneById(new ObjectId(requestBody.boardId));

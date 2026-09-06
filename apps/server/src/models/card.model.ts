@@ -38,7 +38,7 @@ const findAllIds = (): FindCursor<{ _id: ObjectId }> =>
 const countAll = async (): Promise<number> => GET_DB().collection(CARD_COLLECTION_NAME).countDocuments({});
 
 const findOneById = async (id: ObjectId) => {
-  const card = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ _id: id });
+  const card = await GET_DB().collection(CARD_COLLECTION_NAME).findOne({ _id: id, _destroy: false });
   return card;
 };
 
@@ -58,21 +58,25 @@ const update = async (
 
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
-    .findOneAndUpdate({ _id: new ObjectId(cardId) }, { $set: updateData }, { returnDocument: "after" });
+    .findOneAndUpdate(
+      { _id: new ObjectId(cardId), _destroy: false },
+      { $set: updateData },
+      { returnDocument: "after" }
+    );
   return result;
 };
 
 const deleteOneById = async (cardId: string) => {
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
-    .deleteOne({ _id: new ObjectId(cardId) });
+    .updateOne({ _id: new ObjectId(cardId) }, { $set: { _destroy: true, updatedAt: new Date() } });
   return result;
 };
 
 const deleteManyByColumnId = async (columnId: string) => {
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
-    .deleteMany({ columnId: new ObjectId(columnId) });
+    .updateMany({ columnId: new ObjectId(columnId) }, { $set: { _destroy: true, updatedAt: new Date() } });
   return result;
 };
 
@@ -80,7 +84,7 @@ const unshiftNewComment = async (cardId: string, commentData: CardCommentType) =
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
     .findOneAndUpdate(
-      { _id: new ObjectId(cardId) },
+      { _id: new ObjectId(cardId), _destroy: false },
       { $push: { comments: { $each: [commentData], $position: 0 } } } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );
@@ -95,7 +99,7 @@ const updateMembers = async (cardId: string, incomingMemberInfo: IncomingCardMem
 
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
-    .findOneAndUpdate({ _id: new ObjectId(cardId) }, updateCondition, { returnDocument: "after" });
+    .findOneAndUpdate({ _id: new ObjectId(cardId), _destroy: false }, updateCondition, { returnDocument: "after" });
   return result;
 };
 

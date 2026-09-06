@@ -79,6 +79,13 @@ export const bloomFilterItems = new Gauge({
   registers: [metricsRegistry],
 });
 
+export const rateLimitDecisions = new Counter({
+  name: "rate_limit_decisions_total",
+  help: "Rate limit outcomes by bucket: allowed, limited, or unavailable when Redis was unreachable and the request was let through",
+  labelNames: ["bucket", "result"],
+  registers: [metricsRegistry],
+});
+
 export const indexesReady = new Gauge({
   name: "mongodb_indexes_ready",
   help: "1 when every expected MongoDB index exists, 0 when at least one failed to be created",

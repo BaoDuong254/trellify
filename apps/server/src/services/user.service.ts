@@ -178,7 +178,7 @@ const forgotPassword = async (requestBody: UserForgotPasswordType): Promise<void
   const { email } = requestBody;
 
   const WINDOW_SEC = 15 * 60; // 15 minutes in seconds
-  await checkRateLimit(`rl:fp:email:${email}`, 3, WINDOW_SEC);
+  await checkRateLimit(`rl:fp:email:${email}`, 3, WINDOW_SEC, "forgot_password");
 
   const existUser = await userModel.findOneByEmail(email);
   if (!existUser || !existUser.isActive) return;

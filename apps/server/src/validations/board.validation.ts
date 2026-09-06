@@ -1,6 +1,3 @@
-import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
-
 import {
   BOARD_ID_PARAMS_SCHEMA,
   CREATE_NEW_BOARD_SCHEMA,
@@ -9,68 +6,12 @@ import {
   UPDATE_BOARD_SCHEMA,
 } from "@workspace/shared/schemas/board.schema";
 
-import ApiError from "src/utils/api-error";
-
-const createNew = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await CREATE_NEW_BOARD_SCHEMA.parseAsync(request.body);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
-
-const getDetails = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await BOARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
-
-const update = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await BOARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
-    await UPDATE_BOARD_SCHEMA.parseAsync(request.body);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
-
-const moveCardToDifferentColumn = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA.parseAsync(request.body);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
-
-const removeMember = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await REMOVE_BOARD_MEMBER_PARAMS_SCHEMA.parseAsync(request.params);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
+import { validateRequest } from "src/utils/validate-request";
 
 export const boardValidation = {
-  createNew,
-  getDetails,
-  update,
-  moveCardToDifferentColumn,
-  removeMember,
+  createNew: validateRequest({ body: CREATE_NEW_BOARD_SCHEMA }),
+  getDetails: validateRequest({ params: BOARD_ID_PARAMS_SCHEMA }),
+  update: validateRequest({ params: BOARD_ID_PARAMS_SCHEMA, body: UPDATE_BOARD_SCHEMA }),
+  moveCardToDifferentColumn: validateRequest({ body: MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA }),
+  removeMember: validateRequest({ params: REMOVE_BOARD_MEMBER_PARAMS_SCHEMA }),
 };

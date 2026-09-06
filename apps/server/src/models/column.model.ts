@@ -34,7 +34,7 @@ const findAllIds = (): FindCursor<{ _id: ObjectId }> =>
 const countAll = async (): Promise<number> => GET_DB().collection(COLUMN_COLLECTION_NAME).countDocuments({});
 
 const findOneById = async (id: ObjectId) => {
-  const column = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ _id: id });
+  const column = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ _id: id, _destroy: false });
   return column;
 };
 
@@ -42,7 +42,7 @@ const pushCardOrderIds = async (card) => {
   return await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
     .findOneAndUpdate(
-      { _id: new ObjectId(card.columnId as string) },
+      { _id: new ObjectId(card.columnId as string), _destroy: false },
       { $push: { cardOrderIds: new ObjectId(card._id as string) } } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );
@@ -59,13 +59,17 @@ const update = async (columnId: string, updateData: UpdateColumnType) => {
   }
   return await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
-    .findOneAndUpdate({ _id: new ObjectId(columnId) }, { $set: updateData }, { returnDocument: "after" });
+    .findOneAndUpdate(
+      { _id: new ObjectId(columnId), _destroy: false },
+      { $set: updateData },
+      { returnDocument: "after" }
+    );
 };
 
 const deleteOneById = async (columnId: string) => {
   const result = await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
-    .deleteOne({ _id: new ObjectId(columnId) });
+    .updateOne({ _id: new ObjectId(columnId) }, { $set: { _destroy: true, updatedAt: new Date() } });
   return result;
 };
 
@@ -73,7 +77,7 @@ const pullCardOrderIds = async (card) => {
   const result = await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
     .findOneAndUpdate(
-      { _id: new ObjectId(card.columnId as string) },
+      { _id: new ObjectId(card.columnId as string), _destroy: false },
       { $pull: { cardOrderIds: new ObjectId(card._id as string) } } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );

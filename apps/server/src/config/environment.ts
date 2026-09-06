@@ -77,6 +77,16 @@ const configSchema = z.object({
     .positive("REDIS_COMMAND_TIMEOUT_MS must be a positive integer")
     .default(2000),
   BLOOM_FILTER_ENABLED: z.stringbool().default(true),
+  WRITE_RATE_LIMIT_PER_MINUTE: z.coerce
+    .number("WRITE_RATE_LIMIT_PER_MINUTE must be a number")
+    .int("WRITE_RATE_LIMIT_PER_MINUTE must be an integer")
+    .positive("WRITE_RATE_LIMIT_PER_MINUTE must be a positive integer")
+    .default(300),
+  INVITE_RATE_LIMIT_PER_MINUTE: z.coerce
+    .number("INVITE_RATE_LIMIT_PER_MINUTE must be a number")
+    .int("INVITE_RATE_LIMIT_PER_MINUTE must be an integer")
+    .positive("INVITE_RATE_LIMIT_PER_MINUTE must be a positive integer")
+    .default(20),
   CACHE_COMMAND_TIMEOUT_MS: z.coerce
     .number("CACHE_COMMAND_TIMEOUT_MS must be a number")
     .int("CACHE_COMMAND_TIMEOUT_MS must be an integer")

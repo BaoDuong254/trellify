@@ -17,9 +17,9 @@ interface IndexPlan {
 }
 
 const INDEX_PLAN: IndexPlan[] = [
-  { collection: cardModel.CARD_COLLECTION_NAME, spec: { boardId: 1 } },
-  { collection: cardModel.CARD_COLLECTION_NAME, spec: { columnId: 1 } },
-  { collection: columnModel.COLUMN_COLLECTION_NAME, spec: { boardId: 1 } },
+  { collection: cardModel.CARD_COLLECTION_NAME, spec: { boardId: 1, _destroy: 1 } },
+  { collection: cardModel.CARD_COLLECTION_NAME, spec: { columnId: 1, _destroy: 1 } },
+  { collection: columnModel.COLUMN_COLLECTION_NAME, spec: { boardId: 1, _destroy: 1 } },
   { collection: boardModel.BOARD_COLLECTION_NAME, spec: { ownerIds: 1, _destroy: 1 } },
   { collection: boardModel.BOARD_COLLECTION_NAME, spec: { memberIds: 1, _destroy: 1 } },
   {

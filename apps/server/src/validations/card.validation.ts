@@ -1,50 +1,13 @@
-import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
-
 import {
   CARD_ID_PARAMS_SCHEMA,
   CREATE_NEW_CARD_SCHEMA,
   UPDATE_CARD_SCHEMA,
 } from "@workspace/shared/schemas/card.schema";
 
-import ApiError from "src/utils/api-error";
-
-const createNew = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await CREATE_NEW_CARD_SCHEMA.parseAsync(request.body);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
-
-const update = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await CARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
-    await UPDATE_CARD_SCHEMA.parseAsync(request.body);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
-
-const deleteItem = async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
-  try {
-    await CARD_ID_PARAMS_SCHEMA.parseAsync(request.params);
-    next();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const customError = new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, errorMessage);
-    next(customError);
-  }
-};
+import { validateRequest } from "src/utils/validate-request";
 
 export const cardValidation = {
-  createNew,
-  update,
-  deleteItem,
+  createNew: validateRequest({ body: CREATE_NEW_CARD_SCHEMA }),
+  update: validateRequest({ params: CARD_ID_PARAMS_SCHEMA, body: UPDATE_CARD_SCHEMA }),
+  deleteItem: validateRequest({ params: CARD_ID_PARAMS_SCHEMA }),
 };
