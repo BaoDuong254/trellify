@@ -269,18 +269,25 @@ kubectl -n observability exec sts/alertmanager-kps-alertmanager -c alertmanager 
 
 Telegram should receive it within `group_wait` (30s). The annotation values are double-quoted inside the flag on purpose: without that, amtool's UTF-8 matcher parser rejects the spaces, falls back to the classic parser and warns once per annotation. The alert is submitted either way and the stored value is identical - the quoting only silences the warning.
 
-**Prove the rules fire** by making every Redis command time out, which is the real `result="error"` path. Drop `CACHE_COMMAND_TIMEOUT_MS` to `1` in [`config-server.env`](trellify/base/config-server.env), commit, and let ArgoCD roll it out:
+**Prove the rules fire** by deleting a filter key, then generating at least one board read:
 
 ```bash
-sed -i 's/^CACHE_COMMAND_TIMEOUT_MS=1000$/CACHE_COMMAND_TIMEOUT_MS=1/' infra/trellify/base/config-server.env
-git commit -am 'test: force cache timeouts' && git push
-# TrellifyBloomProbeErrors and TrellifyCacheErrors both fire after ~5 minutes
-git revert --no-edit HEAD && git push
+kubectl -n trellify exec sts/trellify-redis -- \
+  sh -c 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning DEL bf:v1:boards'
+
+# open ONE board in the browser - the probe is what produces the metric
+
+# TrellifyBloomFilterUnusable fires ~2 minutes later, then repair:
+kubectl -n trellify rollout restart deployment/trellify-server
 ```
 
-The application stays correct throughout - the cache and the bloom probes fail open and reads go straight to MongoDB, so it is only slower. The rate limiter is unaffected because it uses the client-wide `REDIS_COMMAND_TIMEOUT_MS` rather than the cache's own budget. This doubles as proof that `configMapGenerator` works: before it, a config-only change like this would not have restarted anything.
+Opening a board is not optional. The alerts watch probe outcomes, and a probe only happens when something actually looks a board up - deleting the key and restarting straight away produces no samples and therefore no alert.
 
-> **Do not test by corrupting a filter key.** `SET bf:v1:boards something` used to look like a tidy way to break a probe. It is not: `BF.EXISTS` returns 0 on a wrong-type key instead of raising, which reads as "definitely absent" and 404s every real board. That was a genuine bug, fixed by having the Lua guard compare `TYPE` against `MBbloom--`; the case now fails open and reports `result="unavailable"`, so it no longer triggers the error alert either.
+The four "this should never happen" rules use `increase(...[10m]) > 0` with a short `for`, not `rate(...[5m])` with `for: 5m`. That combination cannot fire from a brief incident at all: `rate` over a 5m window stops being positive about 5 minutes after the last sample, so the condition holds for roughly 4m10s and never survives a 5 minute `for`. A 10 minute lookback with a 1-2 minute confirmation catches a single occurrence, which is what these signals need - any occurrence at all is already a real fault.
+
+> **Do not test by corrupting a filter key.** `SET bf:v1:boards something` used to look like a tidy way to break a probe. It is not: `BF.EXISTS` returns 0 on a wrong-type key instead of raising, which reads as "definitely absent" and 404s every real board. That was a genuine bug, fixed by having the Lua guard compare `TYPE` against `MBbloom--`. The case now fails open and reports `result="unavailable"`, so `DEL` above exercises the same path without ever serving a wrong 404.
+
+**Prove the error path** separately by making every Redis command time out. Drop `CACHE_COMMAND_TIMEOUT_MS` to `1` in [`config-server.env`](trellify/base/config-server.env), commit, and let ArgoCD roll it out; `TrellifyBloomProbeErrors` and `TrellifyCacheErrors` both fire. Reads stay correct, just slower, because the cache and the probes fail open to MongoDB. Revert the commit to restore. This doubles as proof that `configMapGenerator` works - before it, a config-only change would not have restarted anything.
 
 ## Common Operations
 

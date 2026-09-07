@@ -8,8 +8,8 @@ spec:
       interval: 60s
       rules:
         - alert: TrellifyBloomProbeErrors
-          expr: sum(rate(bloom_filter_checks_total{result="error"}[5m])) > 0
-          for: 5m
+          expr: sum(increase(bloom_filter_checks_total{result="error"}[10m])) > 0
+          for: 1m
           labels:
             severity: critical
             service: trellify
@@ -23,8 +23,8 @@ spec:
               for a "bf" entry.
 
         - alert: TrellifyBloomFilterUnusable
-          expr: sum(rate(bloom_filter_checks_total{result="unavailable"}[5m])) > 0
-          for: 5m
+          expr: sum(increase(bloom_filter_checks_total{result="unavailable"}[10m])) > 0
+          for: 1m
           labels:
             severity: critical
             service: trellify
@@ -51,8 +51,8 @@ spec:
               build throws before its first set(), the gauge series never gets created at all.
 
         - alert: TrellifyRateLimitNotEnforced
-          expr: sum(rate(rate_limit_decisions_total{result="unavailable"}[5m])) > 0
-          for: 5m
+          expr: sum(increase(rate_limit_decisions_total{result="unavailable"}[10m])) > 0
+          for: 2m
           labels:
             severity: warning
             service: trellify
@@ -63,8 +63,8 @@ spec:
               design. Write and invite ceilings are not being enforced while this fires.
 
         - alert: TrellifyCacheErrors
-          expr: sum(rate(cache_requests_total{result="error"}[5m])) > 0
-          for: 5m
+          expr: sum(increase(cache_requests_total{result="error"}[10m])) > 0
+          for: 2m
           labels:
             severity: warning
             service: trellify

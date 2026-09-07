@@ -44,6 +44,7 @@ export const isPossiblyPresent = async (filter: BloomFilter, item: string): Prom
 
     if (verdict === VERDICT_UNUSABLE) {
       bloomFilterChecks.inc({ filter: filter.name, result: "unavailable" });
+      bloomFilterItems.set({ filter: filter.name }, 0);
       return true;
     }
 
