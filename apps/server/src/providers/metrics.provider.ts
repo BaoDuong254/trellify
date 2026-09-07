@@ -67,7 +67,7 @@ export const cacheLoaderDuration = new Histogram({
 
 export const bloomFilterChecks = new Counter({
   name: "bloom_filter_checks_total",
-  help: "Bloom filter membership probes by filter and outcome: absent means the id was rejected before any database read, present means it fell through to the cache, skipped means the filter was disabled or not yet built, error means the probe failed and read through",
+  help: "Bloom filter membership probes by filter and outcome: absent means the id was rejected before any database read, present means it fell through to the cache, unavailable means the key was missing or not a bloom filter so the probe failed open, skipped means the filter was disabled, error means the probe itself failed and read through",
   labelNames: ["filter", "result"],
   registers: [metricsRegistry],
 });

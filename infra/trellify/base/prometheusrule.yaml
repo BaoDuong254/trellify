@@ -22,6 +22,21 @@ spec:
               "kubectl -n trellify exec sts/trellify-redis -- sh -c 'redis-cli -a $REDIS_PASSWORD --no-auth-warning MODULE LIST'"
               for a "bf" entry.
 
+        - alert: TrellifyBloomFilterUnusable
+          expr: sum(rate(bloom_filter_checks_total{result="unavailable"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+            service: trellify
+          annotations:
+            summary: A bloom filter key is missing or is not a bloom filter
+            description: >-
+              Probes are failing open while serving real traffic, so protection is off for that
+              domain. This is the case a plain BF.EXISTS cannot report: on a wrong-type key it
+              returns 0, which reads as "definitely absent" and would 404 every real row. The
+              Lua guard checks TYPE instead and reports it here. buildFilter overwrites the key
+              on the next start or Redis reconnect.
+
         - alert: TrellifyBloomFilterMissing
           expr: absent(bloom_filter_items) or max by (filter) (bloom_filter_items) == 0
           for: 15m

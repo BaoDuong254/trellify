@@ -241,7 +241,15 @@ Alertmanager routes on the `service: trellify` label to a Telegram receiver. The
 The bot token and chat id are read from files mounted by the operator at `/etc/alertmanager/secrets/alertmanager-telegram/`, so neither appears in `values.yaml`:
 
 ```bash
-kubectl create secret generic alertmanager-telegram   --namespace observability   --from-literal=bot-token='<BotFather token>'   --from-literal=chat-id='<chat id>'   --dry-run=client -o yaml | kubeseal --format yaml     --controller-namespace sealed-secrets     --controller-name sealed-secrets-controller > infra/observability/manifests/sealedsecret-alertmanager-telegram.yaml
+kubectl create secret generic alertmanager-telegram \
+  --namespace observability \
+  --from-literal=bot-token='<BotFather token>' \
+  --from-literal=chat-id='<chat id>' \
+  --dry-run=client -o yaml \
+| kubeseal --format yaml \
+    --controller-namespace sealed-secrets \
+    --controller-name sealed-secrets-controller \
+> infra/observability/manifests/sealedsecret-alertmanager-telegram.yaml
 ```
 
 Commit and sync that **before** syncing `values.yaml`, or Alertmanager crashloops on a missing secret volume.
@@ -249,13 +257,30 @@ Commit and sync that **before** syncing `values.yaml`, or Alertmanager crashloop
 > **Note**
 > `platform-observability` and `platform-observability-extras` have no `syncPolicy.automated`. Changes to the chart values, the dashboard or that SealedSecret need a manual Sync in the ArgoCD UI. Only `trellify-prod` reconciles on its own.
 
-To prove the whole chain end to end, unload the module and open a few boards:
+**Prove the notification path** with a synthetic alert. It travels the real route tree, so it exercises the matcher, the mounted secret and the message template - the parts most likely to be misconfigured - without touching the application:
 
 ```bash
-kubectl -n trellify exec sts/trellify-redis --   sh -c 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning MODULE UNLOAD bf'
-# TrellifyBloomProbeErrors fires after ~5 minutes and Telegram receives it
-kubectl -n trellify rollout restart statefulset/trellify-redis
+kubectl -n observability exec sts/alertmanager-kps-alertmanager -c alertmanager -- \
+  amtool alert add TrellifyTestAlert service=trellify severity=warning \
+    --annotation='summary="Synthetic alert, ignore"' \
+    --annotation='description="Checking the Telegram route"' \
+    --alertmanager.url=http://localhost:9093
 ```
+
+Telegram should receive it within `group_wait` (30s). The annotation values are double-quoted inside the flag on purpose: without that, amtool's UTF-8 matcher parser rejects the spaces, falls back to the classic parser and warns once per annotation. The alert is submitted either way and the stored value is identical - the quoting only silences the warning.
+
+**Prove the rules fire** by making every Redis command time out, which is the real `result="error"` path. Drop `CACHE_COMMAND_TIMEOUT_MS` to `1` in [`config-server.env`](trellify/base/config-server.env), commit, and let ArgoCD roll it out:
+
+```bash
+sed -i 's/^CACHE_COMMAND_TIMEOUT_MS=1000$/CACHE_COMMAND_TIMEOUT_MS=1/' infra/trellify/base/config-server.env
+git commit -am 'test: force cache timeouts' && git push
+# TrellifyBloomProbeErrors and TrellifyCacheErrors both fire after ~5 minutes
+git revert --no-edit HEAD && git push
+```
+
+The application stays correct throughout - the cache and the bloom probes fail open and reads go straight to MongoDB, so it is only slower. The rate limiter is unaffected because it uses the client-wide `REDIS_COMMAND_TIMEOUT_MS` rather than the cache's own budget. This doubles as proof that `configMapGenerator` works: before it, a config-only change like this would not have restarted anything.
+
+> **Do not test by corrupting a filter key.** `SET bf:v1:boards something` used to look like a tidy way to break a probe. It is not: `BF.EXISTS` returns 0 on a wrong-type key instead of raising, which reads as "definitely absent" and 404s every real board. That was a genuine bug, fixed by having the Lua guard compare `TYPE` against `MBbloom--`; the case now fails open and reports `result="unavailable"`, so it no longer triggers the error alert either.
 
 ## Common Operations
 
@@ -361,8 +386,8 @@ The sealed-secrets private key is **not** covered by this CronJob. Back it up by
 
 **Dashboards and consoles:**
 
-| URL                                | What                                                                                        |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| `https://trellify.duonggiabao.com` | The application                                                                             |
-| `https://argocd.duonggiabao.com`   | ArgoCD - sync state, diffs, manual sync                                                     |
-| `https://grafana.duonggiabao.com`  | Grafana on kube-prometheus-stack (7d / 15GB Prometheus retention; Alertmanager is disabled) |
+| URL                                | What                                                                                                                          |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `https://trellify.duonggiabao.com` | The application                                                                                                               |
+| `https://argocd.duonggiabao.com`   | ArgoCD - sync state, diffs, manual sync                                                                                       |
+| `https://grafana.duonggiabao.com`  | Grafana on kube-prometheus-stack (7d / 15GB Prometheus retention; Alertmanager routes `service: trellify` alerts to Telegram) |

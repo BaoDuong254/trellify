@@ -8,6 +8,8 @@ import { bloomFilterChecks, bloomFilterItems } from "src/providers/metrics.provi
 import { getRedisClient } from "src/providers/redis.provider";
 
 const BUILD_LOCK_TTL_MS = 300_000;
+const BLOOM_TYPE = "MBbloom--";
+const VERDICT_UNUSABLE = 2;
 const INSERT_BATCH_SIZE = 1000;
 const FILTER_EXPANSION = 2;
 
@@ -19,12 +21,12 @@ export type BloomFilter = {
 };
 
 const MIGHT_EXIST_SCRIPT = `
-if redis.call("exists", KEYS[1]) == 0 then return 1 end
+if redis.call("type", KEYS[1]).ok ~= "${BLOOM_TYPE}" then return ${VERDICT_UNUSABLE} end
 return redis.call("bf.exists", KEYS[1], ARGV[1])
 `;
 
 const ADD_IF_BUILT_SCRIPT = `
-if redis.call("exists", KEYS[1]) == 0 then return 0 end
+if redis.call("type", KEYS[1]).ok ~= "${BLOOM_TYPE}" then return 0 end
 return redis.call("bf.add", KEYS[1], ARGV[1])
 `;
 
@@ -39,6 +41,12 @@ export const isPossiblyPresent = async (filter: BloomFilter, item: string): Prom
 
   try {
     const verdict = await withTimeout(getRedisClient().eval(MIGHT_EXIST_SCRIPT, 1, filter.key, item));
+
+    if (verdict === VERDICT_UNUSABLE) {
+      bloomFilterChecks.inc({ filter: filter.name, result: "unavailable" });
+      return true;
+    }
+
     const isPresent = verdict === 1;
     bloomFilterChecks.inc({ filter: filter.name, result: isPresent ? "present" : "absent" });
     return isPresent;
@@ -80,7 +88,7 @@ export const buildFilter = async (
   const token = randomUUID();
 
   try {
-    if ((await withTimeout(client.exists(filter.key))) === 1) {
+    if ((await withTimeout(client.type(filter.key))) === BLOOM_TYPE) {
       const held = Number(await client.call("BF.CARD", filter.key));
       bloomFilterItems.set({ filter: filter.name }, held);
 
