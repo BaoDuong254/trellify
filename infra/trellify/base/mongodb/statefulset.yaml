@@ -64,6 +64,37 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+        - name: exporter
+          image: percona/mongodb_exporter:0.53.0
+          args:
+            - "--web.listen-address=:9216"
+            - "--collector.diagnosticdata"
+            - "--collector.dbstats"
+            - "--compatible-mode"
+          env:
+            - name: MONGO_ROOT_USERNAME
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: root-username } }
+            - name: MONGO_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: root-password } }
+            - name: MONGODB_URI
+              value: "mongodb://$(MONGO_ROOT_USERNAME):$(MONGO_ROOT_PASSWORD)@127.0.0.1:27017/?authSource=admin&directConnection=true"
+          ports:
+            - name: metrics
+              containerPort: 9216
+          readinessProbe:
+            httpGet: { path: /metrics, port: metrics }
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 96Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
       volumes:
         - name: init
           configMap:

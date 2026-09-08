@@ -85,3 +85,80 @@ spec:
               Either a client is hammering writes, or the ceiling is set too low for real usage.
               Tune WRITE_RATE_LIMIT_PER_MINUTE or INVITE_RATE_LIMIT_PER_MINUTE in
               config-server.env if this is legitimate traffic.
+
+    - name: trellify-mongodb
+      interval: 60s
+      rules:
+        - alert: TrellifyMongoDown
+          expr: mongodb_up == 0
+          for: 2m
+          labels:
+            severity: critical
+            service: trellify
+          annotations:
+            summary: The MongoDB exporter cannot reach mongod
+            description: >-
+              The exporter sidecar is running but its connection to mongod on 127.0.0.1:27017 is
+              failing. Either mongod is down, or the root credentials in the trellify-mongodb-auth
+              secret no longer authenticate. Check "kubectl -n trellify logs sts/trellify-mongodb -c exporter".
+
+        - alert: TrellifyMongoNotScraped
+          expr: absent(mongodb_up)
+          for: 15m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: No MongoDB metrics are arriving at all
+            description: >-
+              The series does not exist, so the scrape never happens - this is not a database
+              problem. The cluster has a default-deny-ingress NetworkPolicy, so the usual causes
+              are the allow-prometheus-to-mongodb-metrics policy missing, the trellify-mongodb
+              ServiceMonitor not matching the app=trellify-mongodb label on the
+              trellify-mongodb-metrics Service, or the exporter container not starting.
+
+        - alert: TrellifyMongoMetricNamesUnexpected
+          expr: absent(mongodb_ss_connections) or absent(mongodb_ss_wt_cache_maximum_bytes_configured)
+          for: 30m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: Expected mongodb_exporter series are missing, some Mongo alerts are dead
+            description: >-
+              mongodb_up is present so the scrape works, but the series the connection and
+              WiredTiger alerts below are built on are not. Either the exporter changed its metric
+              names across a version bump, or the diagnosticdata collector is not enabled - note
+              every optional collector in mongodb_exporter defaults to off. Without this guard
+              those alerts would silently never fire. Compare against
+              "kubectl -n trellify exec sts/trellify-mongodb -c exporter -- wget -qO- localhost:9216/metrics".
+
+        - alert: TrellifyMongoConnectionsHigh
+          expr: max(mongodb_ss_connections{conn_type="current"}) > 200
+          for: 10m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: MongoDB is holding an unexpected number of connections
+            description: >-
+              maxPoolSize is 20 per process, so 6 server pods at the HPA ceiling plus the worker
+              should top out near 140. Sustained traffic above that means connections are being
+              leaked rather than pooled. Each connection costs roughly 1MB in mongod, against a
+              1536Mi container limit.
+
+        - alert: TrellifyMongoWiredTigerCacheFull
+          expr: >-
+            max(mongodb_ss_wt_cache_bytes_currently_in_the_cache)
+              / max(mongodb_ss_wt_cache_maximum_bytes_configured) > 0.95
+          for: 20m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: WiredTiger cache is full, reads are going to disk
+            description: >-
+              The cache is pinned at its configured ceiling so the working set no longer fits and
+              reads are hitting the HDD. The cache is set to 0.5GB by --wiredTigerCacheSizeGB
+              while the container is allowed 1536Mi, so there is headroom to raise it in
+              mongodb/statefulset.yaml before considering anything larger.

@@ -12,3 +12,17 @@ spec:
     - port: metrics
       path: /metrics
       interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: trellify-mongodb
+spec:
+  selector:
+    matchLabels:
+      app: trellify-mongodb
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 20s

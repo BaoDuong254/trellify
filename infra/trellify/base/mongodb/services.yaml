@@ -18,3 +18,18 @@ spec:
     app: trellify-mongodb
   ports:
     - { name: mongo, port: 27017, targetPort: mongo }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trellify-mongodb-metrics
+  labels:
+    app: trellify-mongodb
+spec:
+  clusterIP: None
+  selector:
+    app: trellify-mongodb
+  ports:
+    - name: metrics
+      port: 9216
+      targetPort: metrics
