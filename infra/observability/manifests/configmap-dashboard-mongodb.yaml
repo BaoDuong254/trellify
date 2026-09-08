@@ -1,0 +1,693 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-trellify-mongodb
+  labels:
+    grafana_dashboard: "1"
+data:
+  trellify-mongodb.json: |
+    {
+      "uid": "trellify-mongodb",
+      "title": "Trellify MongoDB",
+      "description": "Database metrics from the mongodb_exporter sidecar in the trellify-mongodb pod. Only the diagnosticdata and dbstats collectors are enabled, so replica set, collection and top-command panels are deliberately absent - mongod runs standalone.",
+      "tags": [
+        "trellify"
+      ],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "editable": true,
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "label": "Data source",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {},
+            "hide": 0,
+            "refresh": 1
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "MongoDB reachable",
+          "description": "The exporter's own view of mongod over 127.0.0.1 inside the pod. DOWN means the sidecar is running but cannot authenticate or connect, which is a different failure from the scrape itself being broken.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red",
+                      "index": 0
+                    }
+                  }
+                },
+                {
+                  "type": "value",
+                  "options": {
+                    "1": {
+                      "text": "UP",
+                      "color": "green",
+                      "index": 1
+                    }
+                  }
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "min(mongodb_up)",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Open connections",
+          "description": "maxPoolSize is 20 per process, so 6 server pods at the HPA ceiling plus the worker should top out near 140. Sustained values well above that mean connections are leaking rather than pooling.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 140
+                  },
+                  {
+                    "color": "red",
+                    "value": 200
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "textMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max(mongodb_ss_connections{conn_type=\"current\"})",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "WiredTiger cache used",
+          "description": "Share of the cache ceiling set by --wiredTigerCacheSizeGB, currently 0.5GB inside a 1536Mi container. Pinned near 100% means the working set no longer fits and reads are going to the HDD - raise the cache before considering anything larger.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 95
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "textMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "100 * max(mongodb_ss_wt_cache_bytes_currently_in_the_cache) / max(mongodb_ss_wt_cache_maximum_bytes_configured)",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "trellify data size",
+          "description": "Logical size of the trellify database. The PVC asks for 20Gi but local-path is a hostPath and does not enforce it, so the real ceiling is free space on the node disk.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max(mongodb_dbstats_dataSize{database=\"trellify\"})",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "Connections",
+          "description": "current is every open socket, active is the subset running an operation right now. A rising current with a flat active is the shape of a pool leak.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max(mongodb_ss_connections{conn_type=\"current\"})",
+              "legendFormat": "current",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            },
+            {
+              "refId": "B",
+              "expr": "max(mongodb_ss_connections{conn_type=\"active\"})",
+              "legendFormat": "active",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "WiredTiger cache",
+          "description": "Bytes held against the configured ceiling. The ceiling is a flat line - when the used line meets it and stays there, the cache is the constraint.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max(mongodb_ss_wt_cache_bytes_currently_in_the_cache)",
+              "legendFormat": "used",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            },
+            {
+              "refId": "B",
+              "expr": "max(mongodb_ss_wt_cache_maximum_bytes_configured)",
+              "legendFormat": "configured ceiling",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Operation rate by type",
+          "description": "The real read/write shape reaching the database, after the Redis read-through cache and the bloom filters have absorbed what they can. command dominating query is normal for this app.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 13
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (legacy_op_type) (rate(mongodb_ss_opcounters[5m]))",
+              "legendFormat": "{{legacy_op_type}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Average operation latency",
+          "description": "Server-side latency only - it excludes network and driver time, so it is the number that isolates the database from the Node event loop. Compare it against the server dashboard's HTTP p95 before blaming Mongo.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 13
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "µs",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (op_type) (rate(mongodb_ss_opLatencies_latency[5m])) / sum by (op_type) (rate(mongodb_ss_opLatencies_ops[5m]))",
+              "legendFormat": "{{op_type}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Collection scans",
+          "description": "Queries that read a whole collection instead of using an index. This should sit at zero. A non-zero line points at a query with no covering index - getBoards sorts by title with an en collation, and INDEX_PLAN has nothing that covers it.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 21
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 20
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(mongodb_ss_metrics_queryExecutor_collectionScans_total[5m]))",
+              "legendFormat": "collection scans/s",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Scan efficiency",
+          "description": "Documents scanned per document returned. 1 means every document read was wanted. Sustained above roughly 10 means an index is missing or the wrong one is being chosen. Flat at zero simply means no qualifying reads in the window.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 21
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(mongodb_ss_metrics_queryExecutor_scannedObjects[5m])) / clamp_min(sum(rate(mongodb_ss_metrics_document{doc_op_type=\"returned\"}[5m])), 0.001)",
+              "legendFormat": "documents scanned per returned",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            },
+            {
+              "refId": "B",
+              "expr": "sum(rate(mongodb_ss_metrics_queryExecutor_scanned[5m]))",
+              "legendFormat": "index keys scanned/s",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Data size by database",
+          "description": "local holds the oplog once this becomes a replica set, so watch it grow at that point. Until then it carries startup log collections only.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 29
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max by (database) (mongodb_dbstats_dataSize)",
+              "legendFormat": "{{database}}",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "type": "text",
+          "title": "Reading this dashboard",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 29
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "Metrics come from the `mongodb_exporter` sidecar in `trellify-mongodb-0`, scraped every 30s.\n\n**Only two collectors are enabled**, `diagnosticdata` and `dbstats`. Every optional collector in mongodb_exporter defaults to off, so anything not listed here is absent on purpose rather than broken.\n\n**No replica set panels.** mongod runs standalone, so `replSetGetStatus` has nothing to report and replication lag does not exist as a concept yet. Enabling `--collector.replicasetstatus` before converting to a replica set only produces errors.\n\n**This dashboard cannot tell you the server is healthy.** The load test found the ceiling inside the Node event loop while Mongo stayed cheap, so read this next to the Trellify server dashboard rather than alone - a slow request with flat latency here is not a database problem.\n\nAlerts for these series live in the `trellify-mongodb` group in `infra/trellify/base/prometheusrule.yaml`."
+          }
+        }
+      ]
+    }

@@ -82,7 +82,7 @@ spec:
             - name: metrics
               containerPort: 9216
           readinessProbe:
-            httpGet: { path: /metrics, port: metrics }
+            httpGet: { path: /, port: metrics }
             initialDelaySeconds: 20
             periodSeconds: 30
           resources:
