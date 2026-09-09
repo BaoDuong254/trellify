@@ -10,9 +10,10 @@ interface TurnstileFieldProps {
   onSuccess: (token: string) => void;
   onExpire: () => void;
   onError: () => void;
+  onTimeout: () => void;
 }
 
-function TurnstileField({ active, onSuccess, onExpire, onError }: TurnstileFieldProps) {
+function TurnstileField({ active, onSuccess, onExpire, onError, onTimeout }: TurnstileFieldProps) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
@@ -23,7 +24,7 @@ function TurnstileField({ active, onSuccess, onExpire, onError }: TurnstileField
             variant='rectangular'
             width={300}
             height={65}
-            sx={{ borderRadius: 1, position: "absolute", top: 0, left: 0 }}
+            sx={{ borderRadius: 1, position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
           />
         )}
         {active && (
@@ -32,7 +33,8 @@ function TurnstileField({ active, onSuccess, onExpire, onError }: TurnstileField
             onSuccess={onSuccess}
             onExpire={onExpire}
             onError={onError}
-            onLoad={() => setIsLoaded(true)}
+            onTimeout={onTimeout}
+            onWidgetLoad={() => setIsLoaded(true)}
             options={{ theme: "auto" }}
           />
         )}

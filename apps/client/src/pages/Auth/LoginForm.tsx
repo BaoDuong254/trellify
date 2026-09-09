@@ -170,6 +170,7 @@ function LoginForm() {
           onSuccess={turnstile.setToken}
           onExpire={turnstile.clearToken}
           onError={turnstile.clearToken}
+          onTimeout={turnstile.reset}
         />
         <CardActions sx={{ padding: "0 1em 1em 1em" }}>
           <Button
