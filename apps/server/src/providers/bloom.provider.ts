@@ -9,6 +9,8 @@ import { getRedisClient } from "src/providers/redis.provider";
 
 const BUILD_LOCK_TTL_MS = 300_000;
 const BLOOM_TYPE = "MBbloom--";
+const VERDICT_ABSENT = 0;
+const VERDICT_PRESENT = 1;
 const VERDICT_UNUSABLE = 2;
 const INSERT_BATCH_SIZE = 1000;
 const FILTER_EXPANSION = 2;
@@ -23,6 +25,17 @@ export type BloomFilter = {
 const MIGHT_EXIST_SCRIPT = `
 if redis.call("type", KEYS[1]).ok ~= "${BLOOM_TYPE}" then return ${VERDICT_UNUSABLE} end
 return redis.call("bf.exists", KEYS[1], ARGV[1])
+`;
+
+const MIGHT_EXIST_AND_READ_SCRIPT = `
+local verdict = ${VERDICT_UNUSABLE}
+if redis.call("type", KEYS[1]).ok == "${BLOOM_TYPE}" then
+  if redis.call("bf.exists", KEYS[1], ARGV[1]) == 0 then return { ${VERDICT_ABSENT} } end
+  verdict = ${VERDICT_PRESENT}
+end
+local cached = redis.call("get", KEYS[2])
+if cached == false then return { verdict } end
+return { verdict, cached }
 `;
 
 const ADD_IF_BUILT_SCRIPT = `
@@ -48,13 +61,46 @@ export const isPossiblyPresent = async (filter: BloomFilter, item: string): Prom
       return true;
     }
 
-    const isPresent = verdict === 1;
+    const isPresent = verdict === VERDICT_PRESENT;
     bloomFilterChecks.inc({ filter: filter.name, result: isPresent ? "present" : "absent" });
     return isPresent;
   } catch (error) {
     logger.warn(`Bloom filter ${filter.name} unavailable for ${item}, reading through: ${(error as Error).message}`);
     bloomFilterChecks.inc({ filter: filter.name, result: "error" });
     return true;
+  }
+};
+
+type GuardedCacheRead = { mightExist: boolean; cached: string | null | undefined };
+
+export const probeAndRead = async (filter: BloomFilter, item: string, cacheKey: string): Promise<GuardedCacheRead> => {
+  if (!environmentConfig.BLOOM_FILTER_ENABLED) {
+    bloomFilterChecks.inc({ filter: filter.name, result: "skipped" });
+    return { mightExist: true, cached: undefined };
+  }
+
+  if (!environmentConfig.CACHE_ENABLED) {
+    return { mightExist: await isPossiblyPresent(filter, item), cached: undefined };
+  }
+
+  try {
+    const [verdict, cached] = (await withTimeout(
+      getRedisClient().eval(MIGHT_EXIST_AND_READ_SCRIPT, 2, filter.key, cacheKey, item)
+    )) as [number, string?];
+
+    if (verdict === VERDICT_UNUSABLE) {
+      bloomFilterChecks.inc({ filter: filter.name, result: "unavailable" });
+      bloomFilterItems.set({ filter: filter.name }, 0);
+      return { mightExist: true, cached: cached ?? null };
+    }
+
+    const isPresent = verdict === VERDICT_PRESENT;
+    bloomFilterChecks.inc({ filter: filter.name, result: isPresent ? "present" : "absent" });
+    return { mightExist: isPresent, cached: isPresent ? (cached ?? null) : undefined };
+  } catch (error) {
+    logger.warn(`Bloom filter ${filter.name} unavailable for ${item}, reading through: ${(error as Error).message}`);
+    bloomFilterChecks.inc({ filter: filter.name, result: "error" });
+    return { mightExist: true, cached: undefined };
   }
 };
 

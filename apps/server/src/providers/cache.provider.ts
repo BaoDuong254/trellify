@@ -27,6 +27,7 @@ type CacheOptions<T> = {
   ttlSeconds: number;
   negativeTtlSeconds: number;
   load: () => Promise<T | null>;
+  cachedRaw?: string | null;
 };
 
 type Decision<T> =
@@ -72,7 +73,7 @@ const decide = async <T>(options: CacheOptions<T>): Promise<Decision<T>> => {
   try {
     const client = getRedisClient();
 
-    const cached = await withTimeout(client.get(key));
+    const cached = options.cachedRaw === undefined ? await withTimeout(client.get(key)) : options.cachedRaw;
     if (cached !== null) {
       const value = parseEntry<T>(cached);
       cacheRequests.inc({ cache: cacheName, result: value === null ? "negative_hit" : "hit" });

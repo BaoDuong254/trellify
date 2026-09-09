@@ -15,7 +15,7 @@ import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { invitationModel } from "src/models/invitation.model";
-import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
+import { addItem, isPossiblyPresent, probeAndRead } from "src/providers/bloom.provider";
 import { getOrLoad, invalidate } from "src/providers/cache.provider";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
@@ -51,11 +51,14 @@ const invalidateBoardMembership = async (boardId: string): Promise<void> => {
 };
 
 const getMembership = async (boardId: string): Promise<BoardMembership | null> => {
-  if (!(await isPossiblyPresent(BOARD_BLOOM, boardId))) return null;
+  const cacheKey = membershipCacheKey(boardId);
+  const guarded = await probeAndRead(BOARD_BLOOM, boardId, cacheKey);
+  if (!guarded.mightExist) return null;
 
   return getOrLoad<BoardMembership>({
     cacheName: "board-membership",
-    key: membershipCacheKey(boardId),
+    key: cacheKey,
+    cachedRaw: guarded.cached,
     ttlSeconds: environmentConfig.BOARD_MEMBERSHIP_CACHE_TTL_SECONDS,
     negativeTtlSeconds: environmentConfig.BOARD_MEMBERSHIP_CACHE_TTL_SECONDS,
     load: async (): Promise<BoardMembership | null> => {
