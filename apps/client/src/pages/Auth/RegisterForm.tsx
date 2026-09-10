@@ -45,10 +45,10 @@ function RegisterForm() {
   const submitRegister = async (data: RegisterFormData) => {
     const { email, password } = data;
 
-    const turnstileToken = await turnstile.ensureToken();
+    const toastId = toast.loading("Registering is in progress...");
+    const turnstileToken = await turnstile.ensureToken(toastId);
     if (!turnstileToken) return;
 
-    const toastId = toast.loading("Registering is in progress...");
     try {
       const user = await registerUserAPI({ email, password, turnstileToken });
       navigate(`/login?registeredEmail=${user.email}`);
@@ -60,7 +60,7 @@ function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(submitRegister)} {...turnstile.formProps}>
+    <form onSubmit={handleSubmit(submitRegister)}>
       <MuiCard sx={authCardSx}>
         <Box
           sx={{

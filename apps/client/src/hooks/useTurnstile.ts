@@ -1,23 +1,13 @@
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import type { RefObject } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
-const PREFILL_POLL_INTERVAL_MS = 150;
-const PREFILL_POLL_DURATION_MS = 5000;
 const TOKEN_WAIT_TIMEOUT_MS = 20000;
 const INTERACTIVE_TOKEN_WAIT_TIMEOUT_MS = 90000;
 
-interface TurnstileFormProps {
-  ref: RefObject<HTMLFormElement | null>;
-  onFocusCapture: () => void;
-  onPointerDown: () => void;
-  onInput: () => void;
-}
-
 export interface TurnstileWidgetProps {
   ref: RefObject<TurnstileInstance | undefined>;
-  active: boolean;
   onSuccess: (token: string) => void;
   onExpire: () => void;
   onError: () => void;
@@ -32,19 +22,14 @@ interface TokenWaiter {
 
 interface UseTurnstileResult {
   reset: () => void;
-  ensureToken: () => Promise<string | null>;
-  formProps: TurnstileFormProps;
+  ensureToken: (toastId: string | number) => Promise<string | null>;
   widgetProps: TurnstileWidgetProps;
 }
 
 export const useTurnstile = (): UseTurnstileResult => {
-  const formRef = useRef<HTMLFormElement | null>(null);
   const widgetRef = useRef<TurnstileInstance | undefined>(undefined);
   const tokenRef = useRef<string | null>(null);
   const waitersRef = useRef<TokenWaiter[]>([]);
-  const [armed, setArmed] = useState(false);
-
-  const arm = useCallback((): void => setArmed(true), []);
 
   const setToken = useCallback((token: string): void => {
     tokenRef.current = token;
@@ -75,22 +60,23 @@ export const useTurnstile = (): UseTurnstileResult => {
     return timeoutId;
   }, []);
 
-  const ensureToken = useCallback(async (): Promise<string | null> => {
-    if (tokenRef.current) return tokenRef.current;
+  const ensureToken = useCallback(
+    async (toastId: string | number): Promise<string | null> => {
+      if (tokenRef.current) return tokenRef.current;
 
-    setArmed(true);
+      const token = await new Promise<string | null>((resolve) => {
+        waitersRef.current.push({ resolve, timeoutId: startDeadline(resolve, TOKEN_WAIT_TIMEOUT_MS) });
+      });
 
-    const token = await new Promise<string | null>((resolve) => {
-      waitersRef.current.push({ resolve, timeoutId: startDeadline(resolve, TOKEN_WAIT_TIMEOUT_MS) });
-    });
+      if (!token) {
+        toast.error("Could not verify you are human. Please try again.", { id: toastId });
+        reset();
+      }
 
-    if (!token) {
-      toast.error("Could not verify you are human. Please try again.");
-      reset();
-    }
-
-    return token;
-  }, [reset, startDeadline]);
+      return token;
+    },
+    [reset, startDeadline]
+  );
 
   const beginInteractive = useCallback((): void => {
     waitersRef.current = waitersRef.current.map((waiter) => {
@@ -106,35 +92,11 @@ export const useTurnstile = (): UseTurnstileResult => {
     };
   }, []);
 
-  useEffect(() => {
-    if (armed) return;
-
-    const armWhenPrefilled = (): void => {
-      const inputs = Array.from(formRef.current?.querySelectorAll("input") ?? []);
-      if (inputs.some((input) => input.value !== "")) setArmed(true);
-    };
-
-    const pollId = window.setInterval(armWhenPrefilled, PREFILL_POLL_INTERVAL_MS);
-    const stopPollId = window.setTimeout(() => window.clearInterval(pollId), PREFILL_POLL_DURATION_MS);
-
-    return () => {
-      window.clearInterval(pollId);
-      window.clearTimeout(stopPollId);
-    };
-  }, [armed]);
-
   return {
     reset,
     ensureToken,
-    formProps: {
-      ref: formRef,
-      onFocusCapture: arm,
-      onPointerDown: arm,
-      onInput: arm,
-    },
     widgetProps: {
       ref: widgetRef,
-      active: armed,
       onSuccess: setToken,
       onExpire: clearToken,
       onError: clearToken,

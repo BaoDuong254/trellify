@@ -32,10 +32,10 @@ function ForgotPasswordForm() {
   const turnstile = useTurnstile();
 
   const submitForgotPassword = async (data: ForgotPasswordFormData) => {
-    const turnstileToken = await turnstile.ensureToken();
+    const toastId = toast.loading("Sending reset link...");
+    const turnstileToken = await turnstile.ensureToken(toastId);
     if (!turnstileToken) return;
 
-    const toastId = toast.loading("Sending reset link...");
     try {
       await forgotPasswordAPI({ email: data.email, turnstileToken });
       toast.success(
@@ -50,7 +50,7 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(submitForgotPassword)} {...turnstile.formProps}>
+    <form onSubmit={handleSubmit(submitForgotPassword)}>
       <MuiCard sx={authCardSx}>
         <Box
           sx={{

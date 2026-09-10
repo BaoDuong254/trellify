@@ -50,10 +50,10 @@ function LoginForm() {
   const submitLogIn = async (data: LoginFormData) => {
     const { email, password } = data;
 
-    const turnstileToken = await turnstile.ensureToken();
+    const toastId = toast.loading("Logging in...");
+    const turnstileToken = await turnstile.ensureToken(toastId);
     if (!turnstileToken) return;
 
-    const toastId = toast.loading("Logging in...");
     const res = await dispatch(loginUserAPI({ email, password, turnstileToken }));
     if (res.meta.requestStatus === "fulfilled") {
       toast.success("Logged in successfully!", { id: toastId });
@@ -65,7 +65,7 @@ function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(submitLogIn)} {...turnstile.formProps}>
+    <form onSubmit={handleSubmit(submitLogIn)}>
       <MuiCard sx={authCardSx}>
         <Box
           sx={{

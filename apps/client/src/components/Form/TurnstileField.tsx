@@ -6,18 +6,8 @@ import { useState } from "react";
 import envConfig from "src/config/env";
 import type { TurnstileWidgetProps } from "src/hooks/useTurnstile";
 
-function TurnstileField({
-  ref,
-  active,
-  onSuccess,
-  onExpire,
-  onError,
-  onTimeout,
-  onBeforeInteractive,
-}: TurnstileWidgetProps) {
+function TurnstileField({ ref, onSuccess, onExpire, onError, onTimeout, onBeforeInteractive }: TurnstileWidgetProps) {
   const [interactionRequired, setInteractionRequired] = useState(false);
-
-  if (!active) return null;
 
   return (
     <Box
