@@ -36,7 +36,7 @@ function LoginForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormData>();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -47,19 +47,21 @@ function LoginForm() {
 
   const turnstile = useTurnstile();
 
-  const submitLogIn = (data: LoginFormData) => {
+  const submitLogIn = async (data: LoginFormData) => {
     const { email, password } = data;
 
+    const turnstileToken = await turnstile.ensureToken();
+    if (!turnstileToken) return;
+
     const toastId = toast.loading("Logging in...");
-    dispatch(loginUserAPI({ email, password, turnstileToken: turnstile.token! })).then((res) => {
-      if (res.meta.requestStatus === "fulfilled") {
-        toast.success("Logged in successfully!", { id: toastId });
-        navigate("/");
-      } else {
-        toast.dismiss(toastId);
-        turnstile.reset();
-      }
-    });
+    const res = await dispatch(loginUserAPI({ email, password, turnstileToken }));
+    if (res.meta.requestStatus === "fulfilled") {
+      toast.success("Logged in successfully!", { id: toastId });
+      navigate("/");
+    } else {
+      toast.dismiss(toastId);
+      turnstile.reset();
+    }
   };
 
   return (
@@ -164,14 +166,7 @@ function LoginForm() {
             </Link>
           </Box>
         </Box>
-        <TurnstileField
-          key={turnstile.widgetKey}
-          active={turnstile.armed}
-          onSuccess={turnstile.setToken}
-          onExpire={turnstile.clearToken}
-          onError={turnstile.clearToken}
-          onTimeout={turnstile.reset}
-        />
+        <TurnstileField {...turnstile.widgetProps} />
         <CardActions sx={{ padding: "0 1em 1em 1em" }}>
           <Button
             type='submit'
@@ -180,7 +175,7 @@ function LoginForm() {
             size='large'
             fullWidth
             className='interceptor-loading'
-            disabled={!turnstile.token}
+            disabled={isSubmitting}
           >
             Login
           </Button>

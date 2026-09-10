@@ -26,24 +26,27 @@ function ForgotPasswordForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormData>();
 
   const turnstile = useTurnstile();
 
-  const submitForgotPassword = (data: ForgotPasswordFormData) => {
+  const submitForgotPassword = async (data: ForgotPasswordFormData) => {
+    const turnstileToken = await turnstile.ensureToken();
+    if (!turnstileToken) return;
+
     const toastId = toast.loading("Sending reset link...");
-    forgotPasswordAPI({ email: data.email, turnstileToken: turnstile.token! })
-      .then(() => {
-        toast.success(
-          "If the email is registered, a password reset link has been sent. Please check your inbox and spam folder.",
-          { id: toastId }
-        );
-      })
-      .catch(() => {
-        toast.dismiss(toastId);
-      })
-      .finally(turnstile.reset);
+    try {
+      await forgotPasswordAPI({ email: data.email, turnstileToken });
+      toast.success(
+        "If the email is registered, a password reset link has been sent. Please check your inbox and spam folder.",
+        { id: toastId }
+      );
+    } catch {
+      toast.dismiss(toastId);
+    } finally {
+      turnstile.reset();
+    }
   };
 
   return (
@@ -95,14 +98,7 @@ function ForgotPasswordForm() {
             <FieldErrorAlert errors={errors} fieldName='email' />
           </Box>
         </Box>
-        <TurnstileField
-          key={turnstile.widgetKey}
-          active={turnstile.armed}
-          onSuccess={turnstile.setToken}
-          onExpire={turnstile.clearToken}
-          onError={turnstile.clearToken}
-          onTimeout={turnstile.reset}
-        />
+        <TurnstileField {...turnstile.widgetProps} />
         <CardActions sx={{ padding: "0 1em 1em 1em" }}>
           <Button
             type='submit'
@@ -111,7 +107,7 @@ function ForgotPasswordForm() {
             size='large'
             fullWidth
             className='interceptor-loading'
-            disabled={!turnstile.token}
+            disabled={isSubmitting}
           >
             Send Password Reset Link
           </Button>

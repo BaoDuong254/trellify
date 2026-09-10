@@ -34,7 +34,7 @@ function RegisterForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     getValues,
   } = useForm<RegisterFormData>();
 
@@ -42,19 +42,21 @@ function RegisterForm() {
 
   const turnstile = useTurnstile();
 
-  const submitRegister = (data: RegisterFormData) => {
+  const submitRegister = async (data: RegisterFormData) => {
     const { email, password } = data;
+
+    const turnstileToken = await turnstile.ensureToken();
+    if (!turnstileToken) return;
+
     const toastId = toast.loading("Registering is in progress...");
-    registerUserAPI({ email, password, turnstileToken: turnstile.token! })
-      .then((user) => {
-        navigate(`/login?registeredEmail=${user.email}`);
-      })
-      .catch(() => {
-        turnstile.reset();
-      })
-      .finally(() => {
-        toast.dismiss(toastId);
-      });
+    try {
+      const user = await registerUserAPI({ email, password, turnstileToken });
+      navigate(`/login?registeredEmail=${user.email}`);
+    } catch {
+      turnstile.reset();
+    } finally {
+      toast.dismiss(toastId);
+    }
   };
 
   return (
@@ -139,14 +141,7 @@ function RegisterForm() {
             <FieldErrorAlert errors={errors} fieldName={"passwordConfirmation"} />
           </Box>
         </Box>
-        <TurnstileField
-          key={turnstile.widgetKey}
-          active={turnstile.armed}
-          onSuccess={turnstile.setToken}
-          onExpire={turnstile.clearToken}
-          onError={turnstile.clearToken}
-          onTimeout={turnstile.reset}
-        />
+        <TurnstileField {...turnstile.widgetProps} />
         <CardActions sx={{ padding: "0 1em 1em 1em" }}>
           <Button
             type='submit'
@@ -155,7 +150,7 @@ function RegisterForm() {
             size='large'
             fullWidth
             className='interceptor-loading'
-            disabled={!turnstile.token}
+            disabled={isSubmitting}
           >
             Register
           </Button>
