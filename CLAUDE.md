@@ -188,7 +188,7 @@ Both entrypoints register `async-exit-hook` shutdown sequences (metrics server/q
 
 ### Observability
 
-Both the API server and the worker expose a Prometheus endpoint on a **second HTTP server** at `METRICS_PORT` (9464), separate from the app port — `startMetricsServer()` in `src/providers/metrics.provider.ts`. All custom metrics are declared in that one file against a single `Registry`; add new ones there and export them rather than creating a registry elsewhere. `src/middlewares/metrics.middleware.ts` records latency for every request, including ones that never match a route.
+Both the API server and the worker expose a Prometheus endpoint on a **second HTTP server** at `METRICS_PORT` (9464), separate from the app port — `startMetricsServer()` in `src/providers/metrics.provider.ts`. In production each runs in its own pod, so both keep 9464; locally `pnpm start:dev` runs them on one host, so `start:worker:dev` sets `METRICS_PORT=9465` for the worker (the same trick `docker-compose.loadtest.multi.yml` uses). A metrics server that cannot bind logs an error and the process keeps serving - the worker's `/healthz` server is deliberately left fatal, because the k8s probes depend on it. All custom metrics are declared in that one file against a single `Registry`; add new ones there and export them rather than creating a registry elsewhere. `src/middlewares/metrics.middleware.ts` records latency for every request, including ones that never match a route.
 
 ## Frontend Architecture
 

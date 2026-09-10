@@ -117,6 +117,10 @@ export const startMetricsServer = (port: number, label: string): http.Server => 
     })();
   });
 
+  server.on("error", (error: Error) => {
+    logger.error(`${label} metrics could not listen on :${port}, metrics unavailable: ${error.message}`);
+  });
+
   server.listen(port, () => {
     logger.info(`${label} metrics listening on :${port}/metrics`);
   });
