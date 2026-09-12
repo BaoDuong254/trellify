@@ -11,7 +11,7 @@ pnpm install
 # Development — runs client (5173), API server (3000) AND the BullMQ worker in parallel
 pnpm start:dev
 
-# Run a single workspace (`fe`/`be`/`shared`/`ui` are aliases for `pnpm --filter=<pkg>`)
+# Run a single workspace (`fe`/`be`/`shared`/`e2e` are aliases for `pnpm --filter=<pkg>`)
 pnpm fe start:dev            # client only
 pnpm be start:dev            # API server only (no worker)
 pnpm be start:worker:dev     # worker only
@@ -39,9 +39,21 @@ pnpm start:prod
 pnpm cz
 ```
 
-There is no unit/integration test suite and no test step to add to. Correctness is exercised three ways instead: the Postman collection (`postman/collections/Trellify.postman_collection.json`), the k6 load tests (below), and CI.
+### Tests
 
-CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → CSP hash check → pkg:build → apps:build → SonarCloud. There is no `typecheck` step — `apps:build` (`tsc -b` / `tsc --project tsconfig.build.json`) is what catches type errors in CI.
+```bash
+pnpm test                    # every Vitest suite (shared, server unit + integration, client) with coverage
+pnpm shared test             # shared Zod schemas only
+pnpm be test:unit            # server unit tests — no Docker needed
+pnpm be test:integration     # server integration tests — needs Docker (Testcontainers starts mongo:8.0 + redis:8-alpine)
+pnpm fe test                 # client (jsdom + Testing Library + MSW)
+
+pnpm e2e:up                  # Mongo + Redis for Playwright (docker-compose.e2e.yml, ports 27019/6381)
+pnpm test:e2e                # Playwright; starts its own API (3100) and Vite (5174) from e2e/e2e.env
+pnpm e2e:down
+```
+
+CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → CSP hash check → pkg:build → typecheck → apps:build → `pnpm test` → SonarCloud, and Playwright in a separate `e2e` job. The client's `typecheck` is `tsc -b`, not `tsc --noEmit`: its root `tsconfig.json` is solution-style (`"files": []` plus references to `tsconfig.app.json`/`tsconfig.node.json`), and plain `tsc --noEmit` only reads that root, checks zero files and exits 0. Only build mode follows the references. The Postman collection (`postman/collections/Trellify.postman_collection.json`) and the k6 load tests (below) remain the manual and performance checks.
 
 ### Load testing (k6)
 
@@ -66,7 +78,6 @@ pnpm workspaces + Turbo:
 - `apps/client` — React 19 + Vite + SWC frontend
 - `apps/server` — Express 5 + MongoDB + Socket.io + BullMQ backend (two entrypoints: `src/index.ts`, `src/worker.ts`)
 - `packages/shared` — Zod schemas, socket event constants, logger (`@workspace/shared`)
-- `packages/ui` — shadcn/ui + Tailwind primitives (`@workspace/ui`). Scaffolded but **not currently consumed by the client** — the client is MUI-based. Don't reach for it when building client UI unless explicitly asked.
 - `packages/eslint` / `packages/typescript` — shared configs
 - `infra/` — Kubernetes manifests reconciled by ArgoCD (see Deployment)
 - `k6/` — load-test scenarios, profiles, and helpers (excluded from knip)
@@ -210,6 +221,19 @@ Drag-and-drop uses `@dnd-kit`; Markdown editing uses `@uiw/react-md-editor`; bot
 
 `apps/client/nginx/security-headers.conf` pins a `script-src` allowlist of sha256 hashes for the inline `<script>` blocks in `apps/client/index.html`. Editing any inline script without updating those hashes ships a CSP that blocks the script and breaks the page — `scripts/check-csp-hashes.sh` (pre-commit and CI) fails with the exact hashes to paste in.
 
+## Testing
+
+Vitest everywhere except E2E. Specs are `*.spec.ts(x)`; both `tsconfig.build.json` files exclude `**/*spec.ts` and `vitest.config.ts`, so nothing test-related reaches `dist/`.
+
+- **Unit tests sit next to the file they cover** inside `src/` (`board.broadcast.ts` ↔ `board.broadcast.spec.ts`). Do not mirror `src/` into a separate tree.
+- **Server integration tests live in `apps/server/test/integration/`**, grouped by feature or endpoint (`api/`, `providers/`, `utils/`), and import helpers through the `test/*` alias. `setup/global-setup.ts` starts the containers once and hands their URLs to workers through `project.provide`; `setup/environment.ts` writes them into `process.env` **before** anything imports `src/config/environment`; `setup/lifecycle.ts` mocks Brevo, Cloudinary and Turnstile, empties every collection plus `FLUSHALL` before each test, and closes the BullMQ queue, Redis and Mongo after each file. Files run serially (`fileParallelism: false`) because they share one Mongo and one Redis.
+- **Use real Redis, never a mock, for the cache/bloom/rate-limit paths.** They depend on Lua `EVAL`, `TYPE` and `BF.*`, which no in-memory fake implements faithfully. `global-setup.ts` fails fast if the image comes up without RedisBloom.
+- **`NODE_ENV=test` makes `src/config/environment.ts` skip `.env` entirely.** `dotenv` never overwrites a variable that is already set, so loading `.env` under test would fill every variable the test did not set with real values (Atlas URI, Brevo key, Cloudinary). Each Vitest config and `e2e/e2e.env` supplies the full variable set itself.
+- `src/app.ts` exports `createApp()`, the Express app with no `listen`, sockets or metrics server; supertest drives it directly. `src/index.ts` wraps it for production.
+- **Client**: `src/test/setup.ts` registers jest-dom and an MSW server that fails on any unhandled request; `src/test/render.tsx` renders with the real slice reducers, the app theme and a `MemoryRouter`. Mock network at the MSW layer, not by stubbing axios, so the interceptors in `http.ts` stay under test.
+- **E2E (`e2e/`)** is its own workspace. Playwright starts `webServer` before `globalSetup`, so it cannot use Testcontainers and uses `docker-compose.e2e.yml` instead. It runs on ports 3100/5174/9474 so it can never reuse a running dev server. The `setup` project seeds an active user straight into Mongo, logs in through the real form with Cloudflare's always-pass Turnstile test keys (which needs network access to Cloudflare), and saves `storageState` for the other projects. E2E files are `*.e2e.ts`, not `*.spec.ts`, which keeps them out of the Vitest lint rules.
+- knip: production files are the `!`-suffixed `project` globs in `knip.json`; test-only folders (`apps/server/test`, `apps/client/src/test`, `e2e`) are deliberately left unsuffixed so `knip --production` ignores them.
+
 ## Deployment
 
 Production is a single-node k3s cluster; every manifest lives in `infra/` and **ArgoCD reconciles the cluster to `main`**. Nothing is applied by hand — changing production means committing to `infra/`, and a `kubectl` change is reverted by `selfHeal` within seconds. Rollback is `git revert` of the bump commit.
@@ -226,7 +250,7 @@ Pushing to `main` triggers `.github/workflows/build-k8s-images.yml`: it builds b
 
 **Type safety** — no `any` (use `unknown`); explicit return types everywhere; no `as` assertions unless unavoidable.
 
-**Validation** — every Zod schema lives in `packages/shared/src/schemas/`; validate at both the route level (middleware) and the model level (before DB writes). Route middleware is built with `validateRequest({ params, body })` (`src/utils/validate-request.ts`), never hand-rolled `try/parseAsync/catch` blocks — it checks params before body and maps any failure to 422. A route that takes an id in `request.params` validates it too, not just the body — an unvalidated id reaches `new ObjectId()` and turns a 404 into a 500.
+**Validation** — every Zod schema lives in `packages/shared/src/schemas/`; validate at both the route level (middleware) and the model level (before DB writes). Route middleware is built with `validateRequest({ params, body })` (`src/utils/validate-request.ts`), never hand-rolled `try/parseAsync/catch` blocks — it checks params before body, maps any failure to 422, and **replaces `request.body` with the parsed value**, so a field outside the schema never reaches a controller. That write-back is the only thing standing between a request and `$set`: the models' `INVALID_UPDATE_FIELDS` denylists are narrow, and before the write-back existed any board member could `$set` `ownerIds`/`memberIds`/`_destroy`, and any user could `$set` their own `role`. Two rules follow. First, an `UPDATE_*_SCHEMA` is an explicit allowlist of what the client may change — never `COLLECTION_SCHEMA.partial()`. Second, it must not carry defaults: Zod 4 still applies `.default()` inside `.partial()`, so a title-only update would reset `columnOrderIds`/`cardOrderIds`/`comments` to `[]`. Reuse a collection field with `.shape.<field>.unwrap()`. Models take the separate `*PatchType` (`Partial<collection>`) for server-side writes. `test/integration/api/mass-assignment.spec.ts` pins both rules. A route that takes an id in `request.params` validates it too, not just the body — an unvalidated id reaches `new ObjectId()` and turns a 404 into a 500.
 
 **Dead code** — knip runs on pre-commit and in CI. An exported symbol nobody imports, or a dependency nobody uses, will fail the build; delete it or wire it up rather than leaving it dangling.
 

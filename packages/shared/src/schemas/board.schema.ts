@@ -40,8 +40,9 @@ export const UPDATE_BOARD_SCHEMA = BOARD_COLLECTION_SCHEMA.pick({
   title: true,
   description: true,
   type: true,
-  columnOrderIds: true,
-}).partial();
+})
+  .extend({ columnOrderIds: BOARD_COLLECTION_SCHEMA.shape.columnOrderIds.unwrap() })
+  .partial();
 
 export const MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA = z.object({
   currentCardId: z
@@ -71,6 +72,7 @@ export const REMOVE_BOARD_MEMBER_PARAMS_SCHEMA = z.object({
 });
 
 export type BoardCollectionType = z.infer<typeof BOARD_COLLECTION_SCHEMA>;
+export type BoardPatchType = Partial<BoardCollectionType>;
 export type CreateNewBoardType = z.infer<typeof CREATE_NEW_BOARD_SCHEMA>;
 export type UpdateBoardType = z.infer<typeof UPDATE_BOARD_SCHEMA>;
 export type MoveCardToDifferentColumnType = z.infer<typeof MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA>;

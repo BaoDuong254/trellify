@@ -1,0 +1,32 @@
+{
+  "name": "e2e",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "format": "prettier --check . --ignore-unknown --ignore-path ../.prettierignore",
+    "format:fix": "prettier --write . --ignore-unknown --ignore-path ../.prettierignore",
+    "preinstall": "pnpm dlx only-allow pnpm",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "@workspace/eslint": "workspace:*",
+    "@workspace/typescript": "workspace:*",
+    "bcryptjs": "catalog:",
+    "dotenv": "catalog:",
+    "eslint": "catalog:",
+    "mongodb": "catalog:",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": "24.12.0",
+    "pnpm": "11.5.2"
+  }
+}

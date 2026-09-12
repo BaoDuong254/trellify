@@ -1,22 +1,19 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import reactEslint from "@workspace/eslint/react";
+import nodeEslint from "@workspace/eslint/node";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
-  ...reactEslint,
+  ...nodeEslint,
   {
     languageOptions: {
       parserOptions: {
         projectService: true,
         tsconfigRootDir: __dirname,
       },
-    },
-    rules: {
-      "react-refresh/only-export-components": ["off", { allowConstantExport: true }],
     },
   },
 ];

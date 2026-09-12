@@ -21,12 +21,12 @@
   "devDependencies": {
     "@eslint-react/eslint-plugin": "catalog:",
     "@eslint/js": "catalog:",
+    "@vitest/eslint-plugin": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-eslint-plugin": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-jest": "catalog:",
     "eslint-plugin-jsx-a11y": "catalog:",
     "eslint-plugin-n": "catalog:",
     "eslint-plugin-promise": "catalog:",

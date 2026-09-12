@@ -50,16 +50,16 @@ const INCOMING_CARD_MEMBER_INFO_SCHEMA = z.object({
   action: z.enum(["ADD", "REMOVE"], { error: "Error.ActionMustBeEitherAddOrRemove" }),
 });
 
-export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.partial().extend({
-  commentToAdd: z
-    .object({
+export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({ title: true, description: true })
+  .extend({
+    commentToAdd: z.object({
       userAvatar: z.url({ message: "Error.UserAvatarMustBeURL" }).nullable().default(null),
       userDisplayName: z.string({ error: "Error.UserDisplayNameMustBeString" }),
       content: z.string({ error: "Error.CommentContentMustBeString" }),
-    })
-    .optional(),
-  incomingMemberInfo: INCOMING_CARD_MEMBER_INFO_SCHEMA.optional(),
-});
+    }),
+    incomingMemberInfo: INCOMING_CARD_MEMBER_INFO_SCHEMA,
+  })
+  .partial();
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CARD_COMMENT_SCHEMA = z.object({
@@ -75,6 +75,7 @@ export const CARD_ID_PARAMS_SCHEMA = z.object({
   id: z.string({ error: "Error.CardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
 });
 
+export type CardPatchType = Partial<z.infer<typeof CARD_COLLECTION_SCHEMA>>;
 export type CreateNewCardType = z.infer<typeof CREATE_NEW_CARD_SCHEMA>;
 export type UpdateCardType = z.infer<typeof UPDATE_CARD_SCHEMA>;
 export type CardCommentType = z.infer<typeof CARD_COMMENT_SCHEMA>;

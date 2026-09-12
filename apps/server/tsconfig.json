@@ -4,6 +4,7 @@
     "jsx": "react",
     "paths": {
       "src/*": ["./src/*"],
+      "test/*": ["./test/*"],
       "generated/*": ["./generated/*"],
       "@workspace/shared/*": ["../../packages/shared/src/*"]
     }

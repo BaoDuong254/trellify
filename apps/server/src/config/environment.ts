@@ -8,10 +8,11 @@ import z from "zod";
 import logger from "@workspace/shared/utils/logger";
 
 const environmentPath = path.resolve(process.cwd(), ".env");
+const shouldReadEnvironmentFile = process.env.NODE_ENV !== "test";
 
-if (fs.existsSync(environmentPath)) {
+if (shouldReadEnvironmentFile && fs.existsSync(environmentPath)) {
   config({ path: environmentPath });
-} else if (process.env.NODE_ENV !== "production") {
+} else if (shouldReadEnvironmentFile && process.env.NODE_ENV !== "production") {
   logger.error(chalk.red("Can not find .env file at path:"), chalk.yellow(environmentPath));
   throw new Error(".env file not found");
 }

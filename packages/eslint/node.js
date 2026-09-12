@@ -1,4 +1,3 @@
-import jestPlugin from "eslint-plugin-jest";
 import nodePlugin from "eslint-plugin-n";
 import pluginPromise from "eslint-plugin-promise";
 import pluginSecurity from "eslint-plugin-security";
@@ -6,6 +5,7 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 
 import baseConfig from "./base.js";
+import vitestConfig from "./vitest.js";
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
@@ -14,15 +14,10 @@ export default [
   eslintPluginUnicorn.configs.recommended,
   pluginSecurity.configs.recommended,
   nodePlugin.configs["flat/recommended-script"],
+  ...vitestConfig,
   {
-    plugins: {
-      jest: jestPlugin,
-    },
     languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.jest,
-      },
+      globals: globals.node,
     },
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",

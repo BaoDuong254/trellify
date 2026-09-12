@@ -5,6 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
 import baseConfig from "./base.js";
+import vitestConfig from "./vitest.js";
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
@@ -13,6 +14,7 @@ export default [
   reactHooks.configs.flat.recommended,
   reactRefresh.configs.recommended,
   jsxA11y.flatConfigs.recommended,
+  ...vitestConfig,
   {
     languageOptions: {
       globals: globals.browser,

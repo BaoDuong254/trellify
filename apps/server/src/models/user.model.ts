@@ -2,8 +2,8 @@ import { ObjectId } from "mongodb";
 
 import {
   USER_COLLECTION_SCHEMA,
+  UserPatchType,
   UserRegistrationServiceType,
-  UserUpdateType,
 } from "@workspace/shared/schemas/user.schema";
 
 import { GET_DB } from "src/config/database";
@@ -49,7 +49,7 @@ const hardDeleteById = async (userId: string): Promise<void> => {
     .deleteOne({ _id: new ObjectId(userId) });
 };
 
-const update = async (userId: string, updateData: UserUpdateType) => {
+const update = async (userId: string, updateData: UserPatchType) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
       delete updateData[field];

@@ -2,8 +2,8 @@ import { Document, FindCursor, ObjectId, UpdateFilter } from "mongodb";
 
 import {
   COLUMN_COLLECTION_SCHEMA,
+  ColumnPatchType,
   CreateNewColumnType,
-  UpdateColumnType,
 } from "@workspace/shared/schemas/column.schema";
 
 import { GET_DB } from "src/config/database";
@@ -48,7 +48,7 @@ const pushCardOrderIds = async (card) => {
     );
 };
 
-const update = async (columnId: string, updateData: UpdateColumnType) => {
+const update = async (columnId: string, updateData: ColumnPatchType) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
       delete updateData[field];

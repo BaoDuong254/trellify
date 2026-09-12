@@ -17,6 +17,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "pkg:build": "pnpm clean && tsc --project tsconfig.build.json && tsc-alias --project tsconfig.build.json",
+    "test": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -25,12 +26,14 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "eslint": "catalog:",
     "rimraf": "catalog:",
     "tsc-alias": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "packageManager": "pnpm@11.5.2",
   "engines": {

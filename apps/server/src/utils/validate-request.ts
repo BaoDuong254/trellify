@@ -15,7 +15,7 @@ export const validateRequest =
   async (request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
     try {
       if (schemas.params) await schemas.params.parseAsync(request.params);
-      if (schemas.body) await schemas.body.parseAsync(request.body);
+      if (schemas.body) request.body = await schemas.body.parseAsync(request.body);
       next();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

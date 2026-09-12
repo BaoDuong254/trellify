@@ -22,15 +22,14 @@ export const CREATE_NEW_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({
   boardId: true,
 });
 
-export const UPDATE_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({
-  title: true,
-  cardOrderIds: true,
-  updatedAt: true,
-}).partial();
+export const UPDATE_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({ title: true })
+  .extend({ cardOrderIds: COLUMN_COLLECTION_SCHEMA.shape.cardOrderIds.unwrap() })
+  .partial();
 
 export const COLUMN_ID_PARAMS_SCHEMA = z.object({
   id: z.string({ error: "Error.ColumnIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
 });
 
+export type ColumnPatchType = Partial<z.infer<typeof COLUMN_COLLECTION_SCHEMA>>;
 export type CreateNewColumnType = z.infer<typeof CREATE_NEW_COLUMN_SCHEMA>;
 export type UpdateColumnType = z.infer<typeof UPDATE_COLUMN_SCHEMA>;

@@ -20,6 +20,9 @@ __MACOSX/
 # Tests
 coverage
 /.nyc_output
+playwright-report/
+test-results/
+e2e/.auth/
 
 # IDEs and editors
 /.idea

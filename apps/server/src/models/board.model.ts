@@ -1,6 +1,6 @@
 import { Document, FindCursor, ObjectId, UpdateFilter } from "mongodb";
 
-import { BOARD_COLLECTION_SCHEMA, CreateNewBoardType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
+import { BOARD_COLLECTION_SCHEMA, BoardPatchType, CreateNewBoardType } from "@workspace/shared/schemas/board.schema";
 
 import { GET_DB } from "src/config/database";
 import { cardModel } from "src/models/card.model";
@@ -113,7 +113,7 @@ const pullColumnOrderIds = async (column) => {
   return result;
 };
 
-const update = async (boardId: string, updateData: UpdateBoardType) => {
+const update = async (boardId: string, updateData: BoardPatchType) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
       delete updateData[field];

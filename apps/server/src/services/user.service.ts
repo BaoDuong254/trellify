@@ -167,8 +167,10 @@ const update = async (userId: string, requestBody: UserUpdateType, userAvatarFil
       avatar: uploadResult.secure_url,
     });
     updatedUser = result ?? {};
+  } else if (requestBody.displayName === undefined) {
+    updatedUser = existUser;
   } else {
-    updatedUser = (await userModel.update(existUser._id.toString(), requestBody)) as unknown as UserUpdateType;
+    updatedUser = await userModel.update(existUser._id.toString(), { displayName: requestBody.displayName });
   }
 
   return pickUser(updatedUser);

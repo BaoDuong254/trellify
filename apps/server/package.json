@@ -19,6 +19,9 @@
     "start:prod": "cross-env NODE_ENV=production node dist/index",
     "start:worker:dev": "cross-env NODE_ENV=development METRICS_PORT=9465 pnpm exec nodemon --exec tsx ./src/worker.ts",
     "start:worker:prod": "cross-env NODE_ENV=production node dist/worker",
+    "test": "vitest run --coverage",
+    "test:integration": "vitest run --project integration",
+    "test:unit": "vitest run --project unit",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -50,6 +53,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@testcontainers/mongodb": "catalog:",
     "@types/async-exit-hook": "catalog:",
     "@types/cookie-parser": "catalog:",
     "@types/cors": "catalog:",
@@ -61,6 +65,8 @@
     "@types/multer": "catalog:",
     "@types/node": "catalog:",
     "@types/streamifier": "catalog:",
+    "@types/supertest": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "copyfiles": "catalog:",
@@ -68,9 +74,12 @@
     "eslint": "catalog:",
     "nodemon": "catalog:",
     "rimraf": "catalog:",
+    "supertest": "catalog:",
+    "testcontainers": "catalog:",
     "tsc-alias": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "packageManager": "pnpm@11.5.2",
   "engines": {

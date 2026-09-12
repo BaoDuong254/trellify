@@ -43,6 +43,14 @@
     },
     "typecheck": {
       "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "outputs": ["coverage/**"],
+      "passThroughEnv": ["CI", "DOCKER_HOST", "TESTCONTAINERS_*"]
+    },
+    "test:e2e": {
+      "cache": false,
+      "passThroughEnv": ["CI", "PLAYWRIGHT_*"]
     }
   }
 }

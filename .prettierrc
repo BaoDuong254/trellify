@@ -11,11 +11,12 @@
   "bracketSpacing": true,
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
-  "importOrder": ["<BUILTIN_MODULES>", "<THIRD_PARTY_MODULES>", "^@workspace/(.*)$", "^(src|generated)/(.*)$", "^[./]"],
-  "plugins": [
-    "prettier-plugin-tailwindcss",
-    "prettier-plugin-prisma",
-    "prettier-plugin-packagejson",
-    "@trivago/prettier-plugin-sort-imports"
-  ]
+  "importOrder": [
+    "<BUILTIN_MODULES>",
+    "<THIRD_PARTY_MODULES>",
+    "^@workspace/(.*)$",
+    "^(src|generated|test)/(.*)$",
+    "^[./]"
+  ],
+  "plugins": ["prettier-plugin-prisma", "prettier-plugin-packagejson", "@trivago/prettier-plugin-sort-imports"]
 }

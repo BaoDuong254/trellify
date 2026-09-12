@@ -104,13 +104,15 @@ Use `"devDependencies"` instead for build-time / tooling packages.
 pnpm install
 ```
 
-**Adding an internal workspace package** (e.g. `@workspace/shared`, `@workspace/ui`) — these are resolved locally, so they do not need a catalog entry. Just reference them directly in `package.json`:
+**Adding an internal workspace package** (e.g. `@workspace/shared`, `@workspace/eslint`) — these are resolved locally, so they do not need a catalog entry. Just reference them directly in `package.json`:
 
 ```json
 {
   "dependencies": {
-    "@workspace/shared": "workspace:*",
-    "@workspace/ui": "workspace:*"
+    "@workspace/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*"
   }
 }
 ```

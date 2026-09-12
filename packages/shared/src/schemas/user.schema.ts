@@ -42,14 +42,16 @@ const USER_REGISTRATION_SERVICE_SCHEMA = USER_COLLECTION_SCHEMA.pick({
 export const USER_VERIFICATION_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true }).extend({
   token: z.string({ error: "Error.VerifyTokenMustBeString" }),
 });
-export const USER_UPDATE_SCHEMA = USER_COLLECTION_SCHEMA.extend({
-  current_password: z
-    .string({ error: "Error.CurrentPasswordMustBeString" })
-    .regex(PASSWORD_RULE, { error: `current_password: ${PASSWORD_RULE_MESSAGE}` }),
-  new_password: z
-    .string({ error: "Error.NewPasswordMustBeString" })
-    .regex(PASSWORD_RULE, { error: `new_password: ${PASSWORD_RULE_MESSAGE}` }),
-}).partial();
+export const USER_UPDATE_SCHEMA = USER_COLLECTION_SCHEMA.pick({ displayName: true })
+  .extend({
+    current_password: z
+      .string({ error: "Error.CurrentPasswordMustBeString" })
+      .regex(PASSWORD_RULE, { error: `current_password: ${PASSWORD_RULE_MESSAGE}` }),
+    new_password: z
+      .string({ error: "Error.NewPasswordMustBeString" })
+      .regex(PASSWORD_RULE, { error: `new_password: ${PASSWORD_RULE_MESSAGE}` }),
+  })
+  .partial();
 
 export const USER_FORGOT_PASSWORD_SCHEMA = USER_COLLECTION_SCHEMA.pick({ email: true });
 
@@ -61,6 +63,7 @@ export const USER_RESET_PASSWORD_SCHEMA = z.object({
 });
 
 export type UserCollectionType = z.infer<typeof USER_COLLECTION_SCHEMA>;
+export type UserPatchType = Partial<UserCollectionType>;
 export type PublicUserType = Pick<
   UserCollectionType,
   "email" | "username" | "displayName" | "avatar" | "role" | "isActive" | "createdAt" | "updatedAt"

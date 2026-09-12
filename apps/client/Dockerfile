@@ -15,7 +15,6 @@ COPY package.json pnpm-lock.yaml ./
 
 # Copy all package.json files for workspace resolution
 COPY packages/shared/package.json ./packages/shared/
-COPY packages/ui/package.json ./packages/ui/
 COPY packages/eslint/package.json ./packages/eslint/
 COPY packages/typescript/package.json ./packages/typescript/
 COPY apps/client/package.json ./apps/client/
@@ -28,11 +27,9 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy shared packages source code
 COPY packages/shared ./packages/shared
-COPY packages/ui ./packages/ui
 
 # Build shared packages first
 RUN pnpm --filter=@workspace/shared run pkg:build || echo "No build script for shared"
-RUN pnpm --filter=@workspace/ui run pkg:build || echo "No build script for ui"
 
 # Copy client app configuration files
 COPY apps/client/tsconfig*.json ./apps/client/

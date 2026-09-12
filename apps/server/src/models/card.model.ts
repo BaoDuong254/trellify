@@ -3,9 +3,9 @@ import { Document, FindCursor, ObjectId, UpdateFilter } from "mongodb";
 import {
   CARD_COLLECTION_SCHEMA,
   CardCommentType,
+  CardPatchType,
   CreateNewCardType,
   IncomingCardMemberInfoType,
-  UpdateCardType,
 } from "@workspace/shared/schemas/card.schema";
 import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 
@@ -42,12 +42,7 @@ const findOneById = async (id: ObjectId) => {
   return card;
 };
 
-const update = async (
-  cardId: string,
-  updateData: UpdateCardType & {
-    columnId?: string;
-  }
-) => {
+const update = async (cardId: string, updateData: CardPatchType) => {
   for (const field of Object.keys(updateData)) {
     if (INVALID_UPDATE_FIELDS.has(field)) {
       delete updateData[field];

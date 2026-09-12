@@ -9,7 +9,18 @@ import tseslint from "typescript-eslint";
 /** @type {import("eslint").Linter.Config[]} */
 export default [
   {
-    ignores: ["**/eslint.config.mjs", "**/dist", "**/node_modules", "**/generated", "**/coverage", "**/vite.config.ts"],
+    ignores: [
+      "**/eslint.config.mjs",
+      "**/dist",
+      "**/node_modules",
+      "**/generated",
+      "**/coverage",
+      "**/vite.config.ts",
+      "**/vitest.config.ts",
+      "**/playwright.config.ts",
+      "**/playwright-report",
+      "**/test-results",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

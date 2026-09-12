@@ -13,7 +13,8 @@
     "lint:fix": "eslint . --fix",
     "start:dev": "cross-env NODE_ENV=development vite --host",
     "start:prod": "cross-env NODE_ENV=production vite preview --host",
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run --coverage",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@dnd-kit/core": "catalog:",
@@ -44,20 +45,28 @@
     "sonner": "catalog:"
   },
   "devDependencies": {
+    "@testing-library/dom": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
     "@types/randomcolor": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "@workspace/eslint": "workspace:*",
     "@workspace/typescript": "workspace:*",
     "cross-env": "catalog:",
     "eslint": "catalog:",
+    "jsdom": "catalog:",
+    "msw": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-svgr": "catalog:"
+    "vite-plugin-svgr": "catalog:",
+    "vitest": "catalog:"
   },
   "packageManager": "pnpm@11.5.2",
   "engines": {
