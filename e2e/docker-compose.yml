@@ -2,7 +2,7 @@ name: trellify-e2e
 
 services:
   mongo:
-    image: mongo:8.0
+    image: mongo:8.2
     ports:
       - "27019:27017"
     command: ["--quiet", "--logpath", "/dev/null"]
