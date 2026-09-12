@@ -48,7 +48,7 @@ pnpm be test:unit            # server unit tests — no Docker needed
 pnpm be test:integration     # server integration tests — needs Docker (Testcontainers starts mongo:8.0 + redis:8-alpine)
 pnpm fe test                 # client (jsdom + Testing Library + MSW)
 
-pnpm e2e:up                  # Mongo + Redis for Playwright (docker-compose.e2e.yml, ports 27019/6381)
+pnpm e2e:up                  # Mongo + Redis for Playwright (e2e/docker-compose.yml, ports 27019/6381)
 pnpm test:e2e                # Playwright; starts its own API (3100) and Vite (5174) from e2e/e2e.env
 pnpm e2e:down
 ```
@@ -199,7 +199,7 @@ Both entrypoints register `async-exit-hook` shutdown sequences (metrics server/q
 
 ### Observability
 
-Both the API server and the worker expose a Prometheus endpoint on a **second HTTP server** at `METRICS_PORT` (9464), separate from the app port — `startMetricsServer()` in `src/providers/metrics.provider.ts`. In production each runs in its own pod, so both keep 9464; locally `pnpm start:dev` runs them on one host, so `start:worker:dev` sets `METRICS_PORT=9465` for the worker (the same trick `docker-compose.loadtest.multi.yml` uses). A metrics server that cannot bind logs an error and the process keeps serving - the worker's `/healthz` server is deliberately left fatal, because the k8s probes depend on it. All custom metrics are declared in that one file against a single `Registry`; add new ones there and export them rather than creating a registry elsewhere. `src/middlewares/metrics.middleware.ts` records latency for every request, including ones that never match a route.
+Both the API server and the worker expose a Prometheus endpoint on a **second HTTP server** at `METRICS_PORT` (9464), separate from the app port — `startMetricsServer()` in `src/providers/metrics.provider.ts`. In production each runs in its own pod, so both keep 9464; locally `pnpm start:dev` runs them on one host, so `start:worker:dev` sets `METRICS_PORT=9465` for the worker (the same trick `k6/docker-compose.multi.yml` uses). A metrics server that cannot bind logs an error and the process keeps serving - the worker's `/healthz` server is deliberately left fatal, because the k8s probes depend on it. All custom metrics are declared in that one file against a single `Registry`; add new ones there and export them rather than creating a registry elsewhere. `src/middlewares/metrics.middleware.ts` records latency for every request, including ones that never match a route.
 
 ## Frontend Architecture
 
@@ -231,7 +231,7 @@ Vitest everywhere except E2E. Specs are `*.spec.ts(x)`; both `tsconfig.build.jso
 - **`NODE_ENV=test` makes `src/config/environment.ts` skip `.env` entirely.** `dotenv` never overwrites a variable that is already set, so loading `.env` under test would fill every variable the test did not set with real values (Atlas URI, Brevo key, Cloudinary). Each Vitest config and `e2e/e2e.env` supplies the full variable set itself.
 - `src/app.ts` exports `createApp()`, the Express app with no `listen`, sockets or metrics server; supertest drives it directly. `src/index.ts` wraps it for production.
 - **Client**: `src/test/setup.ts` registers jest-dom and an MSW server that fails on any unhandled request; `src/test/render.tsx` renders with the real slice reducers, the app theme and a `MemoryRouter`. Mock network at the MSW layer, not by stubbing axios, so the interceptors in `http.ts` stay under test.
-- **E2E (`e2e/`)** is its own workspace. Playwright starts `webServer` before `globalSetup`, so it cannot use Testcontainers and uses `docker-compose.e2e.yml` instead. It runs on ports 3100/5174/9474 so it can never reuse a running dev server. The `setup` project seeds an active user straight into Mongo, logs in through the real form with Cloudflare's always-pass Turnstile test keys (which needs network access to Cloudflare), and saves `storageState` for the other projects. E2E files are `*.e2e.ts`, not `*.spec.ts`, which keeps them out of the Vitest lint rules.
+- **E2E (`e2e/`)** is its own workspace. Playwright starts `webServer` before `globalSetup`, so it cannot use Testcontainers and uses `e2e/docker-compose.yml` instead. It runs on ports 3100/5174/9474 so it can never reuse a running dev server. The `setup` project seeds an active user straight into Mongo, logs in through the real form with Cloudflare's always-pass Turnstile test keys (which needs network access to Cloudflare), and saves `storageState` for the other projects. E2E files are `*.e2e.ts`, not `*.spec.ts`, which keeps them out of the Vitest lint rules.
 - knip: production files are the `!`-suffixed `project` globs in `knip.json`; test-only folders (`apps/server/test`, `apps/client/src/test`, `e2e`) are deliberately left unsuffixed so `knip --production` ignores them.
 
 ## Deployment
@@ -242,7 +242,7 @@ Pushing to `main` triggers `.github/workflows/build-k8s-images.yml`: it builds b
 
 `infra/README.md` is the reference for the cluster: platform vs. application ArgoCD projects, SealedSecrets (and the master key that must be backed up outside the repo), the three Ingresses, the NetworkPolicy, and the MongoDB → R2 backup CronJob. Read it before touching anything under `infra/`.
 
-`docker-compose*.yml` at the root are the legacy Compose deployment and the load-test stacks — not the production path.
+`docker-compose.yml` and `docker-compose.portainer.yml` at the root are the legacy single-VPS Compose deployment — not the production path. The other compose stacks live next to what they serve: `k6/docker-compose.yml` and `k6/docker-compose.multi.yml` for load tests, `e2e/docker-compose.yml` for Playwright. Compose resolves `build.context`, `env_file` and volume paths relative to the compose file's own directory, so the k6 stacks use `context: ..` to build from the repo root.
 
 ## Critical Rules
 

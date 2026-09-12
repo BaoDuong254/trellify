@@ -208,11 +208,13 @@ $env:SEED_USERS = "10"; pnpm loadtest:seed
 
 ## Configuration files
 
-| File                  | Used by                              | Contents                                                                                                                                                                                                        |
-| --------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `loadtest.env`        | both compose stacks, `loadtest:seed` | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token.                                                       |
-| `prometheus.env`      | `pnpm k6 --prom`                     | Remote write endpoint, trend stats, push interval, stale markers. `K6_PROMETHEUS_RW_TREND_STATS` decides which `k6_http_req_duration_*` series exist, so it has to cover every stat a dashboard panel asks for. |
-| `nginx/loadtest.conf` | `loadtest:up:multi`                  | Load balancer in front of the 3 replicas                                                                                                                                                                        |
+| File                       | Used by                                    | Contents                                                                                                                                                                                                        |
+| -------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loadtest.env`             | both compose stacks, `loadtest:seed`       | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token.                                                       |
+| `prometheus.env`           | `pnpm k6 --prom`                           | Remote write endpoint, trend stats, push interval, stale markers. `K6_PROMETHEUS_RW_TREND_STATS` decides which `k6_http_req_duration_*` series exist, so it has to cover every stat a dashboard panel asks for. |
+| `nginx/loadtest.conf`      | `loadtest:up:multi`                        | Load balancer in front of the 3 replicas                                                                                                                                                                        |
+| `docker-compose.yml`       | `loadtest:up`, `loadtest:down`             | Single-replica stack: server, worker, MongoDB, Redis. Paths inside resolve from `k6/`, so the image builds with `context: ..` (repo root).                                                                      |
+| `docker-compose.multi.yml` | `loadtest:up:multi`, `loadtest:down:multi` | Same, with 3 server replicas behind nginx.                                                                                                                                                                      |
 
 Seed sizing is not in `loadtest.env` on purpose — it comes from `SEED_*` environment variables so CI can seed a small dataset without editing the file.
 
