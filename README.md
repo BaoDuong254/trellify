@@ -20,7 +20,13 @@ A full-stack project management platform with real-time collaboration, drag-and-
     - [Cluster topology](#cluster-topology)
     - [Required GitHub secrets](#required-github-secrets)
     - [Legacy: Docker Compose deployment](#legacy-docker-compose-deployment)
-  - [📮 Testing with Postman](#-testing-with-postman)
+  - [🧪 Automated Testing](#-automated-testing)
+    - [Test layers](#test-layers)
+    - [Prerequisites](#prerequisites)
+    - [Where tests live](#where-tests-live)
+    - [Test isolation](#test-isolation)
+    - [Tests in CI](#tests-in-ci)
+  - [📮 Manual API Testing with Postman](#-manual-api-testing-with-postman)
     - [Setup](#setup)
   - [⚡ Performance Testing](#-performance-testing)
   - [🔄 Git Workflow](#-git-workflow)
@@ -196,7 +202,7 @@ The project uses Turbo for monorepo management. A single command starts **three*
 pnpm start:dev
 ```
 
-Or run a single workspace. From the root directory, `fe` and `be` are aliases for `pnpm --filter=client` and `pnpm --filter=server`, so there is no need to change directory:
+Or run a single workspace. From the root directory, `fe`, `be`, `shared` and `e2e` are aliases for `pnpm --filter=client`, `pnpm --filter=server`, `pnpm --filter=shared` and `pnpm --filter=e2e`, so there is no need to change directory:
 
 ```bash
 # Terminal 1 - Client only
@@ -283,7 +289,68 @@ It required its own secrets, none of which the k3s pipeline uses:
 | `DOCKERHUB_USERNAME`, `DOCKERHUB_PASSWORD`        | Docker Hub authentication and image namespace |
 | `HOST_VPS`, `USERNAME_VPS`, `KEY_VPS`, `PORT_VPS` | SSH access to the deployment host             |
 
-## 📮 Testing with Postman
+## 🧪 Automated Testing
+
+Every layer has its own suite. The unit, integration and component suites run on [Vitest](https://vitest.dev/), and the end-to-end suite runs on [Playwright](https://playwright.dev/).
+
+### Test layers
+
+| Layer              | Tools                                                  | Command                                           | Needs Docker |
+| ------------------ | ------------------------------------------------------ | ------------------------------------------------- | ------------ |
+| Shared schemas     | Vitest                                                 | `pnpm shared test`                                | No           |
+| Server unit        | Vitest, `vi.mock`                                      | `pnpm be test:unit`                               | No           |
+| Server integration | Vitest, Supertest, Testcontainers (MongoDB 8, Redis 8) | `pnpm be test:integration`                        | Yes          |
+| Client             | Vitest, jsdom, Testing Library, MSW                    | `pnpm fe test`                                    | No           |
+| End-to-end         | Playwright (Chromium)                                  | `pnpm e2e:up` → `pnpm test:e2e` → `pnpm e2e:down` | Yes          |
+
+```bash
+pnpm test                  # every Vitest suite (shared, server unit + integration, client) with coverage
+pnpm be test:unit          # the fast loop while working on the server - no containers
+pnpm be test:integration   # starts throwaway MongoDB and Redis containers, runs, removes them
+
+pnpm e2e:up                # MongoDB + Redis for Playwright (e2e/docker-compose.yml)
+pnpm test:e2e              # starts its own API and Vite dev server, then drives Chromium
+pnpm e2e:down              # stop and delete the E2E containers and their data
+```
+
+### Prerequisites
+
+- **Docker** must be running for `pnpm be test:integration`, `pnpm test` and the E2E suite. Testcontainers pulls `mongo:8.0` and `redis:8-alpine` on the first run.
+- **Chromium for Playwright** is a one-time download: `pnpm e2e exec playwright install chromium`.
+- **Network access to Cloudflare** for E2E. The login step goes through the real Turnstile widget using Cloudflare's always-pass test keys, so both the browser and the API call `challenges.cloudflare.com`.
+
+### Where tests live
+
+- **Unit and component tests** sit next to the file they cover as `*.spec.ts(x)` inside each workspace's `src/` (for example `apps/server/src/sockets/board/board.broadcast.spec.ts`). Build configs exclude them, so nothing test-related reaches `dist/` or the client bundle.
+- **Server integration tests** live in [`apps/server/test/integration/`](apps/server/test/integration), grouped by feature (`api/`, `providers/`, `utils/`) rather than mirroring `src/`, because each one exercises several layers at once.
+- **End-to-end tests** live in [`e2e/tests/`](e2e/tests) as `*.e2e.ts`. See [`e2e/README.md`](e2e/README.md) for how to run, debug and write them.
+
+The conventions behind these suites - why the cache and bloom filter are tested against real Redis, how the integration containers are wired, what the client test helpers provide - are documented in the Testing section of [`CLAUDE.md`](CLAUDE.md).
+
+### Test isolation
+
+No test run touches real services or data:
+
+- **`NODE_ENV=test` makes the server skip `apps/server/.env` entirely.** Each Vitest config and `e2e/e2e.env` supplies every variable itself, so a missing value can never fall back to your real MongoDB Atlas, Brevo or Cloudinary credentials.
+- **Integration tests** get fresh containers for every run, mock the three outside services (Brevo, Cloudinary, Turnstile) and empty the database and Redis before each test.
+- **End-to-end tests** run on their own ports (API `3100`, client `5174`, MongoDB `27019`, Redis `6381`) and their own database (`trellify_e2e`), so they never reuse a running dev server.
+
+### Tests in CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs two jobs in parallel:
+
+- **`ci`**: lint → knip → knip:production → format check → CSP hash check → `pkg:build` → `typecheck` → `apps:build` → `pnpm test` → SonarCloud. `pnpm test` writes `lcov` coverage for the server, client and shared packages, and SonarCloud picks it up.
+- **`e2e`**: installs Chromium, starts `e2e/docker-compose.yml` and runs Playwright. On CI a failing test is retried once and reported as an inline annotation.
+
+When the `e2e` job fails it uploads the Playwright HTML report, including screenshots and traces of the failing tests, as the **`playwright-report`** artifact, kept for 7 days. Find it at **Actions → the failed run → Summary → Artifacts**, unzip it, and open it with:
+
+```bash
+pnpm e2e exec playwright show-report <path-to-unzipped-folder>
+```
+
+Tests do **not** run in the pre-commit hook, because the integration and E2E suites need Docker. CI is the gate.
+
+## 📮 Manual API Testing with Postman
 
 The project includes a Postman collection with pre-configured requests.
 
@@ -305,7 +372,7 @@ The project includes a Postman collection with pre-configured requests.
 
 ## ⚡ Performance Testing
 
-Load tests run with [k6](https://k6.io/) against an isolated docker-compose stack built from the production Dockerfile, with its own MongoDB and Redis. No real data is touched.
+Load tests run with [k6](https://k6.io/) against an isolated docker-compose stack built from the production Dockerfile, with its own MongoDB and Redis. No real data is touched. The stacks are defined in [`k6/docker-compose.yml`](k6/docker-compose.yml) (one server) and [`k6/docker-compose.multi.yml`](k6/docker-compose.multi.yml) (three servers behind nginx).
 
 ```bash
 pnpm loadtest:up      # start the isolated stack
@@ -372,14 +439,17 @@ Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook) an
 
 - **pre-commit**:
   1. Verify `pnpm-lock.yaml` is in sync (`scripts/check-lockfile.sh`)
-  2. Run `knip` to detect unused files, exports, and dependencies
-  3. Format staged files with Prettier
-  4. Run `pnpm lint:fix`
+  2. Verify the CSP hashes for the client's inline scripts (`scripts/check-csp-hashes.sh`)
+  3. Run `knip` to detect unused files, exports, and dependencies
+  4. Format staged files with Prettier
+  5. Run `pnpm lint:fix`
 - **commit-msg**: Validate the message against Conventional Commits via commitlint
 - **post-commit**: Print a success message
 
 > **Note**
 > `knip` also runs in CI (both `knip` and `knip:production`). An exported symbol nobody imports, or a dependency nobody uses, will fail the build - delete it or wire it up rather than leaving it dangling.
+>
+> The test suites are not part of any hook - run `pnpm test` (and `pnpm test:e2e` when touching user flows) before pushing, or let CI run them. See [🧪 Automated Testing](#-automated-testing).
 
 ### Branch Naming
 
