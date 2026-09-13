@@ -46,6 +46,24 @@ describe("POST /api/v1/diagnostics", () => {
     expect(Buffer.from(init.body as Uint8Array).equals(envelope)).toBe(true);
   });
 
+  it("hands Sentry the viewer's IP from X-Real-IP instead of the server's own address", async () => {
+    const fetchMock = stubSentry(async () => new Response(null, { status: StatusCodes.OK }));
+
+    await postEnvelope(envelopeFor(SENTRY_DSN)).set("X-Real-IP", "203.0.113.7").expect(StatusCodes.OK);
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.headers).toMatchObject({ "X-Forwarded-For": "203.0.113.7" });
+  });
+
+  it("falls back to the socket address when no proxy set X-Real-IP", async () => {
+    const fetchMock = stubSentry(async () => new Response(null, { status: StatusCodes.OK }));
+
+    await postEnvelope(envelopeFor(SENTRY_DSN)).expect(StatusCodes.OK);
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.headers).toMatchObject({ "X-Forwarded-For": expect.stringContaining("127.0.0.1") });
+  });
+
   it("relays Sentry's status and rate-limit headers so the SDK backs off", async () => {
     stubSentry(
       async () =>

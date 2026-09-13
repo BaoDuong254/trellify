@@ -30,9 +30,10 @@ Sentry.init({
   enabled: SENTRY_ENABLED,
   environment: import.meta.env.MODE,
   dataCollection: {
-    userInfo: false,
+    userInfo: true,
     httpBodies: [],
   },
+  enableMetrics: true,
   integrations: [
     Sentry.reactRouterBrowserTracingIntegration({
       useEffect,

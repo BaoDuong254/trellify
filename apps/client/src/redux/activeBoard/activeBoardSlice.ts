@@ -4,6 +4,7 @@ import envConfig from "src/config/env";
 import type { Board } from "src/types/board.type";
 import { normalizeBoard } from "src/utils/board";
 import http from "src/utils/http";
+import { recordBoardLoadTime } from "src/utils/metrics";
 
 export interface ActiveBoardState {
   currentActiveBoard: Board | null;
@@ -14,7 +15,9 @@ const initialState: ActiveBoardState = {
 };
 
 export const fetchBoardDetailsAPI = createAsyncThunk("activeBoard/fetchBoardDetailsAPI", async (boardId: string) => {
+  const startedAt = performance.now();
   const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`);
+  recordBoardLoadTime(performance.now() - startedAt);
   return response.data.data;
 });
 

@@ -8,6 +8,7 @@ import type { store } from "src/redux/store";
 import { logoutUserAPI } from "src/redux/user/userSlice";
 import { getSocketId } from "src/socketClient";
 import { interceptorLoadingElements } from "src/utils/formatters";
+import { recordApiError } from "src/utils/metrics";
 
 let axiosReduxStore: typeof store | undefined;
 export const injectStore = (mainStore: typeof store): void => {
@@ -65,6 +66,8 @@ http.interceptors.response.use(
         return http(originalRequests);
       });
     }
+
+    recordApiError(error.response?.status);
 
     let errorMessage = error?.message || "An error occurred";
 

@@ -7,9 +7,11 @@ import { SOCKET_ID_HEADER } from "@workspace/shared/utils/socket-events";
 import type { store } from "src/redux/store";
 import { apiUrl, server } from "src/test/server";
 import http, { injectStore } from "src/utils/http";
+import { recordApiError } from "src/utils/metrics";
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("src/socketClient", () => ({ getSocketId: () => "socket-123" }));
+vi.mock("src/utils/metrics", () => ({ recordApiError: vi.fn() }));
 
 const BOARD_URL = apiUrl("/api/v1/boards/board-1");
 const REFRESH_URL = apiUrl("/api/v1/users/refresh_token");
@@ -56,6 +58,7 @@ describe("http client", () => {
     expect(refreshCalls).toBe(1);
     expect(responses.map((response) => response.data.data)).toEqual(["fresh", "fresh"]);
     expect(toast.error).not.toHaveBeenCalled();
+    expect(recordApiError).not.toHaveBeenCalled();
   });
 
   it("logs out when the refresh itself fails", async () => {
@@ -76,6 +79,14 @@ describe("http client", () => {
 
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(toast.error).toHaveBeenCalledWith("Unauthorized!");
+  });
+
+  it("counts a failed request under its status code", async () => {
+    server.use(mock.get(BOARD_URL, () => HttpResponse.json({ message: "Boom" }, { status: 500 })));
+
+    await expect(http.get(BOARD_URL)).rejects.toMatchObject({ response: { status: 500 } });
+
+    expect(recordApiError).toHaveBeenCalledWith(500);
   });
 
   it("joins Zod issue messages into one toast", async () => {

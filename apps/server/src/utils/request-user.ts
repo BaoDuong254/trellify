@@ -10,3 +10,8 @@ export const actorId = (request: ExpressRequest): string => {
   }
   return decoded._id;
 };
+
+export const clientIp = (request: ExpressRequest): string | undefined => {
+  const realIp = request.headers["x-real-ip"];
+  return typeof realIp === "string" && realIp !== "" ? realIp : request.ip;
+};

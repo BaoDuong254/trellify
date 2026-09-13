@@ -20,7 +20,7 @@ const readEnvelopeDsn = (envelope: Buffer): string | undefined => {
   return undefined;
 };
 
-const forwardEnvelope = async (body: unknown): Promise<ForwardedEnvelope> => {
+const forwardEnvelope = async (body: unknown, clientIp: string | undefined): Promise<ForwardedEnvelope> => {
   if (!Buffer.isBuffer(body)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Error.InvalidDiagnosticsEnvelope");
   }
@@ -31,7 +31,7 @@ const forwardEnvelope = async (body: unknown): Promise<ForwardedEnvelope> => {
   }
 
   try {
-    return await SentryProvider.forwardEnvelope(body);
+    return await SentryProvider.forwardEnvelope(body, clientIp);
   } catch (error) {
     logger.warn(`Diagnostics envelope not forwarded: ${error instanceof Error ? error.message : String(error)}`);
     throw new ApiError(StatusCodes.BAD_GATEWAY, "Error.DiagnosticsUpstreamUnavailable");

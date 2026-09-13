@@ -1,6 +1,7 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 
 import { diagnosticsService } from "src/services/diagnostics.service";
+import { clientIp } from "src/utils/request-user";
 
 const forwardEnvelope = async (
   request: ExpressRequest,
@@ -8,7 +9,7 @@ const forwardEnvelope = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { status, headers } = await diagnosticsService.forwardEnvelope(request.body);
+    const { status, headers } = await diagnosticsService.forwardEnvelope(request.body, clientIp(request));
     response.status(status).set(headers).end();
   } catch (error) {
     next(error);

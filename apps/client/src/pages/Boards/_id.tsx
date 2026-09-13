@@ -19,6 +19,7 @@ import {
 import { selectCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card, Column } from "src/types/board.type";
+import { recordCardMoved } from "src/utils/metrics";
 
 function Board() {
   const dispatch = useDispatch<AppDispatch>();
@@ -63,6 +64,7 @@ function Board() {
     dispatch(updateCurrentActiveBoard(newBoard));
 
     await updateColumnDetailsAPI(columnId, { cardOrderIds: dndOrderedCardIds });
+    recordCardMoved("same_column");
   };
 
   const moveCardToDifferentColumn = (
@@ -87,7 +89,7 @@ function Board() {
       prevCardOrderIds,
       nextColumnId,
       nextCardOrderIds: dndOrderedColumns.find((col) => col._id === nextColumnId)?.cardOrderIds || [],
-    });
+    }).then(() => recordCardMoved("other_column"));
   };
 
   if (!board) {

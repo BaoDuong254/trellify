@@ -1,6 +1,7 @@
 import type { Socket } from "socket.io-client";
 
 import envConfig from "src/config/env";
+import { recordSocketReconnect } from "src/utils/metrics";
 
 let socket: Socket | null = null;
 let pending: Promise<Socket> | null = null;
@@ -19,6 +20,7 @@ export const ensureSocket = async (): Promise<Socket> => {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 10_000,
     });
+    socket.io.on("reconnect", recordSocketReconnect);
     pending = null;
     return socket;
   });

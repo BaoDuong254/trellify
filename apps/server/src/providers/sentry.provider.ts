@@ -15,10 +15,13 @@ const isProjectDsn = (dsn: string): boolean => {
   return candidate?.host === PROJECT_DSN.host && candidate.pathname === PROJECT_DSN.pathname;
 };
 
-const forwardEnvelope = async (envelope: Buffer): Promise<ForwardedEnvelope> => {
+const forwardEnvelope = async (envelope: Buffer, clientIp: string | undefined): Promise<ForwardedEnvelope> => {
   const response = await fetch(ENVELOPE_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-sentry-envelope" },
+    headers: {
+      "Content-Type": "application/x-sentry-envelope",
+      ...(clientIp && { "X-Forwarded-For": clientIp }),
+    },
     body: new Uint8Array(envelope),
     signal: AbortSignal.timeout(FORWARD_TIMEOUT_MS),
   });
