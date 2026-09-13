@@ -217,6 +217,12 @@ Drag-and-drop uses `@dnd-kit`; Markdown editing uses `@uiw/react-md-editor`; bot
 
 `VITE_API_ENDPOINT` is deliberately **empty in production builds** — client and API share one host, so the browser calls `/api/v1/...` on its own origin and the Ingress routes it. Nothing in the bundle may hardcode a backend URL.
 
+### Error monitoring (Sentry)
+
+`Sentry.init` in `apps/client/src/main.tsx` is enabled only in production builds, so dev and E2E never send events. The DSN lives in `@workspace/shared/utils/sentry` because both apps need it. The browser never talks to `sentry.io`: `tunnel` posts every envelope to `POST /api/v1/diagnostics` on our own origin, and the server forwards the raw bytes upstream (`src/providers/sentry.provider.ts`), relaying `X-Sentry-Rate-Limits`/`Retry-After` so the SDK still backs off. The tunnel exists because ad blockers and antivirus web filters (Kaspersky's is one) block `*.sentry.io` outright, which loses those users' errors silently. The server refuses any envelope whose header DSN is not this project's, so the route cannot be used as an open relay to other Sentry projects. Keep the forward byte-exact — replay segments are compressed binary, so decoding the body as text corrupts them. Don't add Sentry's ingest host back to the CSP `connect-src`; nothing needs it. `skipBrowserExtensionCheck` is on because an extension that injects `chrome.runtime.id` into the page otherwise makes the SDK disable itself.
+
+Source maps are uploaded by `@sentry/vite-plugin` only when `SENTRY_AUTH_TOKEN` is set. `build-k8s-images.yml` passes it to the client image as the BuildKit secret `sentry_auth_token` (never a build arg, which would land in the image history and build cache) plus `SENTRY_RELEASE` set to the image's `sha-<short>` tag. The build then emits `hidden` maps, uploads them and deletes them from `dist`, so nginx never serves a `.map`. Without the token (`ci.yml`, local builds) the plugin is disabled and no maps are generated at all. `SENTRY_RELEASE` changes on every commit, so the client build layer never comes from cache — that is the price of tagging every event with the deploy it came from.
+
 ### CSP and inline scripts
 
 `apps/client/nginx/security-headers.conf` pins a `script-src` allowlist of sha256 hashes for the inline `<script>` blocks in `apps/client/index.html`. Editing any inline script without updating those hashes ships a CSP that blocks the script and breaks the page — `scripts/check-csp-hashes.sh` (pre-commit and CI) fails with the exact hashes to paste in.

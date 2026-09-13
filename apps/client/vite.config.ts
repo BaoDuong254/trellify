@@ -1,10 +1,26 @@
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from "@vitejs/plugin-react-swc";
 import svgr from "vite-plugin-svgr";
 import { defineConfig } from "vitest/config";
 
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
+const uploadSourceMaps = Boolean(sentryAuthToken);
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), svgr()],
+  plugins: [
+    react(),
+    svgr(),
+    sentryVitePlugin({
+      org: "baoduong254",
+      project: "trellify",
+      authToken: sentryAuthToken,
+      disable: !uploadSourceMaps,
+      telemetry: false,
+      release: { setCommits: false },
+      sourcemaps: { filesToDeleteAfterUpload: ["dist/**/*.map"] },
+    }),
+  ],
   css: {
     devSourcemap: true,
   },
@@ -12,7 +28,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   build: {
-    sourcemap: false,
+    sourcemap: uploadSourceMaps ? "hidden" : false,
     chunkSizeWarningLimit: 900,
   },
   test: {

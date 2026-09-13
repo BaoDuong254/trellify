@@ -49,7 +49,10 @@ RUN printf 'VITE_API_ENDPOINT=%s\nVITE_TURNSTILE_SITE_KEY=%s\n' \
 # Build the client application
 WORKDIR /workspace/apps/client
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN pnpm run apps:build
+ARG SENTRY_RELEASE
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
+    pnpm run apps:build
 
 # Production stage
 FROM nginxinc/nginx-unprivileged:alpine

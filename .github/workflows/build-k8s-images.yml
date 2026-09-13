@@ -58,6 +58,9 @@ jobs:
           build-args: |
             VITE_API_ENDPOINT=
             VITE_TURNSTILE_SITE_KEY=${{ vars.VITE_TURNSTILE_SITE_KEY }}
+            SENTRY_RELEASE=${{ steps.vars.outputs.tag }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client:${{ steps.vars.outputs.tag }}
             ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client:latest

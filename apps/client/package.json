@@ -27,6 +27,7 @@
     "@mui/lab": "catalog:",
     "@mui/material": "catalog:",
     "@reduxjs/toolkit": "catalog:",
+    "@sentry/react": "catalog:",
     "@uiw/react-md-editor": "catalog:",
     "@workspace/shared": "workspace:*",
     "axios": "catalog:",
@@ -45,6 +46,7 @@
     "sonner": "catalog:"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",

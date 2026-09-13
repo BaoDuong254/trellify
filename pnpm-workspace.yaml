@@ -4,6 +4,7 @@ packages:
   - e2e
 
 allowBuilds:
+  "@sentry/cli": false
   "@swc/core": true
   cpu-features: false
   esbuild: true
@@ -131,6 +132,8 @@ catalog:
   winston: 3.19.0
   zod: 4.4.3
   knip: 6.16.1
+  "@sentry/react": 10.74.0
+  "@sentry/vite-plugin": 5.4.0
 
 cleanupUnusedCatalogs: true
 nodeVersion: 24.12.0

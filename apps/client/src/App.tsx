@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { Suspense, lazy } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
@@ -20,6 +21,8 @@ const RegisterForm = lazy(() => import("src/pages/Auth/RegisterForm"));
 const ForgotPasswordForm = lazy(() => import("src/pages/Auth/ForgotPasswordForm"));
 const ConfirmLayout = lazy(() => import("src/layouts/ConfirmLayout"));
 
+const SentryRoutes = Sentry.wrapReactRouterRouting(Routes);
+
 const ProtectedRoute = ({ user }: { user: User | null }) => {
   if (!user) return <Navigate to='/login' replace={true} />;
   return <Outlet />;
@@ -32,7 +35,7 @@ export default function App() {
 
   return (
     <Suspense fallback={<PageLoadingSpinner caption='Loading...' />}>
-      <Routes>
+      <SentryRoutes>
         <Route path='/' element={<Navigate to='/boards' replace />} />
 
         {/* Protected Routes */}
@@ -59,7 +62,7 @@ export default function App() {
 
         {/* 404 not found page */}
         <Route path='*' element={<NotFound />} />
-      </Routes>
+      </SentryRoutes>
     </Suspense>
   );
 }
