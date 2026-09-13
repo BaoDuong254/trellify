@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.12.0"
+          node-version: "24.21.0"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
@@ -56,9 +56,6 @@ jobs:
 
       - name: Create .env for client build
         run: echo "${{ secrets.CLIENT_ENV }}" > apps/client/.env
-
-      # - name: Generate Prisma client
-      #   run: pnpm --filter server exec prisma generate
 
       - name: Run lint
         run: pnpm run lint
@@ -107,7 +104,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.12.0"
+          node-version: "24.21.0"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6

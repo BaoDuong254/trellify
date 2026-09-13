@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24.12.0-alpine AS builder
+FROM node:24.21.0-alpine AS builder
 
 # Set workdir to monorepo root
 WORKDIR /workspace
@@ -44,7 +44,7 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm run apps:build
 
 # Production stage
-FROM node:24.12.0-alpine
+FROM node:24.21.0-alpine
 
 # renovate: datasource=npm depName=pnpm
 ARG PNPM_VERSION=12.4.0
@@ -71,7 +71,7 @@ COPY --from=builder /workspace/packages/shared ./packages/shared
 COPY --from=builder /workspace/apps/server/dist ./apps/server/dist
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts && rm -rf "$(pnpm store path)" /root/.cache /root/.npm
 
 RUN chown -R node:node /workspace
 USER node

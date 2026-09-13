@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24.12.0-alpine AS builder
+FROM node:24.21.0-alpine AS builder
 
 # Set workdir to monorepo root
 WORKDIR /workspace
@@ -40,7 +40,7 @@ COPY apps/client/index.html ./apps/client/
 COPY apps/client/public ./apps/client/public
 COPY apps/client/src ./apps/client/src
 
-# Configure environment variables for the client build. 
+# Configure environment variables for the client build.
 ARG VITE_API_ENDPOINT=""
 ARG VITE_TURNSTILE_SITE_KEY
 RUN printf 'VITE_API_ENDPOINT=%s\nVITE_TURNSTILE_SITE_KEY=%s\n' \

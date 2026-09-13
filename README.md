@@ -280,9 +280,9 @@ All three public paths share one host: `/` goes to the client, `/api` to the ser
 
 Before the k3s migration, production ran as a Docker Compose stack on a single VPS, deployed over SSH by [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) with images on Docker Hub and Portainer for container management. Those files are still in the repo: [`docker-compose.yml`](docker-compose.yml) and [`docker-compose.portainer.yml`](docker-compose.portainer.yml), and remain useful for self-hosting on a single machine.
 
-**This path is no longer used for production.** `deploy.yml` is `workflow_dispatch`-only and its job guard (`github.event.workflow_run.conclusion`) never evaluates true on a manual dispatch, so the workflow is effectively inert. It is kept for reference rather than maintained.
+**This path is no longer used for production.** `deploy.yml` is `workflow_dispatch`-only, so nothing pushed to `main` can trigger it — but dispatching it manually does build the Docker Hub images and redeploy the Compose stack over SSH, which keeps it usable as a fallback if the cluster is unavailable.
 
-It required its own secrets, none of which the k3s pipeline uses:
+It needs its own secrets, none of which the k3s pipeline uses:
 
 | Secret                                            | Purpose                                       |
 | ------------------------------------------------- | --------------------------------------------- |

@@ -104,7 +104,6 @@ catalog:
   nodemon: 3.1.14
   prettier: 3.9.6
   prettier-plugin-packagejson: 3.0.2
-  prettier-plugin-prisma: 5.0.0
   randomcolor: 0.6.2
   react: 19.3.0
   react-dom: 19.3.0
@@ -136,5 +135,4 @@ catalog:
   "@sentry/vite-plugin": 5.4.0
 
 cleanupUnusedCatalogs: true
-nodeVersion: 24.12.0
-useNodeVersion: 24.12.0
+nodeVersion: 24.21.0

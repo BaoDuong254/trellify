@@ -6,6 +6,7 @@ import {
   CLIENT_URL,
   E2E_ENVIRONMENT,
   REPO_ROOT,
+  SETUP_TIMEOUT_MS,
   TURNSTILE_SITE_KEY,
 } from "./support/environment";
 
@@ -24,7 +25,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "setup", testMatch: /.*\.setup\.ts/ },
+    { name: "setup", testMatch: /.*\.setup\.ts/, timeout: SETUP_TIMEOUT_MS, retries: 1 },
     {
       name: "chromium",
       testMatch: /.*\.e2e\.ts/,

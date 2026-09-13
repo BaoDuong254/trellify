@@ -5,11 +5,14 @@ on:
 
 jobs:
   build-and-push:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - name: Read deployed commit
+        id: commit
+        run: echo "subject=$(git log -1 --pretty=%s)" >> "$GITHUB_OUTPUT"
 
       - name: Create .env file for server
         run: echo "${{ secrets.SERVER_ENV }}" > apps/server/.env
@@ -58,13 +61,13 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
             ✅ Build and push Docker images completed successfully.
-            👤 ${{ github.event.workflow_run.actor.login }} created commit:
-            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            👤 ${{ github.actor }} deployed commit:
+            🧑‍💻 Commit message: ${{ steps.commit.outputs.subject }}
             📦 Repository: ${{ github.repository }}
             🐳 Images:
             - ${{ secrets.DOCKERHUB_USERNAME }}/trellify-server:latest
             - ${{ secrets.DOCKERHUB_USERNAME }}/trellify-client:latest
-            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
 
       - name: Send telegram message after build failure
         if: failure()
@@ -74,10 +77,10 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
             ❌ Build and push Docker images failed.
-            👤 ${{ github.event.workflow_run.actor.login }} created commit:
-            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            👤 ${{ github.actor }} deployed commit:
+            🧑‍💻 Commit message: ${{ steps.commit.outputs.subject }}
             📦 Repository: ${{ github.repository }}
-            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -85,6 +88,10 @@ jobs:
     steps:
       - name: Checkout code for docker-compose
         uses: actions/checkout@v7
+
+      - name: Read deployed commit
+        id: commit
+        run: echo "subject=$(git log -1 --pretty=%s)" >> "$GITHUB_OUTPUT"
 
       - name: Create .env file for server
         run: echo "${{ secrets.SERVER_ENV }}" > apps/server/.env
@@ -163,11 +170,11 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
             ✅ Deployment to LXC completed successfully.
-            👤 ${{ github.event.workflow_run.actor.login }} created commit:
-            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            👤 ${{ github.actor }} deployed commit:
+            🧑‍💻 Commit message: ${{ steps.commit.outputs.subject }}
             📦 Repository: ${{ github.repository }}
             🚀 Application is now running on LXC with 3 server replicas and 1 worker replica
-            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
 
       - name: Send telegram message after deploy failure
         if: failure()
@@ -177,7 +184,7 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
             ❌ Deployment to LXC failed.
-            👤 ${{ github.event.workflow_run.actor.login }} created commit:
-            🧑‍💻 Commit message: ${{ github.event.workflow_run.head_commit.message }}
+            👤 ${{ github.actor }} deployed commit:
+            🧑‍💻 Commit message: ${{ steps.commit.outputs.subject }}
             📦 Repository: ${{ github.repository }}
-            👀 See changes: https://github.com/${{ github.repository }}/commit/${{github.event.workflow_run.head_sha}}
+            👀 See changes: https://github.com/${{ github.repository }}/commit/${{ github.sha }}

@@ -18,5 +18,5 @@
     "^(src|generated|test)/(.*)$",
     "^[./]"
   ],
-  "plugins": ["prettier-plugin-prisma", "prettier-plugin-packagejson", "@trivago/prettier-plugin-sort-imports"]
+  "plugins": ["prettier-plugin-packagejson", "@trivago/prettier-plugin-sort-imports"]
 }

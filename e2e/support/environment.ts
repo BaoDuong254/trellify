@@ -15,6 +15,8 @@ const required = (name: string): string => {
 
 export const REPO_ROOT = path.resolve(E2E_ROOT, "..");
 export const AUTH_STATE_PATH = path.join(E2E_ROOT, ".auth", "user.json");
+export const TURNSTILE_TOKEN_TIMEOUT_MS = 60_000;
+export const SETUP_TIMEOUT_MS = 150_000;
 
 export const API_URL = required("VITE_API_ENDPOINT");
 export const CLIENT_URL = required("CLIENT_URL");
