@@ -107,7 +107,7 @@ catalog:
   randomcolor: 0.6.2
   react: 19.3.0
   react-dom: 19.3.0
-  react-hook-form: 7.87.0
+  react-hook-form: 7.88.0
   react-redux: 9.3.0
   react-router-dom: 7.18.3
   redux-persist: 6.0.0
