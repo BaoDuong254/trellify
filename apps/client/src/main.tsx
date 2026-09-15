@@ -21,6 +21,7 @@ import { reloadOnStalePreload } from "src/utils/preloadError.ts";
 
 import App from "./App.tsx";
 
+// eslint-disable-next-line react-refresh/only-export-components
 const SENTRY_ENABLED = import.meta.env.PROD;
 
 Sentry.init({
