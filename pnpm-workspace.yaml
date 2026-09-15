@@ -135,4 +135,7 @@ catalog:
   "@sentry/vite-plugin": 5.4.0
 
 cleanupUnusedCatalogs: true
+engineStrict: true
+saveExact: true
+savePrefix: ""
 nodeVersion: 24.21.0
