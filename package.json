@@ -61,10 +61,10 @@
     "turbo": "catalog:",
     "typescript": "catalog:"
   },
-  "packageManager": "pnpm@12.4.0",
+  "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": "24.21.0",
-    "pnpm": "12.4.0"
+    "pnpm": "12.4.1"
   },
   "devEngines": {
     "runtime": {
