@@ -33,7 +33,7 @@ RUN pnpm --filter=@workspace/shared run pkg:build || echo "No build script for s
 
 # Copy client app configuration files
 COPY apps/client/tsconfig*.json ./apps/client/
-COPY apps/client/vite.config.ts ./apps/client/
+COPY apps/client/vite.config.mts ./apps/client/
 COPY apps/client/index.html ./apps/client/
 
 # Copy client app source code

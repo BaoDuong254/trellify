@@ -15,7 +15,7 @@ export default [
       "**/node_modules",
       "**/generated",
       "**/coverage",
-      "**/vite.config.ts",
+      "**/vite.config.mts",
       "**/vitest.config.ts",
       "**/playwright.config.ts",
       "**/playwright-report",
