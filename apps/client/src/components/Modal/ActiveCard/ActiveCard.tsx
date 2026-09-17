@@ -207,7 +207,12 @@ function ActiveCard() {
 
         <Box sx={{ mb: 1, mt: -3, pr: 2.5, display: "flex", alignItems: "center", gap: 1 }}>
           <CreditCardIcon />
-          <ToggleFocusInput inputFontSize='22px' value={activeCard?.title || ""} onChangedValue={onUpdateCardTitle} />
+          <ToggleFocusInput
+            inputFontSize='22px'
+            value={activeCard?.title || ""}
+            onChangedValue={onUpdateCardTitle}
+            inputLabel='Card title'
+          />
         </Box>
 
         <Box sx={{ mb: 3, display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>

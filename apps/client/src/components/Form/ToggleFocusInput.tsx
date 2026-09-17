@@ -4,11 +4,13 @@ import { useState } from "react";
 function ToggleFocusInput({
   value,
   onChangedValue,
+  inputLabel,
   inputFontSize = "16px",
   ...props
 }: {
   value: string;
   onChangedValue: (newValue: string) => void;
+  inputLabel: string;
   inputFontSize?: string;
 }) {
   const [inputValue, setInputValue] = useState(value);
@@ -26,7 +28,6 @@ function ToggleFocusInput({
 
   return (
     <TextField
-      id='toggle-focus-input-controlled'
       fullWidth
       variant='outlined'
       size='small'
@@ -35,6 +36,7 @@ function ToggleFocusInput({
         setInputValue(event.target.value);
       }}
       onBlur={triggerBlur}
+      slotProps={{ htmlInput: { "aria-label": inputLabel } }}
       {...props}
       sx={{
         "& label": {},

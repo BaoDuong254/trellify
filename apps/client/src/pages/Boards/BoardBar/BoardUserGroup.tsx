@@ -3,6 +3,7 @@ import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import Avatar from "@mui/material/Avatar";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -111,7 +112,7 @@ function BoardUserGroup({
 
     if (!hasMenuActions(user)) {
       return (
-        <Tooltip title={tooltipTitle} key={user?._id}>
+        <Tooltip title={tooltipTitle} key={user?._id} describeChild>
           <Box sx={{ display: "flex", cursor: "default" }}>{avatarBadge}</Box>
         </Tooltip>
       );
@@ -143,7 +144,7 @@ function BoardUserGroup({
 
       {(boardUsers?.length ?? 0) > limit && (
         <Tooltip title='Show more'>
-          <Box
+          <ButtonBase
             aria-describedby={popoverId}
             onClick={handleTogglePopover}
             sx={{
@@ -161,7 +162,7 @@ function BoardUserGroup({
             }}
           >
             +{(boardUsers?.length ?? 0) - limit}
-          </Box>
+          </ButtonBase>
         </Tooltip>
       )}
 

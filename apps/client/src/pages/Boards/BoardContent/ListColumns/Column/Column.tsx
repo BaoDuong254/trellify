@@ -159,7 +159,12 @@ function Column({ column }: { column: ColumnType }) {
             justifyContent: "space-between",
           }}
         >
-          <ToggleFocusInput value={column?.title} onChangedValue={onUpdateColumnTitle} data-no-dnd='true' />
+          <ToggleFocusInput
+            value={column?.title}
+            onChangedValue={onUpdateColumnTitle}
+            inputLabel='Column title'
+            data-no-dnd='true'
+          />
           <Box>
             <Tooltip title='More options'>
               <ExpandMoreIcon

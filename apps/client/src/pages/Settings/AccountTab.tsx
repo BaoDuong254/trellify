@@ -94,8 +94,15 @@ function AccountTab() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box>
             <Avatar sx={{ width: 84, height: 84, mb: 1 }} alt='User avatar' src={currentUser?.avatar ?? undefined} />
-            <Tooltip title='Upload a new image to update your avatar immediately.'>
-              <Button component='label' variant='contained' size='small' startIcon={<CloudUploadIcon />}>
+            <Tooltip title='Upload a new image to update your avatar immediately.' describeChild>
+              <Button
+                component='label'
+                role={undefined}
+                tabIndex={-1}
+                variant='contained'
+                size='small'
+                startIcon={<CloudUploadIcon />}
+              >
                 Upload
                 <VisuallyHiddenInput type='file' onChange={uploadAvatar} />
               </Button>

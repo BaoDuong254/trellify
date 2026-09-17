@@ -3,6 +3,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Avatar from "@mui/material/Avatar";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
 import { useState } from "react";
@@ -41,13 +42,13 @@ function CardUserGroup({
   return (
     <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
       {FE_CardMembers.map((user) => (
-        <Tooltip title={user?.displayName} key={user?._id}>
+        <Tooltip title={user?.displayName} key={user?._id} describeChild>
           <Avatar sx={{ width: 34, height: 34, cursor: "pointer" }} alt={user?.displayName} src={user?.avatar || ""} />
         </Tooltip>
       ))}
 
       <Tooltip title='Add new member'>
-        <Box
+        <ButtonBase
           aria-describedby={popoverId}
           onClick={handleTogglePopover}
           sx={{
@@ -69,7 +70,7 @@ function CardUserGroup({
           }}
         >
           <AddIcon fontSize='small' />
-        </Box>
+        </ButtonBase>
       </Tooltip>
 
       <Popover
@@ -82,17 +83,20 @@ function CardUserGroup({
         <Box sx={{ p: 2, maxWidth: "260px", display: "flex", flexWrap: "wrap", gap: 1.5 }}>
           {board?.FE_allUsers?.map((user) => (
             <Tooltip title={user.displayName} key={user._id}>
-              <Badge
-                sx={{ cursor: "pointer" }}
-                overlap='rectangular'
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                badgeContent={
-                  cardMemberIds.includes(user._id) && <CheckCircleIcon fontSize='small' sx={{ color: "#27ae60" }} />
-                }
+              <ButtonBase
+                aria-pressed={cardMemberIds.includes(user._id)}
                 onClick={() => handleUpdateCardMembers(user._id)}
               >
-                <Avatar sx={{ width: 34, height: 34 }} alt={user.displayName} src={user.avatar || ""} />
-              </Badge>
+                <Badge
+                  overlap='rectangular'
+                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                  badgeContent={
+                    cardMemberIds.includes(user._id) && <CheckCircleIcon fontSize='small' sx={{ color: "#27ae60" }} />
+                  }
+                >
+                  <Avatar sx={{ width: 34, height: 34 }} alt={user.displayName} src={user.avatar || ""} />
+                </Badge>
+              </ButtonBase>
             </Tooltip>
           ))}
         </Box>
