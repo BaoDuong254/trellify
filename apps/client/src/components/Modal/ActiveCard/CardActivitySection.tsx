@@ -3,12 +3,12 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import moment from "moment";
 import { useSelector } from "react-redux";
 
 import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
 
 import { selectCurrentUser } from "src/redux/user/userSlice";
+import { cloudinaryThumb, formatDateTime } from "src/utils/formatters";
 
 function CardActivitySection({
   cardComments,
@@ -39,7 +39,11 @@ function CardActivitySection({
   return (
     <Box sx={{ mt: 2 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <Avatar sx={{ width: 36, height: 36, cursor: "pointer" }} alt='user avatar' src={currentUser?.avatar || ""} />
+        <Avatar
+          sx={{ width: 36, height: 36, cursor: "pointer" }}
+          alt='user avatar'
+          src={cloudinaryThumb(currentUser?.avatar, 36)}
+        />
         <TextField
           fullWidth
           placeholder='Write a comment...'
@@ -61,7 +65,7 @@ function CardActivitySection({
             <Avatar
               sx={{ width: 36, height: 36, cursor: "pointer" }}
               alt={comment.userDisplayName}
-              src={comment.userAvatar || ""}
+              src={cloudinaryThumb(comment.userAvatar, 36)}
             />
           </Tooltip>
           <Box sx={{ width: "inherit" }}>
@@ -70,7 +74,7 @@ function CardActivitySection({
             </Typography>
 
             <Typography component='span' sx={{ fontSize: "12px" }}>
-              {moment(comment.commentedAt).format("llll")}
+              {formatDateTime(comment.commentedAt)}
             </Typography>
 
             <Box

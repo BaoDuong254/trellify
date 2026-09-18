@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 
 import type { AppDispatch } from "src/redux/store";
 import { logoutUserAPI, selectCurrentUser } from "src/redux/user/userSlice";
+import { cloudinaryThumb } from "src/utils/formatters";
 
 function Profiles() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -55,7 +56,7 @@ function Profiles() {
           aria-haspopup='true'
           aria-expanded={open ? "true" : undefined}
         >
-          <Avatar sx={{ width: 36, height: 36 }} src={currentUser?.avatar ?? undefined} alt='User avatar' />
+          <Avatar sx={{ width: 36, height: 36 }} src={cloudinaryThumb(currentUser?.avatar, 36)} alt='User avatar' />
         </IconButton>
       </Tooltip>
       <Menu
@@ -71,7 +72,7 @@ function Profiles() {
       >
         <Link to='/settings/account' style={{ color: "inherit" }}>
           <MenuItem sx={{ "&:hover": { color: "success.light" } }}>
-            <Avatar sx={{ width: 28, height: 28, mr: 2 }} src={currentUser?.avatar ?? undefined} /> Profile
+            <Avatar sx={{ width: 28, height: 28, mr: 2 }} src={cloudinaryThumb(currentUser?.avatar, 28)} /> Profile
           </MenuItem>
         </Link>
         <Divider />

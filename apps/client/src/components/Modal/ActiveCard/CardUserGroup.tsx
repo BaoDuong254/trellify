@@ -13,6 +13,7 @@ import type { IncomingCardMemberInfoType } from "@workspace/shared/schemas/card.
 import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 
 import { selectCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import { cloudinaryThumb } from "src/utils/formatters";
 
 function CardUserGroup({
   cardMemberIds,
@@ -43,7 +44,11 @@ function CardUserGroup({
     <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
       {FE_CardMembers.map((user) => (
         <Tooltip title={user?.displayName} key={user?._id} describeChild>
-          <Avatar sx={{ width: 34, height: 34, cursor: "pointer" }} alt={user?.displayName} src={user?.avatar || ""} />
+          <Avatar
+            sx={{ width: 34, height: 34, cursor: "pointer" }}
+            alt={user?.displayName}
+            src={cloudinaryThumb(user?.avatar, 34)}
+          />
         </Tooltip>
       ))}
 
@@ -94,7 +99,11 @@ function CardUserGroup({
                     cardMemberIds.includes(user._id) && <CheckCircleIcon fontSize='small' sx={{ color: "#27ae60" }} />
                   }
                 >
-                  <Avatar sx={{ width: 34, height: 34 }} alt={user.displayName} src={user.avatar || ""} />
+                  <Avatar
+                    sx={{ width: 34, height: 34 }}
+                    alt={user.displayName}
+                    src={cloudinaryThumb(user.avatar, 34)}
+                  />
                 </Badge>
               </ButtonBase>
             </Tooltip>

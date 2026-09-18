@@ -51,3 +51,26 @@ export const interceptorLoadingElements = (calling: boolean): void => {
     }
   });
 };
+
+const DATE_TIME_FORMAT = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+export const formatDateTime = (value?: number | string | Date | null): string => {
+  if (value === undefined || value === null) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : DATE_TIME_FORMAT.format(date);
+};
+
+const CLOUDINARY_UPLOAD_SEGMENT = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)/;
+
+export const cloudinaryThumb = (url: string | null | undefined, size: number): string | undefined => {
+  if (!url) return undefined;
+  const pixels = size * 2;
+  return url.replace(CLOUDINARY_UPLOAD_SEGMENT, `$1c_fill,g_face,w_${pixels},h_${pixels},f_auto,q_auto/`);
+};

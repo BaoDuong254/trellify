@@ -144,8 +144,6 @@
       }
     </style>
 
-    <link rel="preconnect" href="https://challenges.cloudflare.com" crossorigin />
-
     <script>
       try {
         var muiMode = localStorage.getItem("mui-mode") || "system";
@@ -166,6 +164,11 @@
         bg.href = isNarrow ? "/images/login-bg-mobile.webp" : "/images/login-bg.webp";
         bg.fetchPriority = "high";
         document.head.appendChild(bg);
+        var turnstile = document.createElement("link");
+        turnstile.rel = "preconnect";
+        turnstile.href = "https://challenges.cloudflare.com";
+        turnstile.crossOrigin = "";
+        document.head.appendChild(turnstile);
       }
     </script>
 

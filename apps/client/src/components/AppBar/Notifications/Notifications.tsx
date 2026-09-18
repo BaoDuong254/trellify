@@ -12,7 +12,6 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import moment from "moment";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +30,7 @@ import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import { ensureSocket } from "src/socketClient";
 import type { Notifications as NotificationType } from "src/types/invitation.type";
+import { formatDateTime } from "src/utils/formatters";
 
 function Notifications() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -93,7 +93,7 @@ function Notifications() {
           size='small'
         >
           {/* `showZero` defaults to false, so the badge hides itself at 0. */}
-          <Badge color='warning' badgeContent={pendingInvitationCount}>
+          <Badge color='warning' badgeContent={pendingInvitationCount} slotProps={{ badge: { "aria-hidden": true } }}>
             <NotificationsNoneIcon
               sx={{
                 color: pendingInvitationCount > 0 ? "yellow" : "white",
@@ -181,7 +181,7 @@ function Notifications() {
 
                 <Box sx={{ textAlign: "right" }}>
                   <Typography component='span' sx={{ fontSize: "13px" }}>
-                    {moment(notification.createdAt).format("llll")}
+                    {formatDateTime(notification.createdAt)}
                   </Typography>
                 </Box>
               </Box>

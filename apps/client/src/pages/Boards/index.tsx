@@ -20,7 +20,6 @@ import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/co
 
 import { fetchBoardsAPI } from "src/apis";
 import AppBar from "src/components/AppBar/AppBar";
-import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
 import SidebarCreateBoardModal from "src/pages/Boards/create";
 import type { Board } from "src/types/board.type";
 import { boardCoverColor } from "src/utils/color";
@@ -79,21 +78,18 @@ function Boards() {
     fetchBoards(location.search, () => false);
   };
 
-  if (!loaded) {
-    return <PageLoadingSpinner caption='Loading Boards...' />;
-  }
-
-  const { boards, totalBoards } = loaded;
-  const isLoading = loaded.search !== location.search;
-  const skeletonCount = Math.min(
-    DEFAULT_ITEMS_PER_PAGE,
-    Math.max(totalBoards - (page - DEFAULT_PAGE) * DEFAULT_ITEMS_PER_PAGE, 0)
-  );
+  const boards = loaded?.boards ?? [];
+  const totalBoards = loaded?.totalBoards ?? 0;
+  const isLoading = loaded === null || loaded.search !== location.search;
+  const skeletonCount =
+    loaded === null
+      ? DEFAULT_ITEMS_PER_PAGE
+      : Math.min(DEFAULT_ITEMS_PER_PAGE, Math.max(totalBoards - (page - DEFAULT_PAGE) * DEFAULT_ITEMS_PER_PAGE, 0));
 
   return (
     <Container disableGutters maxWidth={false}>
       <AppBar />
-      <Box sx={{ paddingX: 2, my: 4 }}>
+      <Box component='main' sx={{ paddingX: 2, my: 4 }}>
         <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
           <Box sx={{ width: { xs: "100%", sm: "25%" } }}>
             <Stack direction='column' spacing={1}>

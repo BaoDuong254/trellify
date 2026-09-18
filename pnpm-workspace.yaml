@@ -95,7 +95,6 @@ catalog:
   lefthook: 2.1.12
   lodash: 4.18.1
   material-ui-confirm: 4.0.0
-  moment: 2.30.1
   mongodb: 7.6.0
   morgan: 1.12.0
   ms: 2.1.3

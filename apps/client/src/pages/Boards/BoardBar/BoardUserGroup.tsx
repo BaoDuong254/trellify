@@ -22,6 +22,7 @@ import { fetchBoardDetailsAPI } from "src/redux/activeBoard/activeBoardSlice";
 import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { User } from "src/types/user.type";
+import { cloudinaryThumb } from "src/utils/formatters";
 
 type BoardUser = Omit<User, "password" | "verifyToken">;
 
@@ -106,7 +107,7 @@ function BoardUserGroup({
         invisible={!isViewing}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Avatar sx={{ width: 34, height: 34 }} alt={user?.displayName} src={user?.avatar ?? ""} />
+        <Avatar sx={{ width: 34, height: 34 }} alt={user?.displayName} src={cloudinaryThumb(user?.avatar, 34)} />
       </Badge>
     );
 
