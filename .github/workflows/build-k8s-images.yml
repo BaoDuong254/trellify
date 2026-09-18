@@ -1,11 +1,12 @@
 name: Build k8s Images
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "infra/**"
-      - "**/*.md"
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -15,22 +16,52 @@ permissions:
 env:
   REGISTRY: ghcr.io
   OWNER: baoduong254
+  SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
   build-and-push:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
+      changed: ${{ steps.changes.outputs.changed }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
 
       - name: Compute immutable tag
         id: vars
         run: echo "tag=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
+      - name: Detect app changes since the deployed image
+        id: changes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          deployed=$(git show origin/main:infra/trellify/overlays/prod/kustomization.yaml | sed -n 's/^ *newTag: sha-//p' | head -n1)
+          if [ -z "$deployed" ] || ! git cat-file -e "$deployed^{commit}" 2>/dev/null; then
+            echo "Deployed commit unknown, building."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          app_files=$(git diff --name-only "$deployed" HEAD -- . ':(exclude)infra' ':(exclude)*.md')
+          if [ -z "$app_files" ]; then
+            echo "Nothing outside infra/ and *.md changed since sha-$deployed, skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: docker/setup-buildx-action@v4
+        if: steps.changes.outputs.changed == 'true'
 
       - name: Login to GHCR
+        if: steps.changes.outputs.changed == 'true'
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
@@ -38,6 +69,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push server image
+        if: steps.changes.outputs.changed == 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -50,6 +82,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push client image
+        if: steps.changes.outputs.changed == 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -69,6 +102,7 @@ jobs:
 
   bump-manifest:
     needs: build-and-push
+    if: ${{ needs.build-and-push.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -111,7 +145,7 @@ jobs:
             🏷️ Tag: ${{ needs.build-and-push.outputs.tag }}
             📦 ghcr.io/${{ env.OWNER }}/trellify-{server,client}
             👀 ArgoCD will sync automatically
-            🔗 https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+            🔗 https://github.com/${{ github.repository }}/commit/${{ env.SOURCE_SHA }}
 
       - name: Notify Telegram on failure
         if: failure()
@@ -122,3 +156,16 @@ jobs:
           message: |
             ❌ Build image k3s failed.
             🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  notify-blocked:
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Telegram that CI blocked the deploy
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ⛔ CI failed on main, image not built or deployed.
+            🔗 ${{ github.event.workflow_run.html_url }}

@@ -209,8 +209,12 @@ Application code and infrastructure state meet in one commit loop:
 git push origin main
         │
         ▼
+.github/workflows/ci.yml                       ← lint, types, tests, Playwright
+        │  workflow_run, only on success (failure → Telegram, nothing deployed)
+        ▼
 .github/workflows/build-k8s-images.yml
         │  job: build-and-push
+        ├─ skip if only infra/** or *.md changed since the pinned tag
         ├─ tag = sha-$(git rev-parse --short HEAD)      ← immutable, never reused
         ├─ build apps/server/Dockerfile  → ghcr.io/baoduong254/trellify-server:<tag>
         └─ build apps/client/Dockerfile  → ghcr.io/baoduong254/trellify-client:<tag>

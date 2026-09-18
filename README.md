@@ -243,7 +243,7 @@ pnpm start:prod
 
 Production runs on a self-hosted **k3s** cluster and is deployed by **GitOps** — GitHub Actions builds images, commits the new tag back to this repo, and ArgoCD reconciles the cluster to match. Nothing is deployed by SSH-ing into a machine.
 
-**1. Build** — a push to `main` triggers [`.github/workflows/build-k8s-images.yml`](.github/workflows/build-k8s-images.yml), which builds `apps/server/Dockerfile` and `apps/client/Dockerfile` and pushes them to GHCR as `ghcr.io/baoduong254/trellify-{server,client}`.
+**1. Build** — once CI passes on a push to `main`, [`.github/workflows/build-k8s-images.yml`](.github/workflows/build-k8s-images.yml) builds `apps/server/Dockerfile` and `apps/client/Dockerfile` and pushes them to GHCR as `ghcr.io/baoduong254/trellify-{server,client}`.
 
 **2. Tag** — each image gets the immutable tag `sha-<short-commit>` alongside `latest`. Only the `sha-` tag is ever deployed, so whatever is running traces back to exactly one commit.
 

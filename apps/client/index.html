@@ -145,31 +145,33 @@
     </style>
 
     <script>
-      try {
-        var muiMode = localStorage.getItem("mui-mode") || "system";
-        var muiScheme =
-          muiMode === "system"
-            ? window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light"
-            : muiMode;
-        document.documentElement.setAttribute("data-mui-color-scheme", muiScheme);
-      } catch (e) {}
-      if (/^\/(login|register|forgot-password|reset-password)\b/.test(location.pathname)) {
-        document.documentElement.className = "auth-shell";
-        var isNarrow = window.matchMedia("(max-width: 600px)").matches;
-        var bg = document.createElement("link");
-        bg.rel = "preload";
-        bg.as = "image";
-        bg.href = isNarrow ? "/images/login-bg-mobile.webp" : "/images/login-bg.webp";
-        bg.fetchPriority = "high";
-        document.head.appendChild(bg);
-        var turnstile = document.createElement("link");
-        turnstile.rel = "preconnect";
-        turnstile.href = "https://challenges.cloudflare.com";
-        turnstile.crossOrigin = "";
-        document.head.appendChild(turnstile);
-      }
+      (function () {
+        try {
+          var muiMode = localStorage.getItem("mui-mode") || "system";
+          var muiScheme =
+            muiMode === "system"
+              ? window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"
+              : muiMode;
+          document.documentElement.setAttribute("data-mui-color-scheme", muiScheme);
+        } catch (e) {}
+        if (/^\/(login|register|forgot-password|reset-password)\b/.test(location.pathname)) {
+          document.documentElement.className = "auth-shell";
+          var isNarrow = window.matchMedia("(max-width: 600px)").matches;
+          var bg = document.createElement("link");
+          bg.rel = "preload";
+          bg.as = "image";
+          bg.href = isNarrow ? "/images/login-bg-mobile.webp" : "/images/login-bg.webp";
+          bg.fetchPriority = "high";
+          document.head.appendChild(bg);
+          var turnstilePreconnect = document.createElement("link");
+          turnstilePreconnect.rel = "preconnect";
+          turnstilePreconnect.href = "https://challenges.cloudflare.com";
+          turnstilePreconnect.crossOrigin = "";
+          document.head.appendChild(turnstilePreconnect);
+        }
+      })();
     </script>
 
     <!-- Primary Meta Tags -->
