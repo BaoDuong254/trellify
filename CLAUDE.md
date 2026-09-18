@@ -53,7 +53,7 @@ pnpm test:e2e                # Playwright; starts its own API (3100) and Vite (5
 pnpm e2e:down
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → CSP hash check → pkg:build → typecheck → apps:build → `pnpm test` → SonarCloud, and Playwright in a separate `e2e` job. The client's `typecheck` is `tsc -b`, not `tsc --noEmit`: its root `tsconfig.json` is solution-style (`"files": []` plus references to `tsconfig.app.json`/`tsconfig.node.json`), and plain `tsc --noEmit` only reads that root, checks zero files and exits 0. Only build mode follows the references. The Postman collection (`postman/collections/Trellify.postman_collection.json`) and the k6 load tests (below) remain the manual and performance checks; Lighthouse audits of production run in their own workflow (below).
+CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → CSP hash check → pkg:build → typecheck → apps:build → `pnpm test` → SonarCloud, and Playwright in a separate `e2e` job. The client's `typecheck` is `tsc -b`, not `tsc --noEmit`: its root `tsconfig.json` is solution-style (`"files": []` plus references to `tsconfig.app.json`/`tsconfig.node.json`), and plain `tsc --noEmit` only reads that root, checks zero files and exits 0. Only build mode follows the references. The Postman collection (`postman/collections/Trellify.postman_collection.json`) and the k6 load tests (below) remain the manual and performance checks; Lighthouse audits of production are run locally (below).
 
 ### Load testing (k6)
 
@@ -78,10 +78,11 @@ Audits the **deployed** site (`UNLIGHTHOUSE_SITE`, default `https://trellify.duo
 ```bash
 pnpm lighthouse         # public pages, interactive UI
 pnpm lighthouse:auth    # authenticated pages, loads .env.unlighthouse (gitignored)
-pnpm lighthouse:ci      # headless, fails on ci.budget
+pnpm lighthouse:ci      # public pages, headless, fails on ci.budget
+pnpm lighthouse:ci:auth # authenticated pages, headless
 ```
 
-`.github/workflows/lighthouse.yml` runs weekly and on `workflow_dispatch`, never on PRs, because ArgoCD deploys only after a merge. It trades the `UNLIGHTHOUSE_REFRESH_TOKEN` secret for a fresh access token before the authenticated scan. The secret expires after 14 days (refresh tokens are not rotated), and Turnstile means CI cannot log in by itself.
+**There is deliberately no GitHub Actions workflow for it.** Cloudflare Bot Fight Mode (Free plan) answers GitHub-hosted runners with a Managed Challenge, WAF custom rules cannot skip Bot Fight Mode, and a self-hosted runner on a public repo would let fork PRs run code inside the home network. Don't add a workflow back without solving that first.
 
 The config works around three behaviours of Unlighthouse 0.18. Removing any of these workarounds breaks the scans without an error:
 
@@ -89,7 +90,7 @@ The config works around three behaviours of Unlighthouse 0.18. Removing any of t
 - **Auth is injected by the `authenticate` hook into `defaultBrowserContext()`.** Lighthouse runs in a child process on a tab in the browser's default context, while puppeteer-cluster gives every job its own throwaway incognito context. The `cookies`/`localStorage` options therefore never reach the page being measured, and every protected route renders `/login`. `disableStorageReset` is on for the authenticated run so Lighthouse does not wipe `persist:root` before loading the page.
 - **`maxConcurrency: 1`.** Parallel runs hit `NO_NAVSTART` and silently drop routes from the report.
 
-`samples` is 3 when `CI` is set (Unlighthouse keeps the median run via `computeMedianRun`), 1 locally. The authenticated run has `disableStorageReset` on, which also keeps the HTTP cache between samples and pages, so its performance numbers lean towards a warm cache.
+`unlighthouse-ci` passes a route that has no report or a null/0 score (`if (!categories) return;`, `if (category.score && ...)`), so a Cloudflare challenge page or a protected route redirected to `/login` used to count as a pass. The `worker-finished` hook reads each route's `lighthouse.json` and fails on a missing report, a `runtimeError`, a final path that differs from the requested one, or a missing score; it sets `process.exitCode` inside an `exit` listener because the CLI calls `process.exit(0)` itself afterwards. The authenticated run has `disableStorageReset` on, which also keeps the HTTP cache between pages, so its performance numbers lean towards a warm cache.
 
 Public and authenticated routes are separate runs, split on whether the auth variables are present, because `AuthLayout` redirects a logged-in user away from `/login`/`/register`. Best practices is capped around 0.81 by Cloudflare's injected `/cdn-cgi/challenge-platform` script, and SEO is 0.63 on `noindex` pages. The budgets account for both; a drop below that is a real regression, such as a CSP violation in the console.
 

@@ -25,6 +25,7 @@
     "lighthouse": "unlighthouse",
     "lighthouse:auth": "dotenv -e .env.unlighthouse -- unlighthouse",
     "lighthouse:ci": "unlighthouse-ci",
+    "lighthouse:ci:auth": "dotenv -e .env.unlighthouse -- unlighthouse-ci",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "loadtest:clean": "dotenv -e k6/loadtest.env -o -- pnpm be exec tsx scripts/seed-loadtest.ts --cleanup",

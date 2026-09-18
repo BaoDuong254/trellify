@@ -31,7 +31,7 @@ A full-stack project management platform with real-time collaboration, drag-and-
   - [⚡ Performance Testing](#-performance-testing)
   - [🔦 Lighthouse Audits](#-lighthouse-audits)
     - [Scanning authenticated pages](#scanning-authenticated-pages)
-    - [Lighthouse in CI](#lighthouse-in-ci)
+    - [Why it does not run in GitHub Actions](#why-it-does-not-run-in-github-actions)
   - [🔄 Git Workflow](#-git-workflow)
     - [Commit Message Convention](#commit-message-convention)
     - [Hooks](#hooks)
@@ -409,16 +409,18 @@ Full instructions and configuration: [`k6/README.md`](k6/README.md).
 ```bash
 pnpm lighthouse         # public pages, interactive UI at http://localhost:5678
 pnpm lighthouse:auth    # authenticated pages, reads .env.unlighthouse
-pnpm lighthouse:ci      # headless: scan, check the score budgets, exit non-zero on failure
+pnpm lighthouse:ci      # public pages, headless: check the score budgets, exit non-zero on failure
+pnpm lighthouse:ci:auth # authenticated pages, headless
 ```
 
-| Script            | Scans                                                       | Output                                   |
-| ----------------- | ----------------------------------------------------------- | ---------------------------------------- |
-| `lighthouse`      | `/login`, `/register`, `/forgot-password`, 404              | `.unlighthouse/public`                   |
-| `lighthouse:auth` | `/boards`, `/boards/:id`, `/settings/account`               | `.unlighthouse/authenticated`            |
-| `lighthouse:ci`   | Either set, depending on whether the auth variables are set | Same as above, plus a static HTML report |
+| Script               | Scans                                          | Output                                      |
+| -------------------- | ---------------------------------------------- | ------------------------------------------- |
+| `lighthouse`         | `/login`, `/register`, `/forgot-password`, 404 | `.unlighthouse/public`                      |
+| `lighthouse:auth`    | `/boards`, `/boards/:id`, `/settings/account`  | `.unlighthouse/authenticated`               |
+| `lighthouse:ci`      | Public set, headless                           | `.unlighthouse/public` + static HTML        |
+| `lighthouse:ci:auth` | Authenticated set, headless                    | `.unlighthouse/authenticated` + static HTML |
 
-The two sets are scanned separately because `AuthLayout` redirects a logged-in user away from `/login` and `/register`. Scans run on the desktop preset, one page at a time. When `CI` is set (GitHub Actions sets it), each page is scanned 3 times and the median run is kept; locally it is scanned once.
+The two sets are scanned separately because `AuthLayout` redirects a logged-in user away from `/login` and `/register`. Scans run on the desktop preset, one page at a time. The headless scripts also fail when a page could not be measured at all (no report, a runtime error, or a redirect such as a protected page landing on `/login`), which `unlighthouse-ci` on its own reports as a pass.
 
 Budgets (`ci.budget`): performance 80, accessibility 90, best practices 75, SEO 60. Best practices is capped around 0.81 by deprecation warnings from the script Cloudflare injects (`/cdn-cgi/challenge-platform`). SEO is 0.63 on `noindex` pages, which is intentional.
 
@@ -435,17 +437,11 @@ UNLIGHTHOUSE_BOARD_ID=         # optional, adds /boards/:id
 
 If the report shows the login page instead of a board, the access token has expired. Copy a fresh one.
 
-### Lighthouse in CI
+### Why it does not run in GitHub Actions
 
-[`.github/workflows/lighthouse.yml`](.github/workflows/lighthouse.yml) runs on demand (`workflow_dispatch`) and every Monday at 02:00 UTC. It is not attached to pull requests: ArgoCD deploys only after a merge, so a PR scan would measure the previous build. The workflow scans public pages, trades the refresh token for a fresh access token, scans authenticated pages, and uploads `.unlighthouse/` as the `unlighthouse-report` artifact.
+Cloudflare's Bot Fight Mode is on for the zone and answers GitHub-hosted runners (datacenter IPs) with a Managed Challenge, so every page comes back as "Just a moment…". On the Free plan, Bot Fight Mode cannot be skipped by a WAF custom rule, and a self-hosted runner is not an option for a public repository. Run the scans locally instead, before and after sizeable frontend changes.
 
-| Secret                       | Value                                |
-| ---------------------------- | ------------------------------------ |
-| `UNLIGHTHOUSE_REFRESH_TOKEN` | Test account's `refreshToken` cookie |
-| `UNLIGHTHOUSE_PERSIST_ROOT`  | Test account's `persist:root` value  |
-| `UNLIGHTHOUSE_BOARD_ID`      | Demo board id                        |
-
-Refresh tokens are not rotated, so the secret expires after 14 days. The run then fails with "Refresh token expired": log in again and update `UNLIGHTHOUSE_REFRESH_TOKEN`.
+Local numbers are only as clean as the machine: antivirus web protection that injects scripts into pages (Kaspersky does) keeps the network busy until Lighthouse gives up after 45 seconds and roughly halves the performance score. Exclude `trellify.duonggiabao.com` from it before scanning, and delete `.unlighthouse/` to avoid reading old reports.
 
 ## 🔄 Git Workflow
 
