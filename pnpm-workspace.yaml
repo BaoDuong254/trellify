@@ -12,8 +12,10 @@ allowBuilds:
   msgpackr-extract: true
   msw: false
   protobufjs: false
+  puppeteer: false
   ssh2: false
   unrs-resolver: true
+  vue-demi: false
 
 catalog:
   "@commitlint/cli": 21.2.2
@@ -123,6 +125,7 @@ catalog:
   turbo: 2.10.12
   typescript: 6.0.3
   typescript-eslint: 8.70.0
+  unlighthouse: 0.18.0
   uuid: 14.0.2
   vite: 8.3.0
   vite-plugin-svgr: 5.2.0

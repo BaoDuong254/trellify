@@ -4,6 +4,9 @@
   "ignore": [".claude/**", "k6/**"],
   "ignoreDependencies": ["eslint-import-resolver-typescript"],
   "workspaces": {
+    ".": {
+      "entry": ["unlighthouse.config.ts!"]
+    },
     "apps/server": {
       "entry": ["src/index.ts!", "src/worker.ts!", "scripts/seed-loadtest.ts!"],
       "project": ["src/**/*.ts!", "scripts/**/*.ts!", "test/**/*.ts"]

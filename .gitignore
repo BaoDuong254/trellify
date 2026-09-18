@@ -107,3 +107,7 @@ k6/data/*
 !k6/data/.gitkeep
 k6/results/*
 !k6/results/.gitkeep
+
+# Unlighthouse
+.unlighthouse/
+.env.unlighthouse

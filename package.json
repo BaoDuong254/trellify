@@ -22,6 +22,9 @@
     "k6:watch": "node k6/tools/watch-server.mjs",
     "knip": "knip",
     "knip:production": "knip --production",
+    "lighthouse": "unlighthouse",
+    "lighthouse:auth": "dotenv -e .env.unlighthouse -- unlighthouse",
+    "lighthouse:ci": "unlighthouse-ci",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "loadtest:clean": "dotenv -e k6/loadtest.env -o -- pnpm be exec tsx scripts/seed-loadtest.ts --cleanup",
@@ -59,7 +62,8 @@
     "prettier": "catalog:",
     "prettier-plugin-packagejson": "catalog:",
     "turbo": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "unlighthouse": "catalog:"
   },
   "packageManager": "pnpm@12.4.0",
   "engines": {

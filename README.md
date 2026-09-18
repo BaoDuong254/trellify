@@ -29,6 +29,9 @@ A full-stack project management platform with real-time collaboration, drag-and-
   - [📮 Manual API Testing with Postman](#-manual-api-testing-with-postman)
     - [Setup](#setup)
   - [⚡ Performance Testing](#-performance-testing)
+  - [🔦 Lighthouse Audits](#-lighthouse-audits)
+    - [Scanning authenticated pages](#scanning-authenticated-pages)
+    - [Lighthouse in CI](#lighthouse-in-ci)
   - [🔄 Git Workflow](#-git-workflow)
     - [Commit Message Convention](#commit-message-convention)
     - [Hooks](#hooks)
@@ -398,6 +401,51 @@ Profiles: `smoke`, `baseline`, `load`, `stress`, `spike`, `soak`, `capacity`.
 Flags: `--prom` pushes to Prometheus, `--ts` writes a time-series file for `pnpm k6:peak-rps`.
 
 Full instructions and configuration: [`k6/README.md`](k6/README.md).
+
+## 🔦 Lighthouse Audits
+
+[Unlighthouse](https://unlighthouse.dev/) runs Lighthouse (performance, accessibility, best practices, SEO) against the **deployed** site, `https://trellify.duonggiabao.com` by default (override with `UNLIGHTHOUSE_SITE`). Everything is configured in [`unlighthouse.config.ts`](unlighthouse.config.ts). Routes are listed explicitly because the sitemap only holds two URLs.
+
+```bash
+pnpm lighthouse         # public pages, interactive UI at http://localhost:5678
+pnpm lighthouse:auth    # authenticated pages, reads .env.unlighthouse
+pnpm lighthouse:ci      # headless: scan, check the score budgets, exit non-zero on failure
+```
+
+| Script            | Scans                                                       | Output                                   |
+| ----------------- | ----------------------------------------------------------- | ---------------------------------------- |
+| `lighthouse`      | `/login`, `/register`, `/forgot-password`, 404              | `.unlighthouse/public`                   |
+| `lighthouse:auth` | `/boards`, `/boards/:id`, `/settings/account`               | `.unlighthouse/authenticated`            |
+| `lighthouse:ci`   | Either set, depending on whether the auth variables are set | Same as above, plus a static HTML report |
+
+The two sets are scanned separately because `AuthLayout` redirects a logged-in user away from `/login` and `/register`. Scans run on the desktop preset, one page at a time. When `CI` is set (GitHub Actions sets it), each page is scanned 3 times and the median run is kept; locally it is scanned once.
+
+Budgets (`ci.budget`): performance 80, accessibility 90, best practices 75, SEO 60. Best practices is capped around 0.81 by deprecation warnings from the script Cloudflare injects (`/cdn-cgi/challenge-platform`). SEO is 0.63 on `noindex` pages, which is intentional.
+
+### Scanning authenticated pages
+
+Use a dedicated test account with one demo board, never a real account. Log in in the browser, then copy these values from DevTools → Application into `.env.unlighthouse` at the repo root (gitignored):
+
+```bash
+UNLIGHTHOUSE_ACCESS_TOKEN=     # cookie accessToken, valid for 1 hour
+UNLIGHTHOUSE_REFRESH_TOKEN=    # cookie refreshToken, valid for 14 days
+UNLIGHTHOUSE_PERSIST_ROOT=     # Local Storage value of persist:root, copied as-is
+UNLIGHTHOUSE_BOARD_ID=         # optional, adds /boards/:id
+```
+
+If the report shows the login page instead of a board, the access token has expired. Copy a fresh one.
+
+### Lighthouse in CI
+
+[`.github/workflows/lighthouse.yml`](.github/workflows/lighthouse.yml) runs on demand (`workflow_dispatch`) and every Monday at 02:00 UTC. It is not attached to pull requests: ArgoCD deploys only after a merge, so a PR scan would measure the previous build. The workflow scans public pages, trades the refresh token for a fresh access token, scans authenticated pages, and uploads `.unlighthouse/` as the `unlighthouse-report` artifact.
+
+| Secret                       | Value                                |
+| ---------------------------- | ------------------------------------ |
+| `UNLIGHTHOUSE_REFRESH_TOKEN` | Test account's `refreshToken` cookie |
+| `UNLIGHTHOUSE_PERSIST_ROOT`  | Test account's `persist:root` value  |
+| `UNLIGHTHOUSE_BOARD_ID`      | Demo board id                        |
+
+Refresh tokens are not rotated, so the secret expires after 14 days. The run then fails with "Refresh token expired": log in again and update `UNLIGHTHOUSE_REFRESH_TOKEN`.
 
 ## 🔄 Git Workflow
 

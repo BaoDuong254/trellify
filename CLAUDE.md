@@ -53,7 +53,7 @@ pnpm test:e2e                # Playwright; starts its own API (3100) and Vite (5
 pnpm e2e:down
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → CSP hash check → pkg:build → typecheck → apps:build → `pnpm test` → SonarCloud, and Playwright in a separate `e2e` job. The client's `typecheck` is `tsc -b`, not `tsc --noEmit`: its root `tsconfig.json` is solution-style (`"files": []` plus references to `tsconfig.app.json`/`tsconfig.node.json`), and plain `tsc --noEmit` only reads that root, checks zero files and exits 0. Only build mode follows the references. The Postman collection (`postman/collections/Trellify.postman_collection.json`) and the k6 load tests (below) remain the manual and performance checks.
+CI (`.github/workflows/ci.yml`) runs lint → knip → knip:production → format check → CSP hash check → pkg:build → typecheck → apps:build → `pnpm test` → SonarCloud, and Playwright in a separate `e2e` job. The client's `typecheck` is `tsc -b`, not `tsc --noEmit`: its root `tsconfig.json` is solution-style (`"files": []` plus references to `tsconfig.app.json`/`tsconfig.node.json`), and plain `tsc --noEmit` only reads that root, checks zero files and exits 0. Only build mode follows the references. The Postman collection (`postman/collections/Trellify.postman_collection.json`) and the k6 load tests (below) remain the manual and performance checks; Lighthouse audits of production run in their own workflow (below).
 
 ### Load testing (k6)
 
@@ -71,6 +71,28 @@ pnpm loadtest:down    # removes volumes too, so re-seed afterwards
 
 `k6/README.md` documents the profiles, thresholds, and the Prometheus remote-write path.
 
+### Lighthouse (Unlighthouse)
+
+Audits the **deployed** site (`UNLIGHTHOUSE_SITE`, default `https://trellify.duonggiabao.com`), never a local build. Config is `unlighthouse.config.ts` at the root, which is registered as a knip entry.
+
+```bash
+pnpm lighthouse         # public pages, interactive UI
+pnpm lighthouse:auth    # authenticated pages, loads .env.unlighthouse (gitignored)
+pnpm lighthouse:ci      # headless, fails on ci.budget
+```
+
+`.github/workflows/lighthouse.yml` runs weekly and on `workflow_dispatch`, never on PRs, because ArgoCD deploys only after a merge. It trades the `UNLIGHTHOUSE_REFRESH_TOKEN` secret for a fresh access token before the authenticated scan. The secret expires after 14 days (refresh tokens are not rotated), and Turnstile means CI cannot log in by itself.
+
+The config works around three behaviours of Unlighthouse 0.18. Removing any of these workarounds breaks the scans without an error:
+
+- **Throttling is set explicitly.** `resolveUserConfig` checks `if (typeof config.scanner?.throttle)`, which is always truthy, so without `lighthouseOptions.throttling` every scan uses slow 4G, even with `device: "desktop"` (performance ~0.55 instead of ~0.95).
+- **Auth is injected by the `authenticate` hook into `defaultBrowserContext()`.** Lighthouse runs in a child process on a tab in the browser's default context, while puppeteer-cluster gives every job its own throwaway incognito context. The `cookies`/`localStorage` options therefore never reach the page being measured, and every protected route renders `/login`. `disableStorageReset` is on for the authenticated run so Lighthouse does not wipe `persist:root` before loading the page.
+- **`maxConcurrency: 1`.** Parallel runs hit `NO_NAVSTART` and silently drop routes from the report.
+
+`samples` is 3 when `CI` is set (Unlighthouse keeps the median run via `computeMedianRun`), 1 locally. The authenticated run has `disableStorageReset` on, which also keeps the HTTP cache between samples and pages, so its performance numbers lean towards a warm cache.
+
+Public and authenticated routes are separate runs, split on whether the auth variables are present, because `AuthLayout` redirects a logged-in user away from `/login`/`/register`. Best practices is capped around 0.81 by Cloudflare's injected `/cdn-cgi/challenge-platform` script, and SEO is 0.63 on `noindex` pages. The budgets account for both; a drop below that is a real regression, such as a CSP violation in the console.
+
 ## Monorepo Layout
 
 pnpm workspaces + Turbo:
@@ -81,6 +103,7 @@ pnpm workspaces + Turbo:
 - `packages/eslint` / `packages/typescript` — shared configs
 - `infra/` — Kubernetes manifests reconciled by ArgoCD (see Deployment)
 - `k6/` — load-test scenarios, profiles, and helpers (excluded from knip)
+- `unlighthouse.config.ts` — Lighthouse audits of the deployed site
 
 `@workspace/shared` is consumed through built subpath exports only: `@workspace/shared/schemas/*`, `@workspace/shared/utils/*` and `@workspace/shared/constants/*` (no root import). Because it resolves to `dist/`, run `pnpm pkg:build` after changing shared code if apps start reporting stale or missing exports. A new top-level folder under `packages/shared/src/` needs its own entry in the package's `exports` - dev (`tsx`, Vite) and `pnpm typecheck` resolve through tsconfig `paths` and never notice, but `tsconfig.build.json` drops that mapping, so the server's `apps:build` fails with TS2307 and plain Node rejects the import with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
 
