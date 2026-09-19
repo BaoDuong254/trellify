@@ -7,16 +7,29 @@ import { defineUnlighthouseConfig } from "unlighthouse/config";
 const site = process.env.UNLIGHTHOUSE_SITE ?? "https://trellify.duonggiabao.com";
 const domain = new URL(site).hostname;
 
-const accessToken = process.env.UNLIGHTHOUSE_ACCESS_TOKEN;
 const refreshToken = process.env.UNLIGHTHOUSE_REFRESH_TOKEN;
 const persistRoot = process.env.UNLIGHTHOUSE_PERSIST_ROOT;
 const boardId = process.env.UNLIGHTHOUSE_BOARD_ID;
 
-const session = accessToken && refreshToken && persistRoot ? { accessToken, refreshToken, persistRoot } : undefined;
+const session = refreshToken && persistRoot ? { refreshToken, persistRoot } : undefined;
 
 const publicUrls = ["/login", "/register", "/forgot-password", "/not-found"];
 const authenticatedUrls = ["/boards", ...(boardId ? [`/boards/${boardId}`] : []), "/settings/account"];
 const urls = session ? authenticatedUrls : publicUrls;
+
+const fetchAccessToken = async (token: string): Promise<string> => {
+  const response = await fetch(`${site}/api/v1/users/refresh_token`, { headers: { cookie: `refreshToken=${token}` } });
+  const accessToken = response.headers
+    .getSetCookie()
+    .map((cookie) => /^accessToken=([^;]+)/.exec(cookie)?.[1])
+    .find(Boolean);
+  if (!response.ok || !accessToken) {
+    throw new Error(
+      `Refresh token rejected (HTTP ${response.status}). Log in again and update UNLIGHTHOUSE_REFRESH_TOKEN in .env.unlighthouse.`
+    );
+  }
+  return accessToken;
+};
 
 interface LighthouseResult {
   finalDisplayedUrl: string;
@@ -76,12 +89,13 @@ export default defineUnlighthouseConfig({
     "worker-finished": failOnUnmeasuredPages,
     ...(session && {
       async authenticate(page) {
+        const accessToken = await fetchAccessToken(session.refreshToken);
         await page.goto(`${site}/robots.txt`);
         const context = page.browser().defaultBrowserContext();
         await context.setCookie(
-          ...(["accessToken", "refreshToken"] as const).map((name) => ({
+          ...Object.entries({ accessToken, refreshToken: session.refreshToken }).map(([name, value]) => ({
             name,
-            value: session[name],
+            value,
             domain,
             path: "/",
             secure: true,

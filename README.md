@@ -429,13 +429,12 @@ Budgets (`ci.budget`): performance 80, accessibility 90, best practices 75, SEO 
 Use a dedicated test account with one demo board, never a real account. Log in in the browser, then copy these values from DevTools → Application into `.env.unlighthouse` at the repo root (gitignored):
 
 ```bash
-UNLIGHTHOUSE_ACCESS_TOKEN=     # cookie accessToken, valid for 1 hour
 UNLIGHTHOUSE_REFRESH_TOKEN=    # cookie refreshToken, valid for 14 days
 UNLIGHTHOUSE_PERSIST_ROOT=     # Local Storage value of persist:root, copied as-is
 UNLIGHTHOUSE_BOARD_ID=         # optional, adds /boards/:id
 ```
 
-If the report shows the login page instead of a board, the access token has expired. Copy a fresh one.
+Each scan trades the refresh token for a fresh access token through `GET /api/v1/users/refresh_token`, so there is no access token to copy. When the scan stops with "Refresh token rejected", the refresh token has expired: log in again and replace it.
 
 ### Why it does not run in GitHub Actions
 
