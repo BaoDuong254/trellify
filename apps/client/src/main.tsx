@@ -56,11 +56,13 @@ const loadSentryReplay = (): void => {
 
 if (SENTRY_ENABLED) {
   addEventListener("load", () => {
-    if ("requestIdleCallback" in window) {
-      requestIdleCallback(loadSentryReplay, { timeout: 2000 });
-    } else {
-      setTimeout(loadSentryReplay, 2000);
-    }
+    setTimeout(() => {
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(loadSentryReplay, { timeout: 2000 });
+      } else {
+        loadSentryReplay();
+      }
+    }, 5000);
   });
 }
 
