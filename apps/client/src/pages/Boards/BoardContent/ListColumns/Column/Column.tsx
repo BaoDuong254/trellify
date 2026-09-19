@@ -267,7 +267,11 @@ function Column({ column }: { column: ColumnType }) {
                 justifyContent: "space-between",
               }}
             >
-              <Button startIcon={<AddCardIcon />} onClick={toggleOpenNewCardForm}>
+              <Button
+                startIcon={<AddCardIcon />}
+                onClick={toggleOpenNewCardForm}
+                sx={{ color: (theme) => (theme.palette.mode === "dark" ? undefined : theme.palette.primary.dark) }}
+              >
                 Add new card
               </Button>
               <Tooltip title='Drag to move'>

@@ -170,6 +170,11 @@
           turnstilePreconnect.href = "https://challenges.cloudflare.com";
           turnstilePreconnect.crossOrigin = "";
           document.head.appendChild(turnstilePreconnect);
+        } else {
+          var cloudinaryPreconnect = document.createElement("link");
+          cloudinaryPreconnect.rel = "preconnect";
+          cloudinaryPreconnect.href = "https://res.cloudinary.com";
+          document.head.appendChild(cloudinaryPreconnect);
         }
       })();
     </script>
@@ -223,19 +228,27 @@
         allow_ad_personalization_signals: false,
       });
 
-      addEventListener("load", function () {
+      (function () {
+        var loaded = false;
+        var triggers = ["pointerdown", "keydown", "scroll"];
         var loadGtag = function () {
+          if (loaded) return;
+          loaded = true;
+          triggers.forEach(function (type) {
+            removeEventListener(type, loadGtag, true);
+          });
           var s = document.createElement("script");
           s.async = true;
           s.src = "https://www.googletagmanager.com/gtag/js?id=G-LYYXW52FTF";
           document.head.appendChild(s);
         };
-        if ("requestIdleCallback" in window) {
-          requestIdleCallback(loadGtag, { timeout: 1000 });
-        } else {
-          setTimeout(loadGtag, 1000);
-        }
-      });
+        triggers.forEach(function (type) {
+          addEventListener(type, loadGtag, { capture: true, once: true, passive: true });
+        });
+        addEventListener("load", function () {
+          setTimeout(loadGtag, 4000);
+        });
+      })();
     </script>
   </head>
   <body>

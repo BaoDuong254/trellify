@@ -45,7 +45,7 @@ function BoardBar({ board, presentUserIds }: { board?: Board; presentUserIds?: s
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Tooltip title={board?.description}>
+        <Tooltip title={board?.description} describeChild>
           <Chip icon={<DashboardIcon />} label={board?.title} clickable sx={MENU_STYLES} />
         </Tooltip>
         <Chip icon={<VpnLockIcon />} label={capitalizeFirstLetter(board?.type)} clickable sx={MENU_STYLES} />

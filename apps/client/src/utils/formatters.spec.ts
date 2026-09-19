@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cloudinaryThumb, formatDateTime } from "src/utils/formatters";
+import { cloudinaryImage, cloudinaryThumb, formatDateTime } from "src/utils/formatters";
 
 describe("cloudinaryThumb", () => {
   it("inserts a square retina transformation after the upload segment", () => {
@@ -16,6 +16,18 @@ describe("cloudinaryThumb", () => {
   it("returns undefined for a missing avatar", () => {
     expect(cloudinaryThumb(null, 36)).toBeUndefined();
     expect(cloudinaryThumb("", 36)).toBeUndefined();
+  });
+});
+
+describe("cloudinaryImage", () => {
+  it("caps the width at twice the rendered size and lets Cloudinary pick the format", () => {
+    expect(cloudinaryImage("https://res.cloudinary.com/demo/image/upload/v1769530250/covers/cover.png", 272)).toBe(
+      "https://res.cloudinary.com/demo/image/upload/c_limit,w_544,f_auto,q_auto/v1769530250/covers/cover.png"
+    );
+  });
+
+  it("leaves URLs outside Cloudinary untouched", () => {
+    expect(cloudinaryImage("https://example.com/cover.png", 272)).toBe("https://example.com/cover.png");
   });
 });
 

@@ -74,3 +74,6 @@ export const cloudinaryThumb = (url: string | null | undefined, size: number): s
   const pixels = size * 2;
   return url.replace(CLOUDINARY_UPLOAD_SEGMENT, `$1c_fill,g_face,w_${pixels},h_${pixels},f_auto,q_auto/`);
 };
+
+export const cloudinaryImage = (url: string, width: number): string =>
+  url.replace(CLOUDINARY_UPLOAD_SEGMENT, `$1c_limit,w_${width * 2},f_auto,q_auto/`);

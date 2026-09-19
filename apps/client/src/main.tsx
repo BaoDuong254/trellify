@@ -43,13 +43,26 @@ Sentry.init({
       createRoutesFromChildren,
       matchRoutes,
     }),
-    Sentry.replayIntegration(),
   ],
   tracesSampleRate: 0.1,
   tracePropagationTargets: ["localhost", /^\/api\//],
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
 });
+
+const loadSentryReplay = (): void => {
+  import("src/utils/sentryReplay").then(({ replayIntegration }) => Sentry.addIntegration(replayIntegration()));
+};
+
+if (SENTRY_ENABLED) {
+  addEventListener("load", () => {
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(loadSentryReplay, { timeout: 2000 });
+    } else {
+      setTimeout(loadSentryReplay, 2000);
+    }
+  });
+}
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

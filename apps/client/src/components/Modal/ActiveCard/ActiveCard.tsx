@@ -52,6 +52,7 @@ import {
 } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser } from "src/redux/user/userSlice";
+import { cloudinaryImage } from "src/utils/formatters";
 import { singleFileValidator } from "src/utils/validators";
 
 import CardActivitySection from "./CardActivitySection";
@@ -199,7 +200,7 @@ function ActiveCard() {
           <Box sx={{ mb: 4 }}>
             <img
               style={{ width: "100%", height: "320px", borderRadius: "6px", objectFit: "cover" }}
-              src={activeCard.cover}
+              src={cloudinaryImage(activeCard.cover, 900)}
               alt='card cover'
             />
           </Box>

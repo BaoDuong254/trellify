@@ -14,6 +14,7 @@ import { useDispatch } from "react-redux";
 import { showModalActiveCard, updateCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card as CardType } from "src/types/board.type";
+import { cloudinaryImage } from "src/utils/formatters";
 
 function Card({ card }: { card: CardType }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -57,7 +58,11 @@ function Card({ card }: { card: CardType }) {
       }}
     >
       {card?.cover && (
-        <CardMedia sx={{ height: 140 }} image={card.cover} title={card.description || "Card cover image"} />
+        <CardMedia
+          sx={{ height: 140 }}
+          image={cloudinaryImage(card.cover, 272)}
+          title={card.description || "Card cover image"}
+        />
       )}
       <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
         <Typography>{card?.title}</Typography>

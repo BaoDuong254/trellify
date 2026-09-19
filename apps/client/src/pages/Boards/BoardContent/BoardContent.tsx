@@ -306,6 +306,7 @@ function BoardContent({
       collisionDetection={collisionDetectionStrategy}
     >
       <Box
+        component='main'
         sx={{
           bgcolor: (theme) => (theme.palette.mode === "dark" ? "#34495e" : "#1976d2"),
           width: "100%",

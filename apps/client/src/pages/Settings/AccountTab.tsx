@@ -17,6 +17,7 @@ import FieldErrorAlert from "src/components/Form/FieldErrorAlert";
 import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
 import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser, updateUserAPI } from "src/redux/user/userSlice";
+import { cloudinaryThumb } from "src/utils/formatters";
 import { FIELD_REQUIRED_MESSAGE, singleFileValidator } from "src/utils/validators";
 
 interface AccountTabFormData {
@@ -93,7 +94,11 @@ function AccountTab() {
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box>
-            <Avatar sx={{ width: 84, height: 84, mb: 1 }} alt='User avatar' src={currentUser?.avatar ?? undefined} />
+            <Avatar
+              sx={{ width: 84, height: 84, mb: 1 }}
+              alt='User avatar'
+              src={cloudinaryThumb(currentUser?.avatar, 84)}
+            />
             <Tooltip title='Upload a new image to update your avatar immediately.' describeChild>
               <Button
                 component='label'
@@ -110,7 +115,7 @@ function AccountTab() {
           </Box>
           <Box>
             <Typography variant='h6'>{currentUser?.displayName}</Typography>
-            <Typography sx={{ color: "grey" }}>@{currentUser?.username}</Typography>
+            <Typography sx={{ color: "text.secondary" }}>@{currentUser?.username}</Typography>
           </Box>
         </Box>
 
