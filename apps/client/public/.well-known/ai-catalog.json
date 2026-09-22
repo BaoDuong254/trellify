@@ -1,0 +1,9 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Trellify",
+    "documentationUrl": "https://trellify.duonggiabao.com/llms.txt",
+    "logoUrl": "https://trellify.duonggiabao.com/images/trello.svg"
+  },
+  "entries": []
+}
