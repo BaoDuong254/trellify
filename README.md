@@ -1,5 +1,7 @@
 # Trellify
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/BaoDuong254/trellify)
+
 A full-stack project management platform with real-time collaboration, drag-and-drop kanban workflows, and team workspace management. Built using React, Express.js, and MongoDB in a scalable monorepo architecture.
 
 ## 📋 Table of Contents
