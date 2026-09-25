@@ -48,7 +48,7 @@ const update = async (
 ) => {
   await assertCardAccess(userId, cardId);
 
-  const { commentToAdd, incomingMemberInfo, ...fields } = requestBody;
+  const { commentToAdd, commentToUpdate, commentToDelete, incomingMemberInfo, ...fields } = requestBody;
   let updatedCard: WithId<Document> | null;
   if (cardCoverFile) {
     const uploadResult = (await CloudinaryProvider.streamUpload(cardCoverFile.buffer, "trellify_card-covers")) as {
@@ -58,11 +58,18 @@ const update = async (
   } else if (commentToAdd) {
     const commentData = {
       ...commentToAdd,
+      _id: new ObjectId().toString(),
       commentedAt: new Date(),
       userId: userInfo?._id,
       userEmail: userInfo?.email,
     } as CardCommentType;
     updatedCard = await cardModel.unshiftNewComment(cardId, commentData);
+  } else if (commentToUpdate) {
+    updatedCard = await cardModel.updateOwnComment(cardId, commentToUpdate._id, userId, commentToUpdate.content);
+    if (!updatedCard) throw new ApiError(StatusCodes.NOT_FOUND, "Error.CommentNotFound");
+  } else if (commentToDelete) {
+    updatedCard = await cardModel.deleteOwnComment(cardId, commentToDelete._id, userId);
+    if (!updatedCard) throw new ApiError(StatusCodes.NOT_FOUND, "Error.CommentNotFound");
   } else if (incomingMemberInfo) {
     updatedCard = await cardModel.updateMembers(cardId, incomingMemberInfo);
   } else {

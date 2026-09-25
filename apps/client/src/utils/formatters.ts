@@ -67,6 +67,22 @@ export const formatDateTime = (value?: number | string | Date | null): string =>
   return Number.isNaN(date.getTime()) ? "" : DATE_TIME_FORMAT.format(date);
 };
 
+export const toDateTimeLocalValue = (value?: string | null): string => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+};
+
+export type DueStatus = "complete" | "overdue" | "dueSoon" | "upcoming";
+
+export const dueStatus = (dueDate: string, dueComplete = false, now = Date.now()): DueStatus => {
+  if (dueComplete) return "complete";
+  const remaining = new Date(dueDate).getTime() - now;
+  if (remaining < 0) return "overdue";
+  return remaining < 24 * 60 * 60 * 1000 ? "dueSoon" : "upcoming";
+};
+
 const CLOUDINARY_UPLOAD_SEGMENT = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)/;
 
 export const cloudinaryThumb = (url: string | null | undefined, size: number): string | undefined => {

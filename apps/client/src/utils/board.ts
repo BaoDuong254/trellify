@@ -5,6 +5,7 @@ import { mapOrder } from "src/utils/sort";
 export const normalizeBoard = (incomingBoard: Board): Board => {
   const board = structuredClone(incomingBoard);
 
+  board.labels = board.labels ?? [];
   board.FE_allUsers = (board.owners ?? []).concat(board.members ?? []);
   board.columns = mapOrder(board.columns, board.columnOrderIds, "_id");
 

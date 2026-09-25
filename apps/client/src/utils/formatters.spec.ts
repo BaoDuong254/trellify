@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { cloudinaryImage, cloudinaryThumb, formatDateTime } from "src/utils/formatters";
+import {
+  cloudinaryImage,
+  cloudinaryThumb,
+  dueStatus,
+  formatDateTime,
+  toDateTimeLocalValue,
+} from "src/utils/formatters";
 
 describe("cloudinaryThumb", () => {
   it("inserts a square retina transformation after the upload segment", () => {
@@ -43,5 +49,28 @@ describe("formatDateTime", () => {
   it("returns an empty string for missing or invalid values", () => {
     expect(formatDateTime(undefined)).toBe("");
     expect(formatDateTime("not a date")).toBe("");
+  });
+});
+
+describe("dueStatus", () => {
+  const now = new Date("2026-01-10T12:00:00Z").getTime();
+
+  it("classifies a due date relative to now", () => {
+    expect(dueStatus("2026-01-09T12:00:00Z", false, now)).toBe("overdue");
+    expect(dueStatus("2026-01-10T18:00:00Z", false, now)).toBe("dueSoon");
+    expect(dueStatus("2026-01-20T12:00:00Z", false, now)).toBe("upcoming");
+    expect(dueStatus("2026-01-09T12:00:00Z", true, now)).toBe("complete");
+  });
+});
+
+describe("toDateTimeLocalValue", () => {
+  it("round-trips through a datetime-local input value", () => {
+    const iso = "2026-01-10T12:34:00.000Z";
+    expect(new Date(toDateTimeLocalValue(iso)).toISOString()).toBe(iso);
+  });
+
+  it("returns an empty string for missing or invalid input", () => {
+    expect(toDateTimeLocalValue(null)).toBe("");
+    expect(toDateTimeLocalValue("nope")).toBe("");
   });
 });

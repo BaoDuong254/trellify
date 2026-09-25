@@ -15,7 +15,13 @@ router
 router
   .route("/:id")
   .get(authMiddleware.isAuthorized, boardValidation.getDetails, boardController.getDetails)
-  .put(authMiddleware.isAuthorized, rateLimitMiddleware.write, boardValidation.update, boardController.update);
+  .put(authMiddleware.isAuthorized, rateLimitMiddleware.write, boardValidation.update, boardController.update)
+  .delete(
+    authMiddleware.isAuthorized,
+    rateLimitMiddleware.write,
+    boardValidation.deleteItem,
+    boardController.deleteItem
+  );
 
 router
   .route("/:id/members/:userId")

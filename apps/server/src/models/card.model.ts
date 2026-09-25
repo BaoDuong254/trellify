@@ -86,6 +86,26 @@ const unshiftNewComment = async (cardId: string, commentData: CardCommentType) =
   return result;
 };
 
+const updateOwnComment = async (cardId: string, commentId: string, userId: string, content: string) => {
+  return await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(cardId), _destroy: false, comments: { $elemMatch: { _id: commentId, userId } } },
+      { $set: { "comments.$.content": content, "comments.$.editedAt": new Date() } },
+      { returnDocument: "after" }
+    );
+};
+
+const deleteOwnComment = async (cardId: string, commentId: string, userId: string) => {
+  return await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(cardId), _destroy: false, comments: { $elemMatch: { _id: commentId, userId } } },
+      { $pull: { comments: { _id: commentId, userId } } } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+};
+
 const updateMembers = async (cardId: string, incomingMemberInfo: IncomingCardMemberInfoType) => {
   const updateCondition: Record<string, unknown> =
     incomingMemberInfo.action === CARD_MEMBER_ACTIONS.ADD
@@ -117,6 +137,8 @@ export const cardModel = {
   deleteOneById,
   deleteManyByColumnId,
   unshiftNewComment,
+  updateOwnComment,
+  deleteOwnComment,
   updateMembers,
   pullMemberFromBoardCards,
 };

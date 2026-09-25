@@ -9,7 +9,7 @@ import {
 import { BOARD_UPDATE_REASONS } from "@workspace/shared/utils/socket-events";
 
 import { boardService } from "src/services/board.service";
-import { broadcastBoardUpdate, evictUserFromBoardRoom } from "src/sockets/board/board.broadcast";
+import { broadcastBoardUpdate, evictUserFromBoardRoom, notifyBoardDeleted } from "src/sockets/board/board.broadcast";
 import { actorId } from "src/utils/request-user";
 
 const createNew = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
@@ -51,6 +51,21 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
       data: updatedBoard,
     });
     broadcastBoardUpdate(request, boardId, BOARD_UPDATE_REASONS.BOARD_UPDATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteItem = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const boardId = (request.params.id as string) ?? "";
+    const result = await boardService.deleteItem(actorId(request), boardId);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Board deleted successfully",
+      data: result,
+    });
+    notifyBoardDeleted(request, boardId);
   } catch (error) {
     next(error);
   }
@@ -118,6 +133,7 @@ export const boardController = {
   createNew,
   getDetails,
   update,
+  deleteItem,
   moveCardToDifferentColumn,
   getBoards,
   removeMember,

@@ -3,6 +3,14 @@ import { z } from "zod";
 import { BOARD_TYPES } from "@workspace/shared/utils/constants";
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "@workspace/shared/utils/validators";
 
+const BOARD_LABEL_SCHEMA = z.object({
+  _id: z.string({ error: "Error.LabelIdMustBeString" }).min(1).max(64),
+  name: z.string({ error: "Error.LabelNameMustBeString" }).max(30, { error: "Error.LabelNameTooLong" }).trim(),
+  color: z
+    .string({ error: "Error.LabelColorMustBeString" })
+    .regex(/^#[0-9a-fA-F]{6}$/, { error: "Error.LabelColorInvalid" }),
+});
+
 export const BOARD_COLLECTION_SCHEMA = z.object({
   title: z
     .string({ error: "Error.TitleMustBeString" })
@@ -25,6 +33,7 @@ export const BOARD_COLLECTION_SCHEMA = z.object({
   memberIds: z
     .array(z.string({ error: "Error.MemberIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
     .default([]),
+  labels: z.array(BOARD_LABEL_SCHEMA).max(50, { error: "Error.TooManyLabels" }).default([]),
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
@@ -41,7 +50,10 @@ export const UPDATE_BOARD_SCHEMA = BOARD_COLLECTION_SCHEMA.pick({
   description: true,
   type: true,
 })
-  .extend({ columnOrderIds: BOARD_COLLECTION_SCHEMA.shape.columnOrderIds.unwrap() })
+  .extend({
+    columnOrderIds: BOARD_COLLECTION_SCHEMA.shape.columnOrderIds.unwrap(),
+    labels: BOARD_COLLECTION_SCHEMA.shape.labels.unwrap(),
+  })
   .partial();
 
 export const MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA = z.object({
@@ -72,6 +84,7 @@ export const REMOVE_BOARD_MEMBER_PARAMS_SCHEMA = z.object({
 });
 
 export type BoardCollectionType = z.infer<typeof BOARD_COLLECTION_SCHEMA>;
+export type BoardLabelType = z.infer<typeof BOARD_LABEL_SCHEMA>;
 export type BoardPatchType = Partial<BoardCollectionType>;
 export type CreateNewBoardType = z.infer<typeof CREATE_NEW_BOARD_SCHEMA>;
 export type UpdateBoardType = z.infer<typeof UPDATE_BOARD_SCHEMA>;

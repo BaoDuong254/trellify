@@ -127,6 +127,12 @@ const update = async (boardId: string, updateData: BoardPatchType) => {
     .findOneAndUpdate({ _id: new ObjectId(boardId) }, { $set: updateData }, { returnDocument: "after" });
 };
 
+const deleteOneById = async (boardId: string) => {
+  return await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .updateOne({ _id: new ObjectId(boardId), _destroy: false }, { $set: { _destroy: true, updatedAt: new Date() } });
+};
+
 const getBoards = async (userId: string, page: number, itemsPerPage: number, queryFilters?: Record<string, string>) => {
   const queryConditions: Array<Record<string, unknown>> = [
     { _destroy: false },
@@ -198,6 +204,7 @@ export const boardModel = {
   findMembership,
   pushColumnOrderIds,
   update,
+  deleteOneById,
   pullColumnOrderIds,
   getBoards,
   pushMemberIds,

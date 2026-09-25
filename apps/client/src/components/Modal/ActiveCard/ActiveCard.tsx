@@ -21,6 +21,7 @@ import SubjectRoundedIcon from "@mui/icons-material/SubjectRounded";
 import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
 import WatchLaterOutlinedIcon from "@mui/icons-material/WatchLaterOutlined";
 import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
 import Modal from "@mui/material/Modal";
 import Skeleton from "@mui/material/Skeleton";
@@ -29,14 +30,19 @@ import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 import { cloneDeep } from "lodash";
 import { useConfirm } from "material-ui-confirm";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 
-import type { IncomingCardMemberInfoType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import type { BoardLabelType } from "@workspace/shared/schemas/board.schema";
+import type {
+  ChecklistItemType,
+  IncomingCardMemberInfoType,
+  UpdateCardInputType,
+} from "@workspace/shared/schemas/card.schema";
 import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 
-import { deleteCardDetailsAPI, updateCardDetailsAPI } from "src/apis";
+import { deleteCardDetailsAPI, updateBoardDetailsAPI, updateCardDetailsAPI } from "src/apis";
 import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
 import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
 import {
@@ -56,6 +62,10 @@ import { cloudinaryImage } from "src/utils/formatters";
 import { singleFileValidator } from "src/utils/validators";
 
 import CardActivitySection from "./CardActivitySection";
+import { CardLabelChips, DueDateChip } from "./CardBadges";
+import CardChecklistSection from "./CardChecklistSection";
+import CardDatesPopover from "./CardDatesPopover";
+import CardLabelsPopover from "./CardLabelsPopover";
 import CardUserGroup from "./CardUserGroup";
 
 const CardDescriptionMdEditor = lazy(() => import("./CardDescriptionMdEditor"));
@@ -87,12 +97,19 @@ function ActiveCard() {
   const currentUser = useSelector(selectCurrentUser);
   const board = useSelector(selectCurrentActiveBoard);
   const confirmDeleteCard = useConfirm();
+  const [datesAnchor, setDatesAnchor] = useState<HTMLElement | null>(null);
+  const [labelsAnchor, setLabelsAnchor] = useState<HTMLElement | null>(null);
+  const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+  const boardLabels = board?.labels ?? [];
+  const cardLabelIds = activeCard?.labelIds ?? [];
+  const checklist = activeCard?.checklist ?? [];
 
   const handleCloseModal = () => {
+    setIsChecklistOpen(false);
     dispatch(clearAndHideCurrentActiveCard());
   };
 
-  const callApiUpdateCard = async (updatedCardData: UpdateCardType) => {
+  const callApiUpdateCard = async (updatedCardData: UpdateCardInputType) => {
     const updatedCard = await updateCardDetailsAPI(activeCard?._id || "", updatedCardData);
     dispatch(updateCurrentActiveCard(updatedCard));
     dispatch(updateCardInBoard(updatedCard));
@@ -132,6 +149,31 @@ function ActiveCard() {
     await callApiUpdateCard({
       commentToAdd,
     });
+  };
+
+  const onUpdateComment = async (commentToUpdate: { _id: string; content: string }) => {
+    await callApiUpdateCard({ commentToUpdate });
+  };
+
+  const onDeleteComment = async (commentId: string) => {
+    await callApiUpdateCard({ commentToDelete: { _id: commentId } });
+  };
+
+  const onToggleCardLabel = (labelId: string) => {
+    const labelIds = cardLabelIds.includes(labelId)
+      ? cardLabelIds.filter((id) => id !== labelId)
+      : [...cardLabelIds, labelId];
+    callApiUpdateCard({ labelIds });
+  };
+
+  const onBoardLabelsChange = (labels: BoardLabelType[]) => {
+    if (!board) return;
+    dispatch(updateCurrentActiveBoard({ ...board, labels }));
+    updateBoardDetailsAPI(board._id, { labels });
+  };
+
+  const onUpdateChecklist = (nextChecklist: ChecklistItemType[]) => {
+    callApiUpdateCard({ checklist: nextChecklist });
   };
 
   const onUpdateCardMembers = async (incomingMemberInfo: IncomingCardMemberInfoType) => {
@@ -224,6 +266,32 @@ function ActiveCard() {
               <CardUserGroup cardMemberIds={activeCard?.memberIds || []} onUpdateCardMembers={onUpdateCardMembers} />
             </Box>
 
+            {cardLabelIds.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: "600", color: "primary.main", mb: 1 }}>Labels</Typography>
+                <CardLabelChips boardLabels={boardLabels} labelIds={cardLabelIds} />
+              </Box>
+            )}
+
+            {activeCard?.dueDate && (
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: "600", color: "primary.main", mb: 1 }}>Due date</Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Checkbox
+                    size='small'
+                    checked={Boolean(activeCard.dueComplete)}
+                    onChange={(event) => callApiUpdateCard({ dueComplete: event.target.checked })}
+                    slotProps={{ input: { "aria-label": "Mark due date complete" } }}
+                  />
+                  <DueDateChip
+                    dueDate={activeCard.dueDate}
+                    dueComplete={activeCard.dueComplete}
+                    onClick={(event) => setDatesAnchor(event.currentTarget)}
+                  />
+                </Box>
+              </Box>
+            )}
+
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <SubjectRoundedIcon />
@@ -239,6 +307,12 @@ function ActiveCard() {
               </Suspense>
             </Box>
 
+            {(checklist.length > 0 || isChecklistOpen) && (
+              <Box sx={{ mb: 3 }}>
+                <CardChecklistSection checklist={checklist} onChange={onUpdateChecklist} />
+              </Box>
+            )}
+
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <DvrOutlinedIcon />
@@ -246,7 +320,12 @@ function ActiveCard() {
                   Activity
                 </Typography>
               </Box>
-              <CardActivitySection cardComments={activeCard?.comments} onAddCardComment={onAddCardComment} />
+              <CardActivitySection
+                cardComments={activeCard?.comments}
+                onAddCardComment={onAddCardComment}
+                onUpdateComment={onUpdateComment}
+                onDeleteComment={onDeleteComment}
+              />
             </Box>
           </Box>
 
@@ -298,18 +377,34 @@ function ActiveCard() {
                 <AttachFileOutlinedIcon fontSize='small' />
                 Attachment
               </SidebarItem>
-              <SidebarItem>
+              <SidebarItem className='active' onClick={(event) => setLabelsAnchor(event.currentTarget)}>
                 <LocalOfferOutlinedIcon fontSize='small' />
                 Labels
               </SidebarItem>
-              <SidebarItem>
+              <SidebarItem className='active' onClick={() => setIsChecklistOpen(true)}>
                 <TaskAltOutlinedIcon fontSize='small' />
                 Checklist
               </SidebarItem>
-              <SidebarItem>
+              <SidebarItem className='active' onClick={(event) => setDatesAnchor(event.currentTarget)}>
                 <WatchLaterOutlinedIcon fontSize='small' />
                 Dates
               </SidebarItem>
+              {datesAnchor && (
+                <CardDatesPopover
+                  anchorEl={datesAnchor}
+                  onClose={() => setDatesAnchor(null)}
+                  dueDate={activeCard?.dueDate}
+                  onSave={(dueDate) => callApiUpdateCard({ dueDate, dueComplete: false })}
+                />
+              )}
+              <CardLabelsPopover
+                anchorEl={labelsAnchor}
+                onClose={() => setLabelsAnchor(null)}
+                boardLabels={boardLabels}
+                selectedLabelIds={cardLabelIds}
+                onToggleLabel={onToggleCardLabel}
+                onBoardLabelsChange={onBoardLabelsChange}
+              />
               <SidebarItem>
                 <AutoFixHighOutlinedIcon fontSize='small' />
                 Custom Fields

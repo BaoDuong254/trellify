@@ -1,5 +1,5 @@
 import type { BoardCollectionType } from "@workspace/shared/schemas/board.schema";
-import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
+import type { CardCommentType, ChecklistItemType } from "@workspace/shared/schemas/card.schema";
 
 import type { User } from "src/types/user.type";
 
@@ -13,6 +13,10 @@ export interface Card {
   memberIds?: string[];
   comments?: CardCommentType[];
   attachments?: string[];
+  dueDate?: string | null;
+  dueComplete?: boolean;
+  labelIds?: string[];
+  checklist?: ChecklistItemType[];
   FE_PlaceholderCard?: boolean;
 }
 

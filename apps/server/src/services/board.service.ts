@@ -139,7 +139,7 @@ const getBoardSnapshot = async (boardId: string) => {
   return groupCardsIntoColumns(boardDetails);
 };
 
-const boardCacheKey = (boardId: string): string => `c:v1:board:${boardId}`;
+const boardCacheKey = (boardId: string): string => `c:v2:board:${boardId}`;
 
 const invalidateBoardCache = async (boardId: string): Promise<void> => {
   await invalidate(boardCacheKey(boardId));
@@ -171,6 +171,15 @@ const update = async (userId: string, boardId: string, requestBody: UpdateBoardT
   const updatedBoard = await boardModel.update(boardId, updateData);
   await invalidateBoardMembership(boardId);
   return updatedBoard;
+};
+
+const deleteItem = async (userId: string, boardId: string): Promise<{ deleteResult: string }> => {
+  await assertBoardOwner(userId, boardId);
+
+  await boardModel.deleteOneById(boardId);
+  await Promise.all([invalidateBoardMembership(boardId), invalidateBoardCache(boardId)]);
+
+  return { deleteResult: "Board deleted successfully" };
 };
 
 const moveCardToDifferentColumn = async (userId: string, requestBody: MoveCardToDifferentColumnType) => {
@@ -241,6 +250,7 @@ export const boardService = {
   createNew,
   getDetails,
   update,
+  deleteItem,
   moveCardToDifferentColumn,
   getBoards,
   canUserAccessBoard,

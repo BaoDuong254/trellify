@@ -46,6 +46,7 @@ export const buildBoard = (overrides: Partial<Board> = {}): Board => ({
   columnOrderIds: [],
   ownerIds: ["user-1"],
   memberIds: [],
+  labels: [],
   columns: [],
   owners: [],
   members: [],

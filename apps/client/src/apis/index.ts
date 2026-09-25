@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 
 import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
-import type { UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import type { UpdateCardInputType } from "@workspace/shared/schemas/card.schema";
 import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import type { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
 
@@ -37,6 +37,11 @@ export const createNewBoardAPI = async (data: CreateBoardFormData) => {
   return response.data.data;
 };
 
+export const deleteBoardAPI = async (boardId: string): Promise<{ deleteResult: string }> => {
+  const response = await http.delete(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`);
+  return response.data.data;
+};
+
 export const removeBoardMemberAPI = async (boardId: string, userId: string): Promise<{ removeResult: string }> => {
   const response = await http.delete(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}/members/${userId}`);
   return response.data.data;
@@ -64,7 +69,7 @@ export const createNewCardAPI = async (newCardData: Partial<Card>): Promise<Card
   return response.data.data;
 };
 
-export const updateCardDetailsAPI = async (cardId: string, updateData: UpdateCardType) => {
+export const updateCardDetailsAPI = async (cardId: string, updateData: UpdateCardInputType) => {
   const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards/${cardId}`, updateData);
   return response.data.data;
 };

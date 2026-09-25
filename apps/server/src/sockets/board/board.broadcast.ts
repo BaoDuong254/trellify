@@ -115,6 +115,15 @@ export const evictUserFromBoardRoom = async (boardId: string, userId: string): P
   })();
 };
 
+export const notifyBoardDeleted = (request: ExpressRequest, boardId: string): void => {
+  const socketIdHeader = request.headers[SOCKET_ID_HEADER];
+  const actorSocketId = typeof socketIdHeader === "string" ? socketIdHeader : "";
+  getIo()
+    ?.to(socketRoom.board(boardId))
+    .except(actorSocketId)
+    .emit(SOCKET_SERVER_EVENTS.BOARD_ACCESS_DENIED, { boardId });
+};
+
 export const notifyUserInvitedToBoard = (invitation: UserInvitedToBoardPayloadType): void => {
   getIo()?.to(socketRoom.user(invitation.inviteeId)).emit(SOCKET_SERVER_EVENTS.USER_INVITED_TO_BOARD, invitation);
 };
