@@ -101,7 +101,7 @@ function ActiveCard() {
   const [labelsAnchor, setLabelsAnchor] = useState<HTMLElement | null>(null);
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const boardLabels = board?.labels ?? [];
-  const cardLabelIds = activeCard?.labelIds ?? [];
+  const cardLabelIds = (activeCard?.labelIds ?? []).filter((id) => boardLabels.some((label) => label._id === id));
   const checklist = activeCard?.checklist ?? [];
 
   const handleCloseModal = () => {
@@ -159,11 +159,17 @@ function ActiveCard() {
     await callApiUpdateCard({ commentToDelete: { _id: commentId } });
   };
 
+  const updateCardArrays = (patch: Pick<UpdateCardInputType, "labelIds" | "checklist">) => {
+    if (!activeCard) return;
+    dispatch(updateCurrentActiveCard({ ...activeCard, ...patch }));
+    callApiUpdateCard(patch).catch(() => dispatch(updateCurrentActiveCard(activeCard)));
+  };
+
   const onToggleCardLabel = (labelId: string) => {
     const labelIds = cardLabelIds.includes(labelId)
       ? cardLabelIds.filter((id) => id !== labelId)
       : [...cardLabelIds, labelId];
-    callApiUpdateCard({ labelIds });
+    updateCardArrays({ labelIds });
   };
 
   const onBoardLabelsChange = (labels: BoardLabelType[]) => {
@@ -173,7 +179,7 @@ function ActiveCard() {
   };
 
   const onUpdateChecklist = (nextChecklist: ChecklistItemType[]) => {
-    callApiUpdateCard({ checklist: nextChecklist });
+    updateCardArrays({ checklist: nextChecklist });
   };
 
   const onUpdateCardMembers = async (incomingMemberInfo: IncomingCardMemberInfoType) => {

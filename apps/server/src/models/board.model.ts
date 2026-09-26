@@ -27,7 +27,7 @@ const createNew = async (userId: string, data: CreateNewBoardType & { slug: stri
 };
 
 const findOneById = async (id: ObjectId) => {
-  const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ _id: id });
+  const board = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ _id: id, _destroy: false });
   return board;
 };
 
