@@ -35,7 +35,7 @@ describe("PUT /api/v1/boards/:id", () => {
       .put(`/api/v1/boards/${boardId}`)
       .set("Cookie", member.cookie)
       .send({
-        title: "Renamed",
+        labels: [{ _id: "l1", name: "Bug", color: "#ff0000" }],
         ownerIds: [member.userId],
         memberIds: [outsider.userId],
         _destroy: true,
@@ -43,10 +43,37 @@ describe("PUT /api/v1/boards/:id", () => {
       .expect(200);
 
     const board = await findById(boardModel.BOARD_COLLECTION_NAME, boardId);
-    expect(board?.title).toBe("Renamed");
+    expect(board?.labels).toHaveLength(1);
     expect(idStrings(board?.ownerIds)).toEqual([owner.userId]);
     expect(idStrings(board?.memberIds)).toEqual([member.userId]);
     expect(board?._destroy).toBe(false);
+  });
+
+  it("lets only an owner change the title or description", async () => {
+    const owner = await createActiveUser("owner");
+    const member = await createActiveUser("member");
+    const boardId = await createBoardVia(owner);
+    await addBoardMember(boardId, member.userId);
+
+    await request(getApp())
+      .put(`/api/v1/boards/${boardId}`)
+      .set("Cookie", member.cookie)
+      .send({ title: "Hijacked" })
+      .expect(403);
+    await request(getApp())
+      .put(`/api/v1/boards/${boardId}`)
+      .set("Cookie", member.cookie)
+      .send({ description: "Hijacked description" })
+      .expect(403);
+    await request(getApp())
+      .put(`/api/v1/boards/${boardId}`)
+      .set("Cookie", owner.cookie)
+      .send({ title: "Renamed", description: "New description" })
+      .expect(200);
+
+    const board = await findById(boardModel.BOARD_COLLECTION_NAME, boardId);
+    expect(board?.title).toBe("Renamed");
+    expect(board?.description).toBe("New description");
   });
 
   it("keeps columnOrderIds when only the title changes", async () => {

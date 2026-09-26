@@ -165,7 +165,9 @@ const getDetails = async (userId: string, boardId: string) => {
 };
 
 const update = async (userId: string, boardId: string, requestBody: UpdateBoardType) => {
-  await assertBoardAccess(userId, boardId);
+  const isMetadataEdit =
+    requestBody.title !== undefined || requestBody.description !== undefined || requestBody.type !== undefined;
+  await (isMetadataEdit ? assertBoardOwner : assertBoardAccess)(userId, boardId);
 
   const updateData = { ...requestBody, updatedAt: new Date() };
   const updatedBoard = await boardModel.update(boardId, updateData);

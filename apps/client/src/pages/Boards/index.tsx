@@ -1,4 +1,5 @@
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import HomeIcon from "@mui/icons-material/Home";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
@@ -7,13 +8,16 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import Pagination from "@mui/material/Pagination";
 import PaginationItem from "@mui/material/PaginationItem";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 
 import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/constants";
@@ -21,6 +25,8 @@ import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/co
 import { fetchBoardsAPI } from "src/apis";
 import AppBar from "src/components/AppBar/AppBar";
 import SidebarCreateBoardModal from "src/pages/Boards/create";
+import EditBoardModal from "src/pages/Boards/edit";
+import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { Board } from "src/types/board.type";
 import { boardCoverColor } from "src/utils/color";
 
@@ -52,6 +58,8 @@ const SidebarItem = styled(Box)(({ theme }) => ({
 
 function Boards() {
   const [loaded, setLoaded] = useState<LoadedBoards | null>(null);
+  const [editingBoard, setEditingBoard] = useState<Board | null>(null);
+  const currentUser = useSelector(selectCurrentUser);
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const page = parseInt(query.get("page") || "1", 10);
@@ -74,7 +82,7 @@ function Boards() {
     };
   }, [location.search, fetchBoards]);
 
-  const afterCreateNewBoard = () => {
+  const refreshBoards = () => {
     fetchBoards(location.search, () => false);
   };
 
@@ -108,7 +116,7 @@ function Boards() {
             </Stack>
             <Divider sx={{ my: 1 }} />
             <Stack direction='column' spacing={1}>
-              <SidebarCreateBoardModal afterCreateNewBoard={afterCreateNewBoard} />
+              <SidebarCreateBoardModal afterCreateNewBoard={refreshBoards} />
             </Stack>
           </Box>
 
@@ -153,19 +161,51 @@ function Boards() {
                 {boards.map((b) => (
                   <Box key={b._id}>
                     <Card sx={{ width: "250px" }}>
-                      <Box sx={{ height: "50px", backgroundColor: boardCoverColor(b._id) }}></Box>
+                      <Box
+                        sx={{
+                          height: "50px",
+                          backgroundColor: boardCoverColor(b._id),
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          alignItems: "flex-start",
+                          p: 0.5,
+                        }}
+                      >
+                        {currentUser && b.ownerIds.includes(currentUser._id) && (
+                          <Tooltip title='Edit board'>
+                            <IconButton
+                              size='small'
+                              aria-label={`Edit board ${b.title}`}
+                              onClick={() => setEditingBoard(b)}
+                              sx={{
+                                color: "white",
+                                bgcolor: "rgba(0, 0, 0, 0.35)",
+                                "&:hover": { bgcolor: "rgba(0, 0, 0, 0.55)" },
+                              }}
+                            >
+                              <EditOutlinedIcon fontSize='small' />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
 
                       <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
-                        <Typography gutterBottom variant='h6' component='div'>
+                        <Typography gutterBottom variant='h6' component='div' sx={{ wordBreak: "break-word" }}>
                           {b.title}
                         </Typography>
-                        <Typography
-                          variant='body2'
-                          color='text.secondary'
-                          sx={{ overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}
+                        <Tooltip
+                          title={b.description}
+                          placement='bottom-start'
+                          slotProps={{ tooltip: { sx: { whiteSpace: "pre-wrap", wordBreak: "break-word" } } }}
                         >
-                          {b.description || "No description provided for this board."}
-                        </Typography>
+                          <Typography
+                            variant='body2'
+                            color='text.secondary'
+                            sx={{ overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}
+                          >
+                            {b.description || "No description provided for this board."}
+                          </Typography>
+                        </Tooltip>
                         <Box
                           component={Link}
                           to={`/boards/${b._id}`}
@@ -209,6 +249,9 @@ function Boards() {
           </Box>
         </Box>
       </Box>
+      {editingBoard && (
+        <EditBoardModal board={editingBoard} onClose={() => setEditingBoard(null)} afterUpdateBoard={refreshBoards} />
+      )}
     </Container>
   );
 }
