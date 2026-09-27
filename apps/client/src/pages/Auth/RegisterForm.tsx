@@ -77,6 +77,9 @@ function RegisterForm() {
             <TrelloIcon />
           </Avatar>
         </Box>
+        <Typography component='h1' variant='h5' sx={{ textAlign: "center" }}>
+          Create your Trellify account
+        </Typography>
         <Box
           sx={{
             marginTop: "1em",

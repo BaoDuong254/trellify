@@ -74,6 +74,9 @@ function ResetPasswordForm() {
               <TrelloIcon />
             </Avatar>
           </Box>
+          <Typography component='h1' variant='h5' sx={{ textAlign: "center" }}>
+            Choose a new password
+          </Typography>
           <Box
             sx={{
               marginTop: "1em",

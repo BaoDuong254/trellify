@@ -101,6 +101,12 @@
         border-radius: 50%;
         background-color: var(--auth-accent);
       }
+      #auth-skeleton .sk-title {
+        margin: 0 auto;
+        width: 220px;
+        max-width: calc(100% - 32px);
+        height: 32px;
+      }
       #auth-skeleton .sk-author {
         margin: 16px 0 0;
         font-family: "Roboto Variable", "Roboto Metrics Fallback", "Arial", sans-serif;
@@ -213,6 +219,43 @@
     <meta name="twitter:image" content="https://trellify.duonggiabao.com/images/meta.png" />
     <meta name="twitter:image:alt" content="Trellify – collaborative Kanban boards" />
 
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://trellify.duonggiabao.com/#website",
+            "url": "https://trellify.duonggiabao.com/",
+            "name": "Trellify",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://trellify.duonggiabao.com/#author" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://trellify.duonggiabao.com/#app",
+            "name": "Trellify",
+            "url": "https://trellify.duonggiabao.com/",
+            "description": "A collaborative platform featuring real-time collaboration, drag-and-drop Kanban boards, and shared team workspaces.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript",
+            "image": "https://trellify.duonggiabao.com/images/meta.png",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "author": { "@id": "https://trellify.duonggiabao.com/#author" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://trellify.duonggiabao.com/#author",
+            "name": "BaoGiaDuong",
+            "url": "https://github.com/BaoDuong254",
+            "sameAs": ["https://github.com/BaoDuong254"]
+          }
+        ]
+      }
+    </script>
+
     <!-- Meta Tags Generated with https://metatags.io -->
     <!-- Google tag (gtag.js) -->
     <meta name="google-site-verification" content="YQnnL4wbPkBmYZ-fD5_8BZ5Bouh1Xhvl8difAwHw6CA" />
@@ -255,6 +298,7 @@
     <div id="auth-bg"></div>
     <div id="auth-skeleton" aria-hidden="true">
       <div class="sk-avatars"><span></span><span></span></div>
+      <div class="sk-bar sk-title"></div>
       <p class="sk-author">Author: BaoGiaDuong</p>
       <div class="sk-bar sk-field"></div>
       <div class="sk-bar sk-field"></div>

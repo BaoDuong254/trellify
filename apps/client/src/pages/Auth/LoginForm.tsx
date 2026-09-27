@@ -82,6 +82,9 @@ function LoginForm() {
             <TrelloIcon />
           </Avatar>
         </Box>
+        <Typography component='h1' variant='h5' sx={{ textAlign: "center" }}>
+          Log in to Trellify
+        </Typography>
         <Box
           sx={{
             marginTop: "1em",

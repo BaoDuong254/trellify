@@ -14,7 +14,7 @@ const [indexHtml, headersConf] = process.argv.slice(2);
 const html = readFileSync(indexHtml, "latin1");
 const conf = readFileSync(headersConf, "latin1");
 
-const inlineScripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+const inlineScripts = [...html.matchAll(/<script(?![^>]*\b(?:src=|type="application\/ld\+json"))[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
 
 const expected = inlineScripts.map(
   (body) => `sha256-${createHash("sha256").update(Buffer.from(body, "latin1")).digest("base64")}`
