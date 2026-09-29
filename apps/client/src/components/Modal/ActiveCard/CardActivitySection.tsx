@@ -42,9 +42,11 @@ function CardActivitySection({
         userDisplayName: currentUser?.displayName || "Unknown User",
         content: target.value.trim(),
       };
-      onAddCardComment(commentToAdd).then(() => {
-        target.value = "";
-      });
+      onAddCardComment(commentToAdd)
+        .then(() => {
+          target.value = "";
+        })
+        .catch(() => {});
     }
   };
 
@@ -57,7 +59,9 @@ function CardActivitySection({
     event.preventDefault();
     const content = (event.target as HTMLInputElement).value.trim();
     if (!content) return;
-    onUpdateComment({ _id: commentId, content }).then(() => setEditingCommentId(null));
+    onUpdateComment({ _id: commentId, content })
+      .then(() => setEditingCommentId(null))
+      .catch(() => {});
   };
 
   return (
@@ -152,7 +156,12 @@ function CardActivitySection({
                   <Link component='button' type='button' onClick={() => setEditingCommentId(commentId)}>
                     Edit
                   </Link>
-                  <Link component='button' type='button' color='error' onClick={() => onDeleteComment(commentId)}>
+                  <Link
+                    component='button'
+                    type='button'
+                    color='error'
+                    onClick={() => onDeleteComment(commentId).catch(() => {})}
+                  >
                     Delete
                   </Link>
                 </Box>

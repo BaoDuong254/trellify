@@ -1,3 +1,5 @@
+import { configureStore } from "@reduxjs/toolkit";
+import { HttpResponse, http as mock } from "msw";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,6 +9,7 @@ import {
   updateCurrentActiveBoard,
 } from "src/redux/activeBoard/activeBoardSlice";
 import { buildBoard, buildCard, buildColumn } from "src/test/fixtures";
+import { apiUrl, server } from "src/test/server";
 import { EMPTY_CARD_FILTER } from "src/utils/cardFilter";
 
 describe("activeBoardSlice", () => {
@@ -56,5 +59,26 @@ describe("activeBoardSlice", () => {
     );
 
     expect(state.currentActiveBoard?.columns[0]?.cards[0]?.FE_PlaceholderCard).toBe(true);
+  });
+
+  it("keeps the HTTP status when loading the board fails", async () => {
+    server.use(
+      mock.get(apiUrl("/api/v1/boards/board-1"), () => HttpResponse.json({ message: "gone" }, { status: 404 }))
+    );
+    const store = configureStore({ reducer: { activeBoard: activeBoardReducer } });
+
+    const action = await store.dispatch(fetchBoardDetailsAPI("board-1"));
+
+    expect(fetchBoardDetailsAPI.rejected.match(action)).toBe(true);
+    expect(action.payload).toEqual({ status: 404 });
+  });
+
+  it("reports no status when the request never reached the server", async () => {
+    server.use(mock.get(apiUrl("/api/v1/boards/board-1"), () => HttpResponse.error()));
+    const store = configureStore({ reducer: { activeBoard: activeBoardReducer } });
+
+    const action = await store.dispatch(fetchBoardDetailsAPI("board-1"));
+
+    expect(action.payload).toEqual({ status: null });
   });
 });

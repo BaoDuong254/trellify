@@ -4,7 +4,10 @@ import { BOARD_TYPES } from "@workspace/shared/utils/constants";
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "@workspace/shared/utils/validators";
 
 const BOARD_LABEL_SCHEMA = z.object({
-  _id: z.string({ error: "Error.LabelIdMustBeString" }).min(1).max(64),
+  _id: z
+    .string({ error: "Error.LabelIdMustBeString" })
+    .min(1, { error: "Error.LabelIdTooShort" })
+    .max(64, { error: "Error.LabelIdTooLong" }),
   name: z.string({ error: "Error.LabelNameMustBeString" }).max(30, { error: "Error.LabelNameTooLong" }).trim(),
   color: z
     .string({ error: "Error.LabelColorMustBeString" })

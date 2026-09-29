@@ -24,6 +24,7 @@ import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { Board } from "src/types/board.type";
 import { countActiveFilters } from "src/utils/cardFilter";
 import { capitalizeFirstLetter } from "src/utils/formatters";
+import { forgetRecentBoard } from "src/utils/recentBoards";
 
 const MENU_STYLES = {
   color: "white",
@@ -59,6 +60,7 @@ function BoardBar({ board, presentUserIds }: { board?: Board; presentUserIds?: s
       .then(async ({ confirmed }) => {
         if (!confirmed) return;
         const result = await deleteBoardAPI(board._id);
+        forgetRecentBoard(board._id);
         toast.success(result.deleteResult);
         navigate("/boards", { replace: true });
       })

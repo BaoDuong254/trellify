@@ -62,7 +62,7 @@ function CardHistorySection({
   boardUsers,
 }: {
   cardId: string;
-  version: unknown;
+  version: string;
   boardUsers: BoardUser[];
 }) {
   const [loaded, setLoaded] = useState<{ cardId: string; entries: CardActivityEntryType[] } | null>(null);

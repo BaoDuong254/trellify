@@ -18,6 +18,7 @@ import { ensureSocket, getSocket } from "src/socketClient";
 import type { Board, Card } from "src/types/board.type";
 import { normalizeBoard } from "src/utils/board";
 import { isBoardDragging, subscribeToDragEnd } from "src/utils/boardDragState";
+import { forgetRecentBoard } from "src/utils/recentBoards";
 
 export const useBoardSocket = (boardId?: string, activeCardId?: string): { presentUserIds: string[] } => {
   const dispatch = useDispatch<AppDispatch>();
@@ -79,6 +80,7 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
 
     const handleAccessDenied = (payload: BoardAccessDeniedPayloadType): void => {
       if (payload.boardId !== boardId) return;
+      forgetRecentBoard(boardId);
       toast.warning("You no longer have access to this board.");
       navigate("/boards", { replace: true });
     };

@@ -83,6 +83,23 @@ export const dueStatus = (dueDate: string, dueComplete = false, now = Date.now()
   return remaining < 24 * 60 * 60 * 1000 ? "dueSoon" : "upcoming";
 };
 
+const ERROR_KEY = /^Error\.([A-Za-z0-9_]+)$/;
+
+export const humanizeErrorMessage = (message: string): string =>
+  message
+    .split(", ")
+    .map((part) => {
+      const key = ERROR_KEY.exec(part)?.[1];
+      if (!key) return part;
+      const words = key
+        .replaceAll("_", " ")
+        .replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .toLowerCase()
+        .trim();
+      return words.charAt(0).toUpperCase() + words.slice(1);
+    })
+    .join(", ");
+
 const CLOUDINARY_UPLOAD_SEGMENT = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)/;
 
 export const cloudinaryThumb = (url: string | null | undefined, size: number): string | undefined => {

@@ -18,7 +18,8 @@ const DUE_TS = Date.UTC(2030, 0, 2);
 const cardId = new ObjectId().toString();
 const memberId = new ObjectId();
 
-const run = (data: EmailJobData) => processEmailJob({ data } as Job<EmailJobData>);
+const updateData = vi.fn();
+const run = (data: EmailJobData) => processEmailJob({ data, updateData } as unknown as Job<EmailJobData>);
 
 const dueCard = (overrides: Record<string, unknown> = {}) => ({
   _id: new ObjectId(cardId),
@@ -66,6 +67,29 @@ describe("processEmailJob", () => {
     await run({ kind: "due-reminder", cardId, dueTs });
 
     expect(BrevoProvider.sendEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not email a member again when a retried job already reached them", async () => {
+    vi.mocked(cardModel.findOneById).mockResolvedValue(dueCard());
+
+    await run({ kind: "due-reminder", cardId, dueTs: DUE_TS, sentTo: ["member@trellify.test"] });
+
+    expect(BrevoProvider.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("records every recipient on the job as it goes and skips deleted users", async () => {
+    const deletedId = new ObjectId();
+    vi.mocked(cardModel.findOneById).mockResolvedValue(dueCard({ memberIds: [memberId, deletedId] }));
+    vi.mocked(userModel.findOneById).mockImplementation(async (id: string) =>
+      id === String(deletedId)
+        ? { _id: deletedId, email: "gone@trellify.test", isActive: true, _destroy: true }
+        : { _id: memberId, email: "member@trellify.test", isActive: true }
+    );
+
+    await run({ kind: "due-reminder", cardId, dueTs: DUE_TS });
+
+    expect(BrevoProvider.sendEmail).toHaveBeenCalledTimes(1);
+    expect(updateData).toHaveBeenCalledWith(expect.objectContaining({ sentTo: ["member@trellify.test"] }));
   });
 
   it.each([

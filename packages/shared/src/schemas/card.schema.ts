@@ -8,7 +8,10 @@ import {
   OBJECT_ID_RULE_MESSAGE,
 } from "@workspace/shared/utils/validators";
 
-const CARD_SUBITEM_ID = z.string({ error: "Error.IdMustBeString" }).min(1).max(64);
+const CARD_SUBITEM_ID = z
+  .string({ error: "Error.IdMustBeString" })
+  .min(1, { error: "Error.IdTooShort" })
+  .max(64, { error: "Error.IdTooLong" });
 
 const COMMENT_CONTENT = z
   .string({ error: "Error.CommentContentMustBeString" })

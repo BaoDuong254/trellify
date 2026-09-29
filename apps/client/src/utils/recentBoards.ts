@@ -14,11 +14,21 @@ export const getRecentBoards = (): BoardLink[] => {
   }
 };
 
-export const rememberRecentBoard = (board: BoardLink): void => {
-  const next = [{ _id: board._id, title: board.title }, ...getRecentBoards().filter((item) => item._id !== board._id)];
+const writeRecentBoards = (boards: BoardLink[]): void => {
   try {
-    localStorage.setItem(RECENT_BOARDS_KEY, JSON.stringify(next.slice(0, MAX_RECENT_BOARDS)));
+    localStorage.setItem(RECENT_BOARDS_KEY, JSON.stringify(boards.slice(0, MAX_RECENT_BOARDS)));
   } catch {
     return;
   }
+};
+
+export const rememberRecentBoard = (board: BoardLink): void => {
+  writeRecentBoards([
+    { _id: board._id, title: board.title },
+    ...getRecentBoards().filter((item) => item._id !== board._id),
+  ]);
+};
+
+export const forgetRecentBoard = (boardId: string): void => {
+  writeRecentBoards(getRecentBoards().filter((item) => item._id !== boardId));
 };

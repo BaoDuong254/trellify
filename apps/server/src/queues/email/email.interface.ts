@@ -9,6 +9,7 @@ export interface DueReminderJobData {
   kind: "due-reminder";
   cardId: string;
   dueTs: number;
+  sentTo?: string[];
 }
 
 export type EmailJobData = SendEmailJobData | DueReminderJobData;

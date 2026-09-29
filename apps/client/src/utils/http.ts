@@ -7,7 +7,7 @@ import { refreshTokenAPI } from "src/apis";
 import type { store } from "src/redux/store";
 import { logoutUserAPI } from "src/redux/user/userSlice";
 import { getSocketId } from "src/socketClient";
-import { interceptorLoadingElements } from "src/utils/formatters";
+import { humanizeErrorMessage, interceptorLoadingElements } from "src/utils/formatters";
 import { recordApiError } from "src/utils/metrics";
 
 let axiosReduxStore: typeof store | undefined;
@@ -99,7 +99,7 @@ http.interceptors.response.use(
     }
 
     if (error.response?.status !== 410) {
-      toast.error(errorMessage);
+      toast.error(humanizeErrorMessage(errorMessage));
     }
 
     return Promise.reject(error);

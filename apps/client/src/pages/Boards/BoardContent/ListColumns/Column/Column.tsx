@@ -117,9 +117,13 @@ function Column({ column }: { column: ColumnType }) {
         if (confirmed) {
           removeColumnFromBoard();
 
-          deleteColumnDetailsAPI(column._id).then((res) => {
-            toast.success(res?.deleteResult);
-          });
+          deleteColumnDetailsAPI(column._id)
+            .then((res) => {
+              toast.success(res?.deleteResult);
+            })
+            .catch(() => {
+              dispatch(fetchBoardDetailsAPI(column.boardId));
+            });
         }
       })
       .catch(() => {});
@@ -144,7 +148,7 @@ function Column({ column }: { column: ColumnType }) {
       });
   };
 
-  const onUpdateColumnTitle = (newTitle: string) => {
+  const onUpdateColumnTitle = (newTitle: string) =>
     updateColumnDetailsAPI(column._id, { title: newTitle }).then(() => {
       if (!board) return;
       const newBoard = cloneDeep(board);
@@ -152,7 +156,6 @@ function Column({ column }: { column: ColumnType }) {
       if (columnToUpdate) columnToUpdate.title = newTitle;
       dispatch(updateCurrentActiveBoard(newBoard));
     });
-  };
 
   return (
     <div ref={setNodeRef} style={dndKitColumnStyles} {...attributes}>

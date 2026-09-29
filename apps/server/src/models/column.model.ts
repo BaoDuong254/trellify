@@ -38,6 +38,15 @@ const findOneById = async (id: ObjectId) => {
   return column;
 };
 
+const deleteManyByBoardId = async (boardId: string) => {
+  return await GET_DB()
+    .collection(COLUMN_COLLECTION_NAME)
+    .updateMany(
+      { boardId: new ObjectId(boardId), _destroy: false },
+      { $set: { _destroy: true, updatedAt: new Date() } }
+    );
+};
+
 const findArchivedByBoard = async (boardId: string) => {
   return await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
@@ -55,7 +64,7 @@ const insertCardOrderId = async (parentId: string, childId: string, position: nu
   return await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
     .findOneAndUpdate(
-      { _id: new ObjectId(parentId), _destroy: false, cardOrderIds: { $ne: child } },
+      { _id: new ObjectId(parentId), _destroy: false, archivedAt: null, cardOrderIds: { $ne: child } },
       {
         $push: { cardOrderIds: { $each: [child], ...(position !== null && { $position: position }) } },
       } as unknown as UpdateFilter<Document>,
@@ -116,6 +125,7 @@ export const columnModel = {
   countAll,
   findOneById,
   findArchivedByBoard,
+  deleteManyByBoardId,
   insertCardOrderId,
   pushCardOrderIds,
   update,

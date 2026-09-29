@@ -1,26 +1,24 @@
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
 import { cloneDeep } from "lodash";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { moveCardToDifferentColumnAPI, updateBoardDetailsAPI, updateColumnDetailsAPI } from "src/apis";
 import AppBar from "src/components/AppBar/AppBar";
 import PageLoadingSpinner from "src/components/Loading/PageLoadingSpinner";
 import ActiveCard from "src/components/Modal/ActiveCard/ActiveCard";
+import { useBoardLoader } from "src/hooks/useBoardLoader";
 import { useBoardSocket } from "src/hooks/useBoardSocket";
 import BoardBar from "src/pages/Boards/BoardBar/BoardBar";
 import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
-import {
-  fetchBoardDetailsAPI,
-  selectCurrentActiveBoard,
-  setCardFilter,
-  updateCurrentActiveBoard,
-} from "src/redux/activeBoard/activeBoardSlice";
+import { selectCurrentActiveBoard, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
 import { selectCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card, Column } from "src/types/board.type";
-import { EMPTY_CARD_FILTER } from "src/utils/cardFilter";
 import { recordCardMoved } from "src/utils/metrics";
 import { rememberRecentBoard } from "src/utils/recentBoards";
 
@@ -33,14 +31,7 @@ function Board() {
   const { boardId } = useParams();
 
   const { presentUserIds } = useBoardSocket(boardId, activeCard?._id);
-
-  useEffect(() => {
-    if (boardId) {
-      dispatch(updateCurrentActiveBoard(null));
-      dispatch(setCardFilter(EMPTY_CARD_FILTER));
-      dispatch(fetchBoardDetailsAPI(boardId));
-    }
-  }, [dispatch, boardId]);
+  const { loadError, retry } = useBoardLoader(boardId);
 
   const loadedBoardId = board?._id;
   const loadedBoardTitle = board?.title;
@@ -101,6 +92,31 @@ function Board() {
       nextCardOrderIds: dndOrderedColumns.find((col) => col._id === nextColumnId)?.cardOrderIds || [],
     }).then(() => recordCardMoved("other_column"));
   };
+
+  if (!board && loadError) {
+    return (
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 2,
+        }}
+      >
+        <Typography variant='h6'>Could not load this board.</Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button variant='contained' onClick={retry}>
+            Retry
+          </Button>
+          <Button component={Link} to='/boards'>
+            Back to boards
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
 
   if (!board) {
     return <PageLoadingSpinner caption='Loading board...' />;

@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http as mock } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -12,7 +12,7 @@ const comment = (content: string) => ({
   userAvatar: null,
   userDisplayName: "A",
   content,
-  commentedAt: "2026-01-10T12:00:00.000Z",
+  commentedAt: new Date("2026-01-10T12:00:00.000Z"),
 });
 
 describe("useCardComments", () => {
@@ -37,5 +37,27 @@ describe("useCardComments", () => {
     await waitFor(() => expect(result.current.comments.map((item) => item.content)).toEqual(["c2"]));
     expect(result.current.isLoading).toBe(false);
     expect(requests).toBe(2);
+  });
+
+  it("does not let a slower in-flight load overwrite comments replaced after a mutation", async () => {
+    let releaseSlowLoad: () => void = () => {};
+    server.use(
+      mock.get(apiUrl("/api/v1/cards/card-1/comments"), async () => {
+        await new Promise<void>((resolve) => {
+          releaseSlowLoad = resolve;
+        });
+        return HttpResponse.json({ data: [comment("stale")] });
+      })
+    );
+
+    const { result } = renderHook(() => useCardComments("card-1", "v1"));
+    await waitFor(() => expect(result.current.isLoading).toBe(true));
+
+    act(() => result.current.replaceComments("card-1", [comment("fresh")]));
+    releaseSlowLoad();
+
+    await waitFor(() => expect(result.current.comments.map((item) => item.content)).toEqual(["fresh"]));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(result.current.comments.map((item) => item.content)).toEqual(["fresh"]);
   });
 });

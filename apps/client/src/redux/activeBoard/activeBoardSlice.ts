@@ -1,4 +1,5 @@
 import { type PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { isAxiosError } from "axios";
 
 import envConfig from "src/config/env";
 import type { Board } from "src/types/board.type";
@@ -17,12 +18,23 @@ const initialState: ActiveBoardState = {
   cardFilter: EMPTY_CARD_FILTER,
 };
 
-export const fetchBoardDetailsAPI = createAsyncThunk("activeBoard/fetchBoardDetailsAPI", async (boardId: string) => {
-  const startedAt = performance.now();
-  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`);
-  recordBoardLoadTime(performance.now() - startedAt);
-  return response.data.data;
-});
+export interface BoardLoadError {
+  status: number | null;
+}
+
+export const fetchBoardDetailsAPI = createAsyncThunk<Board, string, { rejectValue: BoardLoadError }>(
+  "activeBoard/fetchBoardDetailsAPI",
+  async (boardId, { rejectWithValue }) => {
+    try {
+      const startedAt = performance.now();
+      const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}`);
+      recordBoardLoadTime(performance.now() - startedAt);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue({ status: isAxiosError(error) ? (error.response?.status ?? null) : null });
+    }
+  }
+);
 
 const activeBoardSlice = createSlice({
   name: "activeBoard",

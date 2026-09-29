@@ -5,6 +5,7 @@ import {
   cloudinaryThumb,
   dueStatus,
   formatDateTime,
+  humanizeErrorMessage,
   toDateTimeLocalValue,
 } from "src/utils/formatters";
 
@@ -72,5 +73,15 @@ describe("toDateTimeLocalValue", () => {
   it("returns an empty string for missing or invalid input", () => {
     expect(toDateTimeLocalValue(null)).toBe("");
     expect(toDateTimeLocalValue("nope")).toBe("");
+  });
+});
+
+describe("humanizeErrorMessage", () => {
+  it("turns i18n error keys into readable text and leaves plain messages alone", () => {
+    expect(humanizeErrorMessage("Error.ColumnUnavailable")).toBe("Column unavailable");
+    expect(humanizeErrorMessage("Error.TitleTooShort, Error.LabelColorInvalid")).toBe(
+      "Title too short, Label color invalid"
+    );
+    expect(humanizeErrorMessage("Card not found!")).toBe("Card not found!");
   });
 });

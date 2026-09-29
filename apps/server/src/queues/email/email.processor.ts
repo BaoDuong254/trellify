@@ -11,7 +11,8 @@ import { userModel } from "src/models/user.model";
 import { BrevoProvider } from "src/providers/brevo.provider";
 import { DueReminderJobData, EmailJobData } from "src/queues/email/email.interface";
 
-const processDueReminder = async ({ cardId, dueTs }: DueReminderJobData): Promise<void> => {
+const processDueReminder = async (job: Job<EmailJobData>, data: DueReminderJobData): Promise<void> => {
+  const { cardId, dueTs } = data;
   const card = await cardModel.findOneById(new ObjectId(cardId));
   const isStillDue =
     card &&
@@ -41,17 +42,20 @@ const processDueReminder = async ({ cardId, dueTs }: DueReminderJobData): Promis
     <p>Best regards,<br/>The Trellify Team</p>
   `;
 
+  const sentTo = [...(data.sentTo ?? [])];
   for (const member of members) {
-    if (member?.email && member.isActive) {
-      await BrevoProvider.sendEmail(String(member.email), subject, html);
-    }
+    const email = member?.email ? String(member.email) : null;
+    if (!email || !member?.isActive || member._destroy || sentTo.includes(email)) continue;
+    await BrevoProvider.sendEmail(email, subject, html);
+    sentTo.push(email);
+    await job.updateData({ ...data, sentTo });
   }
 };
 
 export const processEmailJob: Processor<EmailJobData> = async (job: Job<EmailJobData>): Promise<void> => {
   const { data } = job;
   if (data.kind === "due-reminder") {
-    await processDueReminder(data);
+    await processDueReminder(job, data);
     return;
   }
   await BrevoProvider.sendEmail(data.to, data.subject, data.html);

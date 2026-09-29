@@ -44,15 +44,20 @@ A full-stack project management platform with real-time collaboration, drag-and-
 
 - 📋 **Kanban Boards** - Create and manage multiple boards with customizable columns
 - 🃏 **Card Management** - Drag-and-drop cards between columns with smooth animations
+- 🏷️ **Card Details** - Labels, due dates with reminders, checklists with progress, and editable comments
+- 🔍 **Board Filters** - Filter cards by keyword, label, member, or due status
+- 🗄️ **Archive & Restore** - Archive cards and columns, then restore them to their original position
+- 🕓 **Card History** - Per-card activity log of every change
+- ⭐ **Starred & Recent Boards** - Quick access to favourite and recently opened boards
 - 👥 **Team Collaboration** - Invite members to boards and assign cards to team members
 - 💬 **Real-time Updates** - Socket.io for live synchronization across all users
 - 🔐 **Authentication & Authorization** - JWT-based auth with secure user management
 - 🔑 **Password Reset** - Email-based forgot-password and reset flow
 - 🛡️ **Bot Protection** - Cloudflare Turnstile on register, login, and forgot-password
 - 🖼️ **Avatar Uploads** - Cloudinary-backed profile image uploads
-- ⚙️ **Background Jobs** - BullMQ worker for deferred tasks (e.g. unverified-account cleanup)
+- ⚙️ **Background Jobs** - BullMQ worker for deferred tasks: unverified-account cleanup, invitation emails, and due-date reminders
 - 🎨 **Theme Support** - Light and dark mode with customizable themes
-- 🔔 **Notifications** - Real-time notifications for board activities and invitations
+- 🔔 **Notifications** - Real-time notifications for board invitations
 
 ### Install pnpm
 
@@ -374,6 +379,14 @@ The project includes a Postman collection with pre-configured requests.
    - Select "Trellify" environment in Postman
    - Update variables if needed:
      - `host`: `http://localhost:3000`
+     - `email` / `password`: the account to log in with
+     - `turnstileToken`: any non-empty value passes when the server runs with Cloudflare's always-pass test secret
+
+4. **Run the requests in order**
+   - **Login** stores the auth cookies and `userId`
+   - **Create new board**, **Create new column** and **Create new card** store `boardId`, `columnId` and `cardId`, and every other request reads them from the environment
+   - **Add comment** stores `commentId` and **Get invitations** stores `invitationId`
+   - `otherColumnId`, `memberUserId`, `verifyToken` and `resetToken` are filled in by hand
 
 ## ⚡ Performance Testing
 

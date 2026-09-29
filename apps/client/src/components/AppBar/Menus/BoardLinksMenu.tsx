@@ -4,7 +4,7 @@ import Button from "@mui/material/Button";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import type { BoardLink } from "src/types/board.type";
@@ -24,12 +24,19 @@ function BoardLinksMenu({
   const [boards, setBoards] = useState<BoardLink[] | null>(null);
   const open = Boolean(anchorEl);
 
+  const latestRequestRef = useRef(0);
+
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
     setBoards(null);
+    const request = ++latestRequestRef.current;
     loadBoards()
-      .then(setBoards)
-      .catch(() => setBoards([]));
+      .then((result) => {
+        if (request === latestRequestRef.current) setBoards(result);
+      })
+      .catch(() => {
+        if (request === latestRequestRef.current) setBoards([]);
+      });
   };
   const handleClose = () => {
     setAnchorEl(null);

@@ -27,7 +27,7 @@ describe("<CardHistorySection />", () => {
       )
     );
 
-    renderWithProviders(<CardHistorySection cardId='card-1' version={1} boardUsers={[]} />);
+    renderWithProviders(<CardHistorySection cardId='card-1' version='v1' boardUsers={[]} />);
 
     expect(screen.getAllByTestId("card-history-skeleton")).toHaveLength(3);
     expect(await screen.findByText("created this card")).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe("<CardHistorySection />", () => {
   it("renders nothing once an empty history has loaded", async () => {
     server.use(mock.get(ACTIVITIES_URL, () => HttpResponse.json({ data: [] })));
 
-    renderWithProviders(<CardHistorySection cardId='card-1' version={1} boardUsers={[]} />);
+    renderWithProviders(<CardHistorySection cardId='card-1' version='v1' boardUsers={[]} />);
 
     await screen.findByText("History");
     await expect.poll(() => screen.queryByText("History")).toBeNull();

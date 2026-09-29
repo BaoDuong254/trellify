@@ -184,13 +184,13 @@ const setStarred = async (userId: string, boardId: string, isStarred: boolean): 
   return { starred: isStarred };
 };
 
-const getStarred = async (userId: string) => {
+const getStarred = async (userId: string): Promise<Document[]> => {
   const boardIds = await userModel.findStarredBoardIds(userId);
   if (boardIds.length === 0) return [];
   return await boardModel.findAccessibleTitles(boardIds, userId);
 };
 
-const getArchived = async (userId: string, boardId: string) => {
+const getArchived = async (userId: string, boardId: string): Promise<{ cards: Document[]; columns: Document[] }> => {
   await assertBoardAccess(userId, boardId);
   const [cards, columns] = await Promise.all([
     cardModel.findArchivedByBoard(boardId),
@@ -203,7 +203,12 @@ const deleteItem = async (userId: string, boardId: string): Promise<{ deleteResu
   await assertBoardOwner(userId, boardId);
 
   await boardModel.deleteOneById(boardId);
-  await Promise.all([invalidateBoardMembership(boardId), invalidateBoardCache(boardId)]);
+  await Promise.all([
+    columnModel.deleteManyByBoardId(boardId),
+    cardModel.deleteManyByBoardId(boardId),
+    invalidateBoardMembership(boardId),
+    invalidateBoardCache(boardId),
+  ]);
 
   return { deleteResult: "Board deleted successfully" };
 };
@@ -236,6 +241,10 @@ const moveCardToDifferentColumn = async (userId: string, requestBody: MoveCardTo
   }
 
   await assertBoardAccess(userId, boardId);
+
+  if (nextColumn.archivedAt || card.archivedAt) {
+    throw new ApiError(StatusCodes.CONFLICT, "Error.ColumnUnavailable");
+  }
 
   const isCrossColumnMove = requestBody.prevColumnId !== requestBody.nextColumnId;
   await Promise.all([

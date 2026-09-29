@@ -109,6 +109,26 @@ describe("PUT /api/v1/columns/:id", () => {
     expect(column?._destroy).toBe(false);
   });
 
+  it("ignores archive state and archived position", async () => {
+    const owner = await createActiveUser("owner");
+    const boardId = await createBoardVia(owner);
+    const columnId = await createColumnVia(owner, boardId);
+
+    await request(getApp())
+      .put(`/api/v1/columns/${columnId}`)
+      .set("Cookie", owner.cookie)
+      .send({
+        title: "Doing",
+        archivedAt: new Date().toISOString(),
+        archivedPosition: { prevId: null, nextId: null, index: 0 },
+      })
+      .expect(200);
+
+    const column = await findById(columnModel.COLUMN_COLLECTION_NAME, columnId);
+    expect(column?.archivedAt).toBeNull();
+    expect(column?.archivedPosition).toBeNull();
+  });
+
   it("keeps cardOrderIds when only the title changes", async () => {
     const owner = await createActiveUser("owner");
     const boardId = await createBoardVia(owner);
@@ -173,6 +193,32 @@ describe("PUT /api/v1/cards/:id", () => {
     const card = await findById(cardModel.CARD_COLLECTION_NAME, cardId);
     expect(card?.comments).toHaveLength(1);
     expect(idStrings(card?.memberIds)).toEqual([owner.userId]);
+  });
+
+  it("ignores archive state, archived position and comment fields", async () => {
+    const owner = await createActiveUser("owner");
+    const boardId = await createBoardVia(owner);
+    const columnId = await createColumnVia(owner, boardId);
+    const cardId = await createCardVia(owner, boardId, columnId);
+
+    await request(getApp())
+      .put(`/api/v1/cards/${cardId}`)
+      .set("Cookie", owner.cookie)
+      .send({
+        title: "Renamed card",
+        archivedAt: new Date().toISOString(),
+        archivedPosition: { prevId: null, nextId: null, index: 0 },
+        commentCount: 99,
+        comments: [{ content: "forged" }],
+      })
+      .expect(200);
+
+    const card = await findById(cardModel.CARD_COLLECTION_NAME, cardId);
+    expect(card?.title).toBe("Renamed card");
+    expect(card?.archivedAt).toBeNull();
+    expect(card?.archivedPosition).toBeNull();
+    expect(card?.comments).toEqual([]);
+    expect(card).not.toHaveProperty("commentCount");
   });
 });
 

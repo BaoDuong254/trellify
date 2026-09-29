@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
 
@@ -15,16 +15,19 @@ export const useCardComments = (
   replaceComments: (cardId: string, comments: CardCommentType[]) => void;
 } => {
   const [loaded, setLoaded] = useState<LoadedComments | null>(null);
+  const latestRequestRef = useRef(0);
 
   useEffect(() => {
     if (!cardId) return;
     let cancelled = false;
+    const request = ++latestRequestRef.current;
+    const isCurrent = (): boolean => !cancelled && request === latestRequestRef.current;
     fetchCardCommentsAPI(cardId)
       .then((comments) => {
-        if (!cancelled) setLoaded({ cardId, comments });
+        if (isCurrent()) setLoaded({ cardId, comments });
       })
       .catch(() => {
-        if (!cancelled) setLoaded({ cardId, comments: [] });
+        if (isCurrent()) setLoaded({ cardId, comments: [] });
       });
     return () => {
       cancelled = true;
@@ -36,6 +39,9 @@ export const useCardComments = (
   return {
     comments: isLoading ? [] : (loaded?.comments ?? []),
     isLoading,
-    replaceComments: (nextCardId, comments) => setLoaded({ cardId: nextCardId, comments }),
+    replaceComments: (nextCardId, comments) => {
+      latestRequestRef.current++;
+      setLoaded({ cardId: nextCardId, comments });
+    },
   };
 };

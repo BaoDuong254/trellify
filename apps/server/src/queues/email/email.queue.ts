@@ -39,7 +39,7 @@ export const scheduleDueReminder = async (cardId: string, dueDate: Date, now = D
     await emailQueue.add(
       "due-reminder",
       { kind: "due-reminder", cardId, dueTs },
-      { jobId: `due-${cardId}-${dueTs}`, delay: Math.max(0, dueTs - REMINDER_LEAD_MS - now) }
+      { jobId: `due-${cardId}-${dueTs}`, delay: Math.max(0, dueTs - REMINDER_LEAD_MS - now), removeOnFail: true }
     );
   } catch (error) {
     logger.warn(`[EmailQueue] Due reminder for card ${cardId} not queued: ${(error as Error).message}`);

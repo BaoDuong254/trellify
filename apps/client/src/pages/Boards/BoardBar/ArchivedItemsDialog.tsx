@@ -4,7 +4,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { toast } from "sonner";
 
@@ -32,21 +32,34 @@ function ArchivedRow({ title, archivedAt, onRestore }: { title: string; archived
 
 function ArchivedItemsDialog({ boardId, onClose }: { boardId: string; onClose: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
-  const [items, setItems] = useState<ArchivedItems | null>(null);
-
-  const loadItems = useCallback(() => {
-    fetchArchivedItemsAPI(boardId).then(setItems);
-  }, [boardId]);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [result, setResult] = useState<{ reloadKey: number; items: ArchivedItems | null; hasFailed: boolean } | null>(
+    null
+  );
 
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    let cancelled = false;
+    fetchArchivedItemsAPI(boardId)
+      .then((archived) => {
+        if (!cancelled) setResult({ reloadKey, items: archived, hasFailed: false });
+      })
+      .catch(() => {
+        if (!cancelled) setResult((previous) => ({ reloadKey, items: previous?.items ?? null, hasFailed: true }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, reloadKey]);
+
+  const reload = () => setReloadKey((key) => key + 1);
+  const items = result?.items ?? null;
+  const hasFailed = result?.reloadKey === reloadKey && result.hasFailed;
 
   const restore = (request: Promise<unknown>) => {
     request
       .then(() => {
         toast.success("Restored");
-        loadItems();
+        reload();
         dispatch(fetchBoardDetailsAPI(boardId));
       })
       .catch(() => {});
@@ -58,7 +71,17 @@ function ArchivedItemsDialog({ boardId, onClose }: { boardId: string; onClose: (
     <Dialog open onClose={onClose} fullWidth maxWidth='xs'>
       <DialogTitle>Archived items</DialogTitle>
       <DialogContent>
-        {!items && <Typography>Loading...</Typography>}
+        {!items && !hasFailed && <Typography>Loading...</Typography>}
+        {hasFailed && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography sx={{ color: "error.main" }}>
+              {items ? "Could not refresh archived items." : "Could not load archived items."}
+            </Typography>
+            <Button size='small' onClick={reload}>
+              Retry
+            </Button>
+          </Box>
+        )}
         {isEmpty && <Typography sx={{ color: "text.secondary" }}>Nothing is archived.</Typography>}
 
         {(items?.columns.length ?? 0) > 0 && <Typography sx={{ fontWeight: 600, mt: 1 }}>Columns</Typography>}

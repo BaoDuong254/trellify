@@ -9,21 +9,32 @@ function ToggleFocusInput({
   ...props
 }: {
   value: string;
-  onChangedValue: (newValue: string) => void;
+  onChangedValue: (newValue: string) => Promise<unknown>;
   inputLabel: string;
   inputFontSize?: string;
 }) {
   const [inputValue, setInputValue] = useState(value);
+  const [syncedValue, setSyncedValue] = useState(value);
+  const [focusValue, setFocusValue] = useState<string | null>(null);
+
+  if (focusValue === null && value !== syncedValue) {
+    setSyncedValue(value);
+    setInputValue(value);
+  }
 
   const triggerBlur = () => {
-    setInputValue(inputValue.trim());
+    const isUnchangedByUser = inputValue === focusValue;
+    setFocusValue(null);
+    setSyncedValue(value);
+    const trimmedValue = inputValue.trim();
 
-    if (!inputValue || inputValue.trim() === value) {
+    if (isUnchangedByUser || !trimmedValue || trimmedValue === value) {
       setInputValue(value);
       return;
     }
 
-    onChangedValue(inputValue);
+    setInputValue(trimmedValue);
+    onChangedValue(trimmedValue).catch(() => setInputValue(value));
   };
 
   return (
@@ -35,6 +46,7 @@ function ToggleFocusInput({
       onChange={(event) => {
         setInputValue(event.target.value);
       }}
+      onFocus={() => setFocusValue(inputValue)}
       onBlur={triggerBlur}
       slotProps={{ htmlInput: { "aria-label": inputLabel } }}
       {...props}

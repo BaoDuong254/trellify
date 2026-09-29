@@ -3,288 +3,93 @@
     "_postman_id": "fb978a8c-1430-4216-8369-45f72cecda43",
     "name": "Trellify",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "41961051"
+    "_exporter_id": "41961051",
+    "description": "Every Trellify REST endpoint. Set `host` in the Trellify environment, run **Login** first, then **Create new board/column/card** - they store the ids the other requests use."
   },
   "item": [
     {
-      "name": "module boards",
-      "item": [
-        {
-          "name": "list boards",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{host}}/api/v1/boards",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "boards"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "get board details",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{host}}/api/v1/boards/696cf8e1464f12fbc4ad6c37",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "boards", "696cf8e1464f12fbc4ad6c37"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "create new board",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"title\": \"First title\",\r\n    \"description\": \"Second description\",\r\n    \"type\": \"public\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/api/v1/boards",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "boards"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Moving card to different column",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"currentCardId\": \"1\",\r\n    \"prevColumnId\": \"2\",\r\n    \"prevCardOrderIds\": [],\r\n    \"nextColumnId\": \"3\",\r\n    \"nextCardOrderIds\": []\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/api/v1/boards/supports/moving_card",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "boards", "supports", "moving_card"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "module columns",
-      "item": [
-        {
-          "name": "create new column",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"title\": \"First title column\",\r\n    \"boardId\": \"696cf8e1464f12fbc4ad6c37\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/api/v1/columns",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "columns"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "update a column",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"title\": \"First title column\",\r\n    \"cardOrderIds\": [],\r\n    \"updatedAt\": \r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/api/v1/columns/:id",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "columns", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "example",
-                  "description": "column id"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "delete a column",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{host}}/api/v1/columns/:id",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "columns", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "example",
-                  "description": "column id"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "module cards",
-      "item": [
-        {
-          "name": "create new card",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"title\": \"First title column\",\r\n    \"boardId\": \"696cf8e1464f12fbc4ad6c37\",\r\n    \"columnId\": \"696f91e673de4956025b8514\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/api/v1/cards",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "cards"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update card",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"title\": \"update second cards\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/api/v1/cards/6974597eb558015ef9c46665",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "cards", "6974597eb558015ef9c46665"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "module users",
+      "description": "Register, verify, log in and manage the current user. Login sets the httpOnly `accessToken`/`refreshToken` cookies that every other request relies on; Postman keeps them in its cookie jar. Register, login and forgot-password pass Cloudflare Turnstile, so they send `{{turnstileToken}}` - any non-empty value passes against the always-pass test secret `1x0000000000000000000000000000000AA`.",
       "item": [
         {
           "name": "Register a new user",
           "request": {
             "method": "POST",
             "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"password\": \"12345678a\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{host}}/api/v1/users/register",
               "host": ["{{host}}"],
               "path": ["api", "v1", "users", "register"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "login",
-          "request": {
-            "method": "POST",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"password\": \"123456789a\"\r\n}",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\",\n    \"turnstileToken\": \"{{turnstileToken}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{host}}/api/v1/users/login",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "users", "login"]
-            }
+            "description": "Creates an inactive account and emails a verification link. An unverified account is deleted after 24h by the worker."
           },
           "response": []
         },
         {
-          "name": "verify account",
+          "name": "Verify account",
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"email\": \"duonggiabao254@gmail.com\",\r\n    \"token\": \"12345678a\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{host}}/api/v1/users/verify",
               "host": ["{{host}}"],
               "path": ["api", "v1", "users", "verify"]
-            }
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"token\": \"{{verifyToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "`token` comes from the verification email link."
           },
           "response": []
         },
         {
-          "name": "Logout",
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.data && body.data._id;",
+                  "if (value) pm.environment.set(\"userId\", value);"
+                ]
+              }
+            }
+          ],
           "request": {
-            "method": "DELETE",
+            "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{host}}/api/v1/users/logout",
+              "raw": "{{host}}/api/v1/users/login",
               "host": ["{{host}}"],
-              "path": ["api", "v1", "users", "logout"]
-            }
+              "path": ["api", "v1", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\",\n    \"turnstileToken\": \"{{turnstileToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Sets the auth cookies and saves the user id into `{{userId}}`."
           },
           "response": []
         },
@@ -297,7 +102,8 @@
               "raw": "{{host}}/api/v1/users/refresh_token",
               "host": ["{{host}}"],
               "path": ["api", "v1", "users", "refresh_token"]
-            }
+            },
+            "description": "Issues a new access token from the refresh cookie. The API answers 410 when the access token has expired, 401 when the session is gone."
           },
           "response": []
         },
@@ -306,19 +112,742 @@
           "request": {
             "method": "PUT",
             "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/users/update",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "update"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"current_password\": \"12345678a\",\r\n    \"new_password\": \"12345678a\"\r\n    // \"displayName\": \"BaoDuong254\"\r\n}",
+              "raw": "{\n    \"displayName\": \"Trellify User\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
+            "description": "Allowlisted fields only: `displayName`, or `current_password` + `new_password` together to change the password."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload avatar",
+          "request": {
+            "method": "PUT",
+            "header": [],
             "url": {
               "raw": "{{host}}/api/v1/users/update",
               "host": ["{{host}}"],
               "path": ["api", "v1", "users", "update"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "description": "Multipart upload of the `avatar` field (jpg/png, 10 MB max)."
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/users/forgot-password",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "forgot-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"turnstileToken\": \"{{turnstileToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Emails a reset link. Always answers the same way whether or not the email exists, and is rate limited."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/users/reset-password",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "reset-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"{{resetToken}}\",\n    \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "`token` comes from the reset email link."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/users/logout",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "users", "logout"]
+            },
+            "description": "Clears the auth cookies."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "module boards",
+      "description": "Boards the current user owns or is a member of.",
+      "item": [
+        {
+          "name": "List boards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards?page=1&itemsPerPage=12&q[title]=",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "itemsPerPage",
+                  "value": "12"
+                },
+                {
+                  "key": "q[title]",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Paginated. Enable `q[title]` for a case-insensitive title search."
+          },
+          "response": []
+        },
+        {
+          "name": "Create new board",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.data && body.data._id;",
+                  "if (value) pm.environment.set(\"boardId\", value);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Product roadmap\",\n    \"description\": \"Everything we plan to ship\",\n    \"type\": \"private\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "`type` is `private` or `public`. Saves the new id into `{{boardId}}`."
+          },
+          "response": []
+        },
+        {
+          "name": "Get board details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/{{boardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "{{boardId}}"]
+            },
+            "description": "Full snapshot: columns in order with their cards, owners and members. Cards carry `commentCount`, not their comments."
+          },
+          "response": []
+        },
+        {
+          "name": "Update board",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/{{boardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "{{boardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Product roadmap\",\n    \"description\": \"Everything we plan to ship\",\n    \"type\": \"private\",\n    \"labels\": [\n        {\n            \"_id\": \"label-bug\",\n            \"name\": \"Bug\",\n            \"color\": \"#eb5a46\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Allowlisted fields: `title`, `description`, `type`, `columnOrderIds`, `labels`. `labels` replaces the whole label set; `color` must be a `#rrggbb` hex."
+          },
+          "response": []
+        },
+        {
+          "name": "Move card to a different column",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/supports/moving_card",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "supports", "moving_card"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"currentCardId\": \"{{cardId}}\",\n    \"prevColumnId\": \"{{columnId}}\",\n    \"prevCardOrderIds\": [],\n    \"nextColumnId\": \"{{otherColumnId}}\",\n    \"nextCardOrderIds\": [\n        \"{{cardId}}\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Drag-and-drop between columns: send the full new card order of both columns."
+          },
+          "response": []
+        },
+        {
+          "name": "Get archived items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/{{boardId}}/archived",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "{{boardId}}", "archived"]
+            },
+            "description": "Archived cards and columns of the board, newest first."
+          },
+          "response": []
+        },
+        {
+          "name": "Star a board",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/{{boardId}}/star",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "{{boardId}}", "star"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"starred\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Send `false` to unstar."
+          },
+          "response": []
+        },
+        {
+          "name": "Get starred boards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/starred",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "starred"]
+            },
+            "description": "`[{ _id, title }]` of starred boards the user can still open."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove a board member",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/{{boardId}}/members/{{memberUserId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "{{boardId}}", "members", "{{memberUserId}}"]
+            },
+            "description": "Owner only, or a member removing themself. Owners cannot be removed."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete a board",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/boards/{{boardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "boards", "{{boardId}}"]
+            },
+            "description": "Owner only. Soft delete; everyone viewing the board is sent back to the board list."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "module columns",
+      "description": "Columns of a board.",
+      "item": [
+        {
+          "name": "Create new column",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.data && body.data._id;",
+                  "if (value) pm.environment.set(\"columnId\", value);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/columns",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "columns"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"To do\",\n    \"boardId\": \"{{boardId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Saves the new id into `{{columnId}}`. Run it twice with another title and copy the second id into `{{otherColumnId}}` to try moving cards."
+          },
+          "response": []
+        },
+        {
+          "name": "Update a column",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/columns/{{columnId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "columns", "{{columnId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Doing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Allowlisted fields: `title`, `cardOrderIds`."
+          },
+          "response": []
+        },
+        {
+          "name": "Archive or restore a column",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/columns/{{columnId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "columns", "{{columnId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"archived\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "`true` archives the column (it and its cards leave the board snapshot), `false` restores it next to its old neighbours."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete a column",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/columns/{{columnId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "columns", "{{columnId}}"]
+            },
+            "description": "Soft-deletes the column and all its cards."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "module cards",
+      "description": "Cards and everything inside them. `PUT /cards/:id` handles one kind of change per request: a cover upload, a comment add/edit/delete, a member change, archive/restore, or plain field updates.",
+      "item": [
+        {
+          "name": "Create new card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.data && body.data._id;",
+                  "if (value) pm.environment.set(\"cardId\", value);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Write the release notes\",\n    \"boardId\": \"{{boardId}}\",\n    \"columnId\": \"{{columnId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Saves the new id into `{{cardId}}`."
+          },
+          "response": []
+        },
+        {
+          "name": "Update card title and description",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Write the release notes\",\n    \"description\": \"Markdown **supported**\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update due date",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"dueDate\": \"2030-01-01T09:00:00.000Z\",\n    \"dueComplete\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ISO date with offset, or `null` to clear it. Setting a future date schedules a reminder email to the card's members 24h before."
+          },
+          "response": []
+        },
+        {
+          "name": "Update labels",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"labelIds\": [\n        \"label-bug\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Ids from the board's `labels`."
+          },
+          "response": []
+        },
+        {
+          "name": "Update checklist",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"checklist\": [\n        {\n            \"_id\": \"item-1\",\n            \"text\": \"Draft\",\n            \"done\": true\n        },\n        {\n            \"_id\": \"item-2\",\n            \"text\": \"Review\",\n            \"done\": false\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Replaces the whole checklist."
+          },
+          "response": []
+        },
+        {
+          "name": "Add or remove a card member",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"incomingMemberInfo\": {\n        \"userId\": \"{{userId}}\",\n        \"action\": \"ADD\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "`action` is `ADD` or `REMOVE`; the user must belong to the board."
+          },
+          "response": []
+        },
+        {
+          "name": "Add comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.data && body.data.comments && body.data.comments[0] && body.data.comments[0]._id;",
+                  "if (value) pm.environment.set(\"commentId\", value);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"commentToAdd\": {\n        \"userAvatar\": null,\n        \"userDisplayName\": \"Trellify User\",\n        \"content\": \"Looks good to me\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Saves the new comment id into `{{commentId}}`."
+          },
+          "response": []
+        },
+        {
+          "name": "Edit comment",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"commentToUpdate\": {\n        \"_id\": \"{{commentId}}\",\n        \"content\": \"Looks great to me\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Author only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete comment",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"commentToDelete\": {\n        \"_id\": \"{{commentId}}\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Author only."
+          },
+          "response": []
+        },
+        {
+          "name": "Archive or restore a card",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"archived\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "`true` archives the card, `false` restores it next to its old neighbours. Restoring fails with 409 while its column is archived or deleted."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload card cover",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "cardCover",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "description": "Multipart upload of the `cardCover` field (jpg/png, 10 MB max)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get card comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}/comments",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}", "comments"]
+            },
+            "description": "Newest first."
+          },
+          "response": []
+        },
+        {
+          "name": "Get card activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}/activities",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}", "activities"]
+            },
+            "description": "The card's history, newest first, 50 entries."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete a card",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/cards/{{cardId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "cards", "{{cardId}}"]
             }
           },
           "response": []
@@ -326,32 +855,47 @@
       ]
     },
     {
-      "name": "module invitation",
+      "name": "module invitations",
+      "description": "Board invitations. The invitee gets a realtime notification and an email.",
       "item": [
         {
           "name": "Create new board invitation",
           "request": {
             "method": "POST",
             "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/invitations/board",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "invitations", "board"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"inviteeEmail\": \"duonggiabao254@gmail.com\",\r\n    \"boardId\": \"696cf8e1464f12fbc4ad6c37\"\r\n}",
+              "raw": "{\n    \"inviteeEmail\": \"someone@example.com\",\n    \"boardId\": \"{{boardId}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{host}}/api/v1/invitations/board",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "invitations", "board"]
-            }
+            "description": "The invitee must already have an account. Rate limited per inviter."
           },
           "response": []
         },
         {
           "name": "Get invitations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.data && body.data[0] && body.data[0]._id;",
+                  "if (value) pm.environment.set(\"invitationId\", value);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -359,53 +903,55 @@
               "raw": "{{host}}/api/v1/invitations",
               "host": ["{{host}}"],
               "path": ["api", "v1", "invitations"]
-            }
+            },
+            "description": "Invitations sent to the current user. Saves the first id into `{{invitationId}}`."
           },
           "response": []
         },
         {
-          "name": "Update invitation",
+          "name": "Accept or reject invitation",
           "request": {
             "method": "PUT",
             "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/invitations/board/{{invitationId}}",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "invitations", "board", "{{invitationId}}"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"status\": \"ACCEPTED\"\r\n}",
+              "raw": "{\n    \"status\": \"ACCEPTED\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{host}}/api/v1/invitations/board/:id",
-              "host": ["{{host}}"],
-              "path": ["api", "v1", "invitations", "board", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "123",
-                  "description": "Invitation id"
-                }
-              ]
-            }
+            "description": "`status` is `ACCEPTED` or `REJECTED`."
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Check API status",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{host}}/api/v1/status",
-          "host": ["{{host}}"],
-          "path": ["api", "v1", "status"]
+      "name": "module system",
+      "description": "Operational endpoints. `POST /diagnostics` is left out on purpose: it is the Sentry tunnel and only accepts envelopes from the browser SDK.",
+      "item": [
+        {
+          "name": "Load balancer probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/api/v1/system/load-balancer",
+              "host": ["{{host}}"],
+              "path": ["api", "v1", "system", "load-balancer"]
+            },
+            "description": "No auth. Reports which server instance answered."
+          },
+          "response": []
         }
-      },
-      "response": []
+      ]
     }
   ]
 }

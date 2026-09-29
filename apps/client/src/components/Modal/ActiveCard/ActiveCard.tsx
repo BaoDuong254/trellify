@@ -112,7 +112,7 @@ function ActiveCard() {
     comments,
     isLoading: isLoadingComments,
     replaceComments,
-  } = useCardComments(activeCard?._id, activeCardVersion);
+  } = useCardComments(activeCard?._id, activeCard?.updatedAt ?? "");
 
   const handleCloseModal = () => {
     setIsChecklistOpen(false);
@@ -131,12 +131,14 @@ function ActiveCard() {
     return boardCard;
   };
 
-  const onUpdateCardTitle = (newTitle: string) => {
-    callApiUpdateCard({ title: newTitle.trim() });
+  const updateCardQuietly = (updatedCardData: UpdateCardInputType) => {
+    callApiUpdateCard(updatedCardData).catch(() => {});
   };
 
+  const onUpdateCardTitle = (newTitle: string) => callApiUpdateCard({ title: newTitle.trim() });
+
   const onUpdateCardDescription = (newDescription: string) => {
-    callApiUpdateCard({ description: newDescription });
+    updateCardQuietly({ description: newDescription });
   };
 
   const onUploadCardCover = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +192,9 @@ function ActiveCard() {
   const onBoardLabelsChange = (labels: BoardLabelType[]) => {
     if (!board) return;
     dispatch(updateCurrentActiveBoard({ ...board, labels }));
-    updateBoardDetailsAPI(board._id, { labels });
+    updateBoardDetailsAPI(board._id, { labels }).catch(() => {
+      dispatch(fetchBoardDetailsAPI(board._id));
+    });
   };
 
   const onUpdateChecklist = (nextChecklist: ChecklistItemType[]) => {
@@ -238,12 +242,16 @@ function ActiveCard() {
       .then(({ confirmed }) => {
         if (confirmed) {
           if (!activeCard) return;
-          const cardId = activeCard._id;
+          const { _id: cardId, boardId } = activeCard;
           removeActiveCardFromBoard();
 
-          deleteCardDetailsAPI(cardId).then((res) => {
-            toast.success(res?.deleteResult);
-          });
+          deleteCardDetailsAPI(cardId)
+            .then((res) => {
+              toast.success(res?.deleteResult);
+            })
+            .catch(() => {
+              dispatch(fetchBoardDetailsAPI(boardId));
+            });
         }
       })
       .catch(() => {});
@@ -319,7 +327,7 @@ function ActiveCard() {
                   <Checkbox
                     size='small'
                     checked={Boolean(activeCard.dueComplete)}
-                    onChange={(event) => callApiUpdateCard({ dueComplete: event.target.checked })}
+                    onChange={(event) => updateCardQuietly({ dueComplete: event.target.checked })}
                     slotProps={{ input: { "aria-label": "Mark due date complete" } }}
                   />
                   <DueDateChip
@@ -444,7 +452,7 @@ function ActiveCard() {
                   anchorEl={datesAnchor}
                   onClose={() => setDatesAnchor(null)}
                   dueDate={activeCard?.dueDate}
-                  onSave={(dueDate) => callApiUpdateCard({ dueDate, dueComplete: false })}
+                  onSave={(dueDate) => updateCardQuietly({ dueDate, dueComplete: false })}
                 />
               )}
               <CardLabelsPopover

@@ -29,7 +29,7 @@ const findByCard = async (cardId: string) => {
     .collection(ACTIVITY_COLLECTION_NAME)
     .aggregate([
       { $match: { cardId: new ObjectId(cardId), _destroy: false } },
-      { $sort: { createdAt: -1 } },
+      { $sort: { createdAt: -1, _id: -1 } },
       { $limit: ACTIVITY_PAGE_SIZE },
       {
         $lookup: {

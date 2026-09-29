@@ -1,3 +1,4 @@
+import { isEqual } from "lodash";
 import { Document, WithId } from "mongodb";
 
 import { CARD_ACTIVITY_TYPES, CardActivityType } from "@workspace/shared/schemas/activity.schema";
@@ -41,10 +42,10 @@ const describeCardChanges = (card: Document, body: UpdateCardType, hasCoverChang
     changes.push({ type: CARD_ACTIVITY_TYPES.DUE_COMPLETED });
   }
 
-  if (body.labelIds !== undefined) {
+  if (body.labelIds !== undefined && !isEqual(body.labelIds, card.labelIds ?? [])) {
     changes.push({ type: CARD_ACTIVITY_TYPES.LABELS_CHANGED });
   }
-  if (body.checklist !== undefined) {
+  if (body.checklist !== undefined && !isEqual(body.checklist, card.checklist ?? [])) {
     const done = body.checklist.filter((item) => item.done).length;
     changes.push({ type: CARD_ACTIVITY_TYPES.CHECKLIST_CHANGED, data: { done, total: body.checklist.length } });
   }
@@ -69,7 +70,7 @@ const record = async (card: WithId<Document>, actorId: string, changes: CardChan
   }
 };
 
-const getByCard = async (cardId: string) => activityModel.findByCard(cardId);
+const getByCard = async (cardId: string): Promise<Document[]> => activityModel.findByCard(cardId);
 
 export const activityService = {
   describeCardChanges,

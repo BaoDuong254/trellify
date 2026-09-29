@@ -68,6 +68,21 @@ const deleteOneById = async (cardId: string) => {
   return result;
 };
 
+const deleteManyByBoardId = async (boardId: string) => {
+  return await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .updateMany(
+      { boardId: new ObjectId(boardId), _destroy: false },
+      { $set: { _destroy: true, updatedAt: new Date() } }
+    );
+};
+
+const backfillCommentIds = async (cardId: string, previous: Document[], next: Document[]) => {
+  return await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .updateOne({ _id: new ObjectId(cardId), _destroy: false, comments: previous }, { $set: { comments: next } });
+};
+
 const deleteManyByColumnId = async (columnId: string) => {
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
@@ -155,6 +170,8 @@ export const cardModel = {
   update,
   deleteOneById,
   deleteManyByColumnId,
+  deleteManyByBoardId,
+  backfillCommentIds,
   unshiftNewComment,
   updateOwnComment,
   deleteOwnComment,
