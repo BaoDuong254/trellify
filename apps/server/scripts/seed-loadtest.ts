@@ -7,6 +7,7 @@ import ms, { StringValue } from "ms";
 import { BOARD_TYPES } from "@workspace/shared/utils/constants";
 import logger from "@workspace/shared/utils/logger";
 
+import { BOARD_BLOOM, CARD_BLOOM, COLUMN_BLOOM, ENSURE_BLOOM_FILTERS } from "src/config/bloom";
 import { CLOSE_DB, CONNECT_DB, GET_DB } from "src/config/database";
 import environmentConfig from "src/config/environment";
 import { boardModel } from "src/models/board.model";
@@ -14,6 +15,7 @@ import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { userModel } from "src/models/user.model";
 import { JwtProvider } from "src/providers/jwt.provider";
+import { closeRedisClient, getRedisClient } from "src/providers/redis.provider";
 import slugify from "src/utils/formatters";
 
 const SEED_PREFIX = "k6-";
@@ -190,6 +192,23 @@ const seed = async (): Promise<void> => {
     }
   }
 
+  const commentsPerCard = readCount("SEED_COMMENTS_PER_CARD", 0);
+  if (commentsPerCard > 0) {
+    const comments = Array.from({ length: commentsPerCard }, (_, index) => ({
+      _id: `${SEED_PREFIX}comment-${index}`,
+      userId: owner.userId,
+      userEmail: owner.email,
+      userAvatar: null,
+      userDisplayName: `${SEED_PREFIX}user-0`,
+      content: `Load test comment ${index}: a short note of realistic length describing progress on this card.`,
+      commentedAt: new Date(),
+    }));
+    await GET_DB()
+      .collection(cardModel.CARD_COLLECTION_NAME)
+      .updateMany({ title: { $regex: `^${SEED_PREFIX}` } }, { $set: { comments } });
+    logger.info(`Attached ${commentsPerCard} comments to every seeded card`);
+  }
+
   const target = outputPath();
   const payload: SeedFile = { users, sharedBoards };
   // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -216,8 +235,14 @@ void (async () => {
   await CONNECT_DB();
   try {
     await cleanup();
-    if (!process.argv.includes("--cleanup")) await seed();
+    if (!process.argv.includes("--cleanup")) {
+      await seed();
+      logger.info("Rebuilding bloom filters so the running server sees the seeded ids");
+      await getRedisClient().del(BOARD_BLOOM.key, COLUMN_BLOOM.key, CARD_BLOOM.key);
+      await ENSURE_BLOOM_FILTERS();
+    }
   } finally {
+    await closeRedisClient();
     await CLOSE_DB();
   }
 })();

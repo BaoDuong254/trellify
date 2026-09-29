@@ -3,9 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import Card from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/Card/Card";
-import { updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import { setCardFilter, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
 import { buildBoard, buildCard } from "src/test/fixtures";
 import { renderWithProviders } from "src/test/render";
+import { EMPTY_CARD_FILTER } from "src/utils/cardFilter";
 
 describe("<Card />", () => {
   it("shows the title and no count buttons when there is nothing to count", () => {
@@ -18,16 +19,7 @@ describe("<Card />", () => {
   it("shows member and comment counts", () => {
     const card = buildCard({
       memberIds: ["user-1", "user-2"],
-      comments: [
-        {
-          userId: "user-1",
-          userEmail: "a@trellify.test",
-          userAvatar: null,
-          userDisplayName: "A",
-          content: "Hi",
-          commentedAt: new Date(),
-        },
-      ],
+      commentCount: 1,
     });
 
     renderWithProviders(<Card card={card} />);
@@ -76,5 +68,19 @@ describe("<Card />", () => {
     expect(screen.getByText("Bug")).toBeInTheDocument();
     expect(screen.queryByText("Unused")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "1/2" })).toBeInTheDocument();
+  });
+
+  it("hides a card that does not match the active filter and shows it again once cleared", () => {
+    const { store } = renderWithProviders(<Card card={buildCard({ title: "Write docs" })} />);
+
+    act(() => {
+      store.dispatch(setCardFilter({ ...EMPTY_CARD_FILTER, keyword: "release" }));
+    });
+    expect(screen.getByText("Write docs")).not.toBeVisible();
+
+    act(() => {
+      store.dispatch(setCardFilter(EMPTY_CARD_FILTER));
+    });
+    expect(screen.getByText("Write docs")).toBeVisible();
   });
 });

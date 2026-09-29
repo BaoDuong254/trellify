@@ -1,4 +1,4 @@
-import type { Board } from "src/types/board.type";
+import type { Board, Card } from "src/types/board.type";
 import { generatePlaceholderCard } from "src/utils/formatters";
 import { mapOrder } from "src/utils/sort";
 
@@ -21,3 +21,6 @@ export const normalizeBoard = (incomingBoard: Board): Board => {
 
   return board;
 };
+
+export const cardVersion = (card?: Pick<Card, "updatedAt" | "columnId"> | null): string =>
+  `${card?.updatedAt ?? ""}|${card?.columnId ?? ""}`;

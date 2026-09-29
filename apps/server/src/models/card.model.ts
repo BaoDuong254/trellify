@@ -75,12 +75,27 @@ const deleteManyByColumnId = async (columnId: string) => {
   return result;
 };
 
+const findArchivedByBoard = async (boardId: string) => {
+  return await GET_DB()
+    .collection(CARD_COLLECTION_NAME)
+    .find(
+      { boardId: new ObjectId(boardId), _destroy: false, archivedAt: { $type: "date" } },
+      { projection: { title: 1, columnId: 1, archivedAt: 1 } }
+    )
+    .sort({ archivedAt: -1 })
+    .limit(100)
+    .toArray();
+};
+
 const unshiftNewComment = async (cardId: string, commentData: CardCommentType) => {
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
     .findOneAndUpdate(
       { _id: new ObjectId(cardId), _destroy: false },
-      { $push: { comments: { $each: [commentData], $position: 0 } } } as unknown as UpdateFilter<Document>,
+      {
+        $push: { comments: { $each: [commentData], $position: 0 } },
+        $set: { updatedAt: new Date() },
+      } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );
   return result;
@@ -91,7 +106,7 @@ const updateOwnComment = async (cardId: string, commentId: string, userId: strin
     .collection(CARD_COLLECTION_NAME)
     .findOneAndUpdate(
       { _id: new ObjectId(cardId), _destroy: false, comments: { $elemMatch: { _id: commentId, userId } } },
-      { $set: { "comments.$.content": content, "comments.$.editedAt": new Date() } },
+      { $set: { "comments.$.content": content, "comments.$.editedAt": new Date(), updatedAt: new Date() } },
       { returnDocument: "after" }
     );
 };
@@ -101,7 +116,10 @@ const deleteOwnComment = async (cardId: string, commentId: string, userId: strin
     .collection(CARD_COLLECTION_NAME)
     .findOneAndUpdate(
       { _id: new ObjectId(cardId), _destroy: false, comments: { $elemMatch: { _id: commentId, userId } } },
-      { $pull: { comments: { _id: commentId, userId } } } as unknown as UpdateFilter<Document>,
+      {
+        $pull: { comments: { _id: commentId, userId } },
+        $set: { updatedAt: new Date() },
+      } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );
 };
@@ -109,8 +127,8 @@ const deleteOwnComment = async (cardId: string, commentId: string, userId: strin
 const updateMembers = async (cardId: string, incomingMemberInfo: IncomingCardMemberInfoType) => {
   const updateCondition: Record<string, unknown> =
     incomingMemberInfo.action === CARD_MEMBER_ACTIONS.ADD
-      ? { $push: { memberIds: new ObjectId(incomingMemberInfo.userId) } }
-      : { $pull: { memberIds: new ObjectId(incomingMemberInfo.userId) } };
+      ? { $push: { memberIds: new ObjectId(incomingMemberInfo.userId) }, $set: { updatedAt: new Date() } }
+      : { $pull: { memberIds: new ObjectId(incomingMemberInfo.userId) }, $set: { updatedAt: new Date() } };
 
   const result = await GET_DB()
     .collection(CARD_COLLECTION_NAME)
@@ -133,6 +151,7 @@ export const cardModel = {
   findAllIds,
   countAll,
   findOneById,
+  findArchivedByBoard,
   update,
   deleteOneById,
   deleteManyByColumnId,

@@ -74,6 +74,10 @@ export const MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA = z.object({
     .default([]),
 });
 
+export const STAR_BOARD_SCHEMA = z.object({
+  starred: z.boolean({ error: "Error.StarredMustBeBoolean" }),
+});
+
 export const BOARD_ID_PARAMS_SCHEMA = z.object({
   id: z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }),
 });
@@ -88,4 +92,5 @@ export type BoardLabelType = z.infer<typeof BOARD_LABEL_SCHEMA>;
 export type BoardPatchType = Partial<BoardCollectionType>;
 export type CreateNewBoardType = z.infer<typeof CREATE_NEW_BOARD_SCHEMA>;
 export type UpdateBoardType = z.infer<typeof UPDATE_BOARD_SCHEMA>;
+export type StarBoardType = z.infer<typeof STAR_BOARD_SCHEMA>;
 export type MoveCardToDifferentColumnType = z.infer<typeof MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA>;

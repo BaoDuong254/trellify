@@ -14,12 +14,15 @@ import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
 import {
   fetchBoardDetailsAPI,
   selectCurrentActiveBoard,
+  setCardFilter,
   updateCurrentActiveBoard,
 } from "src/redux/activeBoard/activeBoardSlice";
 import { selectCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card, Column } from "src/types/board.type";
+import { EMPTY_CARD_FILTER } from "src/utils/cardFilter";
 import { recordCardMoved } from "src/utils/metrics";
+import { rememberRecentBoard } from "src/utils/recentBoards";
 
 function Board() {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,9 +37,16 @@ function Board() {
   useEffect(() => {
     if (boardId) {
       dispatch(updateCurrentActiveBoard(null));
+      dispatch(setCardFilter(EMPTY_CARD_FILTER));
       dispatch(fetchBoardDetailsAPI(boardId));
     }
   }, [dispatch, boardId]);
+
+  const loadedBoardId = board?._id;
+  const loadedBoardTitle = board?.title;
+  useEffect(() => {
+    if (loadedBoardId && loadedBoardTitle) rememberRecentBoard({ _id: loadedBoardId, title: loadedBoardTitle });
+  }, [loadedBoardId, loadedBoardTitle]);
 
   const moveColumns = async (dndOrderedColumns: Column[]): Promise<void> => {
     if (!board?._id) return;

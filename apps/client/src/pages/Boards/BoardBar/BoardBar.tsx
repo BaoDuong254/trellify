@@ -1,4 +1,5 @@
 import AddToDriveIcon from "@mui/icons-material/AddToDrive";
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import BoltIcon from "@mui/icons-material/Bolt";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -8,15 +9,20 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
 import { useConfirm } from "material-ui-confirm";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { deleteBoardAPI } from "src/apis";
+import ArchivedItemsDialog from "src/pages/Boards/BoardBar/ArchivedItemsDialog";
+import BoardFilterPopover from "src/pages/Boards/BoardBar/BoardFilterPopover";
 import BoardUserGroup from "src/pages/Boards/BoardBar/BoardUserGroup";
 import InviteBoardUser from "src/pages/Boards/BoardBar/InviteBoardUser";
+import { selectCardFilter } from "src/redux/activeBoard/activeBoardSlice";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import type { Board } from "src/types/board.type";
+import { countActiveFilters } from "src/utils/cardFilter";
 import { capitalizeFirstLetter } from "src/utils/formatters";
 
 const MENU_STYLES = {
@@ -37,6 +43,9 @@ function BoardBar({ board, presentUserIds }: { board?: Board; presentUserIds?: s
   const currentUser = useSelector(selectCurrentUser);
   const confirmDeleteBoard = useConfirm();
   const navigate = useNavigate();
+  const activeFilterCount = countActiveFilters(useSelector(selectCardFilter));
+  const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
+  const [isArchivedOpen, setIsArchivedOpen] = useState(false);
   const isOwner = Boolean(currentUser && board?.ownerIds.includes(currentUser._id));
 
   const handleDeleteBoard = () => {
@@ -80,7 +89,22 @@ function BoardBar({ board, presentUserIds }: { board?: Board; presentUserIds?: s
         <Chip icon={<VpnLockIcon />} label={capitalizeFirstLetter(board?.type)} clickable sx={MENU_STYLES} />
         <Chip icon={<AddToDriveIcon />} label='Add To Goole Drive' clickable sx={MENU_STYLES} />
         <Chip icon={<BoltIcon />} label='Automation' clickable sx={MENU_STYLES} />
-        <Chip icon={<FilterListIcon />} label='Filters' clickable sx={MENU_STYLES} />
+        <Chip
+          icon={<FilterListIcon />}
+          label={activeFilterCount ? `Filters (${activeFilterCount})` : "Filters"}
+          onClick={(event) => setFilterAnchor(event.currentTarget)}
+          sx={MENU_STYLES}
+        />
+        <BoardFilterPopover anchorEl={filterAnchor} onClose={() => setFilterAnchor(null)} board={board} />
+        <Chip
+          icon={<ArchiveOutlinedIcon />}
+          label='Archived'
+          onClick={() => setIsArchivedOpen(true)}
+          sx={MENU_STYLES}
+        />
+        {board && isArchivedOpen && (
+          <ArchivedItemsDialog boardId={board._id} onClose={() => setIsArchivedOpen(false)} />
+        )}
         {isOwner && (
           <Chip icon={<DeleteOutlinedIcon />} label='Delete Board' onClick={handleDeleteBoard} sx={MENU_STYLES} />
         )}

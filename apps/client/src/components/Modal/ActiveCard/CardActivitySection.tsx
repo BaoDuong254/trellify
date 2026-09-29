@@ -1,6 +1,7 @@
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
+import Skeleton from "@mui/material/Skeleton";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -12,13 +13,17 @@ import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import { cloudinaryThumb, formatDateTime } from "src/utils/formatters";
 
+const COMMENT_SKELETON_ROWS = [0, 1];
+
 function CardActivitySection({
   cardComments,
   onAddCardComment,
   onUpdateComment,
   onDeleteComment,
+  isLoading = false,
 }: {
   cardComments?: CardCommentType[];
+  isLoading?: boolean;
   onAddCardComment: (commentToAdd: { userAvatar: string; userDisplayName: string; content: string }) => Promise<void>;
   onUpdateComment: (commentToUpdate: { _id: string; content: string }) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
@@ -73,7 +78,17 @@ function CardActivitySection({
         />
       </Box>
 
-      {cardComments?.length === 0 && (
+      {isLoading &&
+        COMMENT_SKELETON_ROWS.map((row) => (
+          <Box key={row} data-testid='card-comment-skeleton' sx={{ display: "flex", gap: 1, mb: 1.5 }}>
+            <Skeleton variant='circular' width={36} height={36} />
+            <Box sx={{ flex: 1 }}>
+              <Skeleton variant='text' width='40%' />
+              <Skeleton variant='rounded' height={36} />
+            </Box>
+          </Box>
+        ))}
+      {!isLoading && cardComments?.length === 0 && (
         <Typography sx={{ pl: "45px", fontSize: "14px", fontWeight: "500", color: "#b1b1b1" }}>
           No activity found!
         </Typography>

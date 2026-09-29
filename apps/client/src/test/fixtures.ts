@@ -24,7 +24,7 @@ export const buildCard = (overrides: Partial<Card> = {}): Card => ({
   columnId: "column-1",
   title: "Write tests",
   memberIds: [],
-  comments: [],
+  commentCount: 0,
   ...overrides,
 });
 

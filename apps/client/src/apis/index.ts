@@ -1,13 +1,14 @@
 import { toast } from "sonner";
 
+import type { CardActivityEntryType } from "@workspace/shared/schemas/activity.schema";
 import type { MoveCardToDifferentColumnType, UpdateBoardType } from "@workspace/shared/schemas/board.schema";
-import type { UpdateCardInputType } from "@workspace/shared/schemas/card.schema";
+import type { CardCommentType, UpdateCardInputType } from "@workspace/shared/schemas/card.schema";
 import type { UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 import type { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
 
 import envConfig from "src/config/env";
 import type { CreateBoardFormData } from "src/pages/Boards/create";
-import type { Board, Card, Column } from "src/types/board.type";
+import type { ArchivedItems, Board, BoardLink, Card, CardWithComments, Column } from "src/types/board.type";
 import http from "src/utils/http";
 
 // Board APIs
@@ -42,6 +43,21 @@ export const deleteBoardAPI = async (boardId: string): Promise<{ deleteResult: s
   return response.data.data;
 };
 
+export const fetchArchivedItemsAPI = async (boardId: string): Promise<ArchivedItems> => {
+  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}/archived`);
+  return response.data.data;
+};
+
+export const fetchStarredBoardsAPI = async (): Promise<BoardLink[]> => {
+  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/starred`);
+  return response.data.data;
+};
+
+export const setBoardStarredAPI = async (boardId: string, starred: boolean): Promise<{ starred: boolean }> => {
+  const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}/star`, { starred });
+  return response.data.data;
+};
+
 export const removeBoardMemberAPI = async (boardId: string, userId: string): Promise<{ removeResult: string }> => {
   const response = await http.delete(`${envConfig.VITE_API_ENDPOINT}/api/v1/boards/${boardId}/members/${userId}`);
   return response.data.data;
@@ -69,8 +85,21 @@ export const createNewCardAPI = async (newCardData: Partial<Card>): Promise<Card
   return response.data.data;
 };
 
-export const updateCardDetailsAPI = async (cardId: string, updateData: UpdateCardInputType) => {
+export const updateCardDetailsAPI = async (
+  cardId: string,
+  updateData: UpdateCardInputType
+): Promise<CardWithComments> => {
   const response = await http.put(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards/${cardId}`, updateData);
+  return response.data.data;
+};
+
+export const fetchCardCommentsAPI = async (cardId: string): Promise<CardCommentType[]> => {
+  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards/${cardId}/comments`);
+  return response.data.data;
+};
+
+export const fetchCardActivitiesAPI = async (cardId: string): Promise<CardActivityEntryType[]> => {
+  const response = await http.get(`${envConfig.VITE_API_ENDPOINT}/api/v1/cards/${cardId}/activities`);
   return response.data.data;
 };
 

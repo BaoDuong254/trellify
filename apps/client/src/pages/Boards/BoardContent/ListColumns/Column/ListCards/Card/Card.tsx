@@ -14,18 +14,23 @@ import Typography from "@mui/material/Typography";
 import { useDispatch, useSelector } from "react-redux";
 
 import { CardLabelChips, DueDateChip } from "src/components/Modal/ActiveCard/CardBadges";
-import { selectCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import { selectCardFilter, selectCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
 import { showModalActiveCard, updateCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card as CardType } from "src/types/board.type";
+import { countActiveFilters, matchesCardFilter } from "src/utils/cardFilter";
 import { cloudinaryImage } from "src/utils/formatters";
 
 function Card({ card }: { card: CardType }) {
   const dispatch = useDispatch<AppDispatch>();
   const boardLabels = useSelector(selectCurrentActiveBoard)?.labels ?? [];
   const checklist = card.checklist ?? [];
+  const cardFilter = useSelector(selectCardFilter);
+  const isFiltering = countActiveFilters(cardFilter) > 0;
+  const isHidden = card?.FE_PlaceholderCard || (isFiltering && !matchesCardFilter(card, cardFilter));
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card._id,
+    disabled: isFiltering,
     data: {
       ...card,
     },
@@ -39,7 +44,7 @@ function Card({ card }: { card: CardType }) {
   };
 
   const shouldShowCardActions = () => {
-    return !!card?.memberIds?.length || !!card?.comments?.length || !!card?.attachments?.length || !!checklist.length;
+    return !!card?.memberIds?.length || !!card?.commentCount || !!card?.attachments?.length || !!checklist.length;
   };
 
   const setActiveCard = () => {
@@ -58,7 +63,7 @@ function Card({ card }: { card: CardType }) {
         cursor: "pointer",
         boxShadow: "0 1px 1px rgba(0,0,0,0.2)",
         overflow: "unset",
-        display: card?.FE_PlaceholderCard ? "none" : "block",
+        display: isHidden ? "none" : "block",
         border: "1px solid transparent",
         "&:hover": { borderColor: (theme) => theme.palette.primary.main },
       }}
@@ -97,9 +102,9 @@ function Card({ card }: { card: CardType }) {
               {card.memberIds?.length}
             </Button>
           )}
-          {(card?.comments?.length ?? 0) > 0 && (
+          {(card?.commentCount ?? 0) > 0 && (
             <Button size='small' startIcon={<CommentIcon />}>
-              {card.comments?.length}
+              {card.commentCount}
             </Button>
           )}
           {(card?.attachments?.length ?? 0) > 0 && (

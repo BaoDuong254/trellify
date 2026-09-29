@@ -12,6 +12,7 @@ import environmentConfig from "src/config/environment";
 import { ENSURE_INDEXES } from "src/config/indexes";
 import { startMetricsServer } from "src/providers/metrics.provider";
 import { closeRedisClient } from "src/providers/redis.provider";
+import { emailQueue } from "src/queues/email/email.queue";
 import { userQueue } from "src/queues/user/user.queue";
 import { startSockets } from "src/sockets";
 import { closeSocketAdapter } from "src/sockets/socket.server";
@@ -47,8 +48,8 @@ const START_SERVER = async (): Promise<void> => {
         new Promise<void>((resolve) => io.close(() => resolve())),
         new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
       ]);
-      logger.info("6. Closing BullMQ queue...");
-      await userQueue.close();
+      logger.info("6. Closing BullMQ queues...");
+      await Promise.all([userQueue.close(), emailQueue.close()]);
       logger.info("7. Closing Socket.io Redis adapter...");
       await closeSocketAdapter();
       logger.info("8. Closing Redis client...");

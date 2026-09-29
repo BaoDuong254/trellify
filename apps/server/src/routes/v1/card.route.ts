@@ -23,4 +23,10 @@ router
   )
   .delete(authMiddleware.isAuthorized, rateLimitMiddleware.write, cardValidation.deleteItem, cardController.deleteItem);
 
+router.route("/:id/comments").get(authMiddleware.isAuthorized, cardValidation.getComments, cardController.getComments);
+
+router
+  .route("/:id/activities")
+  .get(authMiddleware.isAuthorized, cardValidation.getActivities, cardController.getActivities);
+
 export const cardRoute = router;

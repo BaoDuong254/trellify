@@ -12,6 +12,12 @@ router
   .get(authMiddleware.isAuthorized, boardController.getBoards)
   .post(authMiddleware.isAuthorized, rateLimitMiddleware.write, boardValidation.createNew, boardController.createNew);
 
+router.route("/starred").get(authMiddleware.isAuthorized, boardController.getStarred);
+
+router
+  .route("/:id/star")
+  .put(authMiddleware.isAuthorized, rateLimitMiddleware.write, boardValidation.setStarred, boardController.setStarred);
+
 router
   .route("/:id")
   .get(authMiddleware.isAuthorized, boardValidation.getDetails, boardController.getDetails)
@@ -22,6 +28,8 @@ router
     boardValidation.deleteItem,
     boardController.deleteItem
   );
+
+router.route("/:id/archived").get(authMiddleware.isAuthorized, boardValidation.getDetails, boardController.getArchived);
 
 router
   .route("/:id/members/:userId")

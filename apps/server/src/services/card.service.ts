@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { Document, ObjectId, WithId } from "mongodb";
 
+import { CARD_ACTIVITY_TYPES } from "@workspace/shared/schemas/activity.schema";
 import { CardCommentType, CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
 
 import { CARD_BLOOM } from "src/config/bloom";
@@ -8,8 +9,11 @@ import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
 import { CloudinaryProvider } from "src/providers/cloudinary.provider";
+import { scheduleDueReminder } from "src/queues/email/email.queue";
+import { activityService } from "src/services/activity.service";
 import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
+import { captureArchivedPosition, resolveRestorePosition } from "src/utils/order-position";
 
 const assertCardAccess = async (userId: string, cardId: string) => {
   if (!(await isPossiblyPresent(CARD_BLOOM, cardId))) {
@@ -35,8 +39,38 @@ const createNew = async (userId: string, requestBody: CreateNewCardType) => {
   const newlyCreatedCard = await cardModel.findOneById(createdCard.insertedId);
   if (newlyCreatedCard) {
     await columnModel.pushCardOrderIds(newlyCreatedCard);
+    await activityService.record(newlyCreatedCard, userId, [{ type: CARD_ACTIVITY_TYPES.CARD_CREATED }]);
   }
   return newlyCreatedCard;
+};
+
+const setArchived = async (card: WithId<Document>, isArchived: boolean): Promise<WithId<Document> | null> => {
+  const cardId = String(card._id);
+  if (isArchived === Boolean(card.archivedAt)) return card;
+
+  const column = await columnModel.findOneById(new ObjectId(String(card.columnId)));
+
+  if (isArchived) {
+    const updatedCard = await cardModel.update(cardId, {
+      archivedAt: new Date(),
+      archivedPosition: captureArchivedPosition(column?.cardOrderIds, card._id),
+      updatedAt: new Date(),
+    });
+    await columnModel.pullCardOrderIds(card);
+    return updatedCard;
+  }
+
+  if (!column || column.archivedAt) {
+    throw new ApiError(StatusCodes.CONFLICT, "Error.ColumnUnavailable");
+  }
+  const position = resolveRestorePosition(column.cardOrderIds, card.archivedPosition);
+  const updatedCard = await cardModel.update(cardId, {
+    archivedAt: null,
+    archivedPosition: null,
+    updatedAt: new Date(),
+  });
+  await columnModel.insertCardOrderId(String(column._id), cardId, position);
+  return updatedCard;
 };
 
 const update = async (
@@ -46,15 +80,16 @@ const update = async (
   cardCoverFile?: Express.Multer.File,
   userInfo?: { _id: string; email: string }
 ) => {
-  await assertCardAccess(userId, cardId);
+  const card = await assertCardAccess(userId, cardId);
 
-  const { commentToAdd, commentToUpdate, commentToDelete, incomingMemberInfo, ...fields } = requestBody;
+  const changes = activityService.describeCardChanges(card, requestBody, Boolean(cardCoverFile));
+  const { commentToAdd, commentToUpdate, commentToDelete, incomingMemberInfo, archived, ...fields } = requestBody;
   let updatedCard: WithId<Document> | null;
   if (cardCoverFile) {
     const uploadResult = (await CloudinaryProvider.streamUpload(cardCoverFile.buffer, "trellify_card-covers")) as {
       secure_url: string;
     };
-    updatedCard = await cardModel.update(cardId, { cover: uploadResult.secure_url });
+    updatedCard = await cardModel.update(cardId, { cover: uploadResult.secure_url, updatedAt: new Date() });
   } else if (commentToAdd) {
     const commentData = {
       ...commentToAdd,
@@ -70,12 +105,26 @@ const update = async (
   } else if (commentToDelete) {
     updatedCard = await cardModel.deleteOwnComment(cardId, commentToDelete._id, userId);
     if (!updatedCard) throw new ApiError(StatusCodes.NOT_FOUND, "Error.CommentNotFound");
+  } else if (archived !== undefined) {
+    updatedCard = await setArchived(card, archived);
   } else if (incomingMemberInfo) {
     updatedCard = await cardModel.updateMembers(cardId, incomingMemberInfo);
   } else {
     updatedCard = await cardModel.update(cardId, { ...fields, updatedAt: new Date() });
   }
+  if (updatedCard) await activityService.record(card, userId, changes);
+  if (updatedCard && fields.dueDate) await scheduleDueReminder(cardId, fields.dueDate);
   return updatedCard;
+};
+
+const getComments = async (userId: string, cardId: string): Promise<unknown[]> => {
+  const card = await assertCardAccess(userId, cardId);
+  return Array.isArray(card.comments) ? card.comments : [];
+};
+
+const getActivities = async (userId: string, cardId: string) => {
+  await assertCardAccess(userId, cardId);
+  return await activityService.getByCard(cardId);
 };
 
 const deleteItem = async (userId: string, cardId: string) => {
@@ -93,5 +142,7 @@ const deleteItem = async (userId: string, cardId: string) => {
 export const cardService = {
   createNew,
   update,
+  getComments,
+  getActivities,
   deleteItem,
 };

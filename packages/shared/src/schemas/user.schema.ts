@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
+  OBJECT_ID_RULE,
+  OBJECT_ID_RULE_MESSAGE,
   PASSWORD_RULE,
   PASSWORD_RULE_MESSAGE,
 } from "@workspace/shared/utils/validators";
@@ -24,6 +26,9 @@ export const USER_COLLECTION_SCHEMA = z.object({
   isActive: z.boolean({ error: "Error.IsActiveMustBeBoolean" }).default(false),
   verifyToken: z.string({ error: "Error.VerifyTokenMustBeString" }).nullable().default(null),
   verifyTokenExpiry: z.date({ error: "Error.VerifyTokenExpiryMustBeDate" }).nullable().default(null),
+  starredBoardIds: z
+    .array(z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
+    .default([]),
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),

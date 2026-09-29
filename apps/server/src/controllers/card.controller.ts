@@ -45,6 +45,32 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
   }
 };
 
+const getComments = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const comments = await cardService.getComments(actorId(request), (request.params.id as string) ?? "");
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Card comments fetched successfully",
+      data: comments,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getActivities = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const activities = await cardService.getActivities(actorId(request), (request.params.id as string) ?? "");
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Card activities fetched successfully",
+      data: activities,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteItem = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
     const cardId = (request.params.id as string) ?? "";
@@ -63,5 +89,7 @@ const deleteItem = async (request: ExpressRequest, response: ExpressResponse, ne
 export const cardController = {
   createNew,
   update,
+  getComments,
+  getActivities,
   deleteItem,
 };

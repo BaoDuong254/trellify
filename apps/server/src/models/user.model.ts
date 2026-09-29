@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { Document, ObjectId, UpdateFilter } from "mongodb";
 
 import {
   USER_COLLECTION_SCHEMA,
@@ -9,6 +9,17 @@ import {
 import { GET_DB } from "src/config/database";
 
 const USER_COLLECTION_NAME = "users";
+
+const PUBLIC_USER_PROJECTION = {
+  email: 1,
+  username: 1,
+  displayName: 1,
+  avatar: 1,
+  role: 1,
+  isActive: 1,
+  createdAt: 1,
+  updatedAt: 1,
+} as const;
 
 const INVALID_UPDATE_FIELDS = new Set(["_id", "email", "username", "createdAt"]);
 
@@ -27,6 +38,23 @@ const findOneById = async (userId: string) => {
     .collection(USER_COLLECTION_NAME)
     .findOne({ _id: new ObjectId(userId) });
   return result;
+};
+
+const setStarredBoard = async (userId: string, boardId: string, isStarred: boolean) => {
+  const change = { starredBoardIds: new ObjectId(boardId) };
+  return await GET_DB()
+    .collection(USER_COLLECTION_NAME)
+    .updateOne(
+      { _id: new ObjectId(userId) },
+      (isStarred ? { $addToSet: change } : { $pull: change }) as UpdateFilter<Document>
+    );
+};
+
+const findStarredBoardIds = async (userId: string): Promise<ObjectId[]> => {
+  const user = await GET_DB()
+    .collection(USER_COLLECTION_NAME)
+    .findOne({ _id: new ObjectId(userId) }, { projection: { starredBoardIds: 1 } });
+  return user?.starredBoardIds ?? [];
 };
 
 const findOneByEmail = async (emailValue: string) => {
@@ -64,8 +92,11 @@ const update = async (userId: string, updateData: UserPatchType) => {
 
 export const userModel = {
   USER_COLLECTION_NAME,
+  PUBLIC_USER_PROJECTION,
   createNew,
   findOneById,
+  setStarredBoard,
+  findStarredBoardIds,
   findOneByEmail,
   findOneByVerifyToken,
   hardDeleteById,

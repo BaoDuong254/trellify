@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, vi } from "vitest";
 import { CLOSE_DB, CONNECT_DB, GET_DB } from "src/config/database";
 import { ENSURE_INDEXES } from "src/config/indexes";
 import { closeRedisClient, getRedisClient } from "src/providers/redis.provider";
+import { emailQueue } from "src/queues/email/email.queue";
 import { userQueue } from "src/queues/user/user.queue";
 
 vi.mock("src/providers/brevo.provider", () => ({
@@ -34,7 +35,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await userQueue.close();
+  await Promise.all([userQueue.close(), emailQueue.close()]);
   await closeRedisClient();
   await CLOSE_DB();
 });

@@ -38,12 +38,37 @@ const findOneById = async (id: ObjectId) => {
   return column;
 };
 
+const findArchivedByBoard = async (boardId: string) => {
+  return await GET_DB()
+    .collection(COLUMN_COLLECTION_NAME)
+    .find(
+      { boardId: new ObjectId(boardId), _destroy: false, archivedAt: { $type: "date" } },
+      { projection: { title: 1, archivedAt: 1 } }
+    )
+    .sort({ archivedAt: -1 })
+    .limit(100)
+    .toArray();
+};
+
+const insertCardOrderId = async (parentId: string, childId: string, position: number | null) => {
+  const child = new ObjectId(childId);
+  return await GET_DB()
+    .collection(COLUMN_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(parentId), _destroy: false, cardOrderIds: { $ne: child } },
+      {
+        $push: { cardOrderIds: { $each: [child], ...(position !== null && { $position: position }) } },
+      } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+};
+
 const pushCardOrderIds = async (card) => {
   return await GET_DB()
     .collection(COLUMN_COLLECTION_NAME)
     .findOneAndUpdate(
       { _id: new ObjectId(card.columnId as string), _destroy: false },
-      { $push: { cardOrderIds: new ObjectId(card._id as string) } } as unknown as UpdateFilter<Document>,
+      { $addToSet: { cardOrderIds: new ObjectId(card._id as string) } } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );
 };
@@ -90,6 +115,8 @@ export const columnModel = {
   findAllIds,
   countAll,
   findOneById,
+  findArchivedByBoard,
+  insertCardOrderId,
   pushCardOrderIds,
   update,
   deleteOneById,

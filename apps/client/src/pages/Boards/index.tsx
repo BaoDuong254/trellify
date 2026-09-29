@@ -24,6 +24,8 @@ import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from "@workspace/shared/utils/co
 
 import { fetchBoardsAPI } from "src/apis";
 import AppBar from "src/components/AppBar/AppBar";
+import StarBoardButton from "src/components/StarBoardButton/StarBoardButton";
+import { useStarredBoards } from "src/hooks/useStarredBoards";
 import SidebarCreateBoardModal from "src/pages/Boards/create";
 import EditBoardModal from "src/pages/Boards/edit";
 import { selectCurrentUser } from "src/redux/user/userSlice";
@@ -60,6 +62,7 @@ function Boards() {
   const [loaded, setLoaded] = useState<LoadedBoards | null>(null);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const currentUser = useSelector(selectCurrentUser);
+  const { isStarred, toggleStar } = useStarredBoards();
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const page = parseInt(query.get("page") || "1", 10);
@@ -190,9 +193,17 @@ function Boards() {
                       </Box>
 
                       <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
-                        <Typography gutterBottom variant='h6' component='div' sx={{ wordBreak: "break-word" }}>
-                          {b.title}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, mb: 0.35 }}>
+                          <Typography variant='h6' component='div' sx={{ flex: 1, wordBreak: "break-word" }}>
+                            {b.title}
+                          </Typography>
+                          <StarBoardButton
+                            onSurface
+                            starred={isStarred(b._id)}
+                            boardTitle={b.title}
+                            onToggle={() => toggleStar({ _id: b._id, title: b.title })}
+                          />
+                        </Box>
                         <Tooltip
                           title={b.description}
                           placement='bottom-start'

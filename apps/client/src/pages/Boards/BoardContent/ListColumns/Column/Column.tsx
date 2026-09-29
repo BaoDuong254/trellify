@@ -27,7 +27,11 @@ import { toast } from "sonner";
 import { createNewCardAPI, deleteColumnDetailsAPI, updateColumnDetailsAPI } from "src/apis";
 import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
 import ListCards from "src/pages/Boards/BoardContent/ListColumns/Column/ListCards/ListCards";
-import { selectCurrentActiveBoard, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import {
+  fetchBoardDetailsAPI,
+  selectCurrentActiveBoard,
+  updateCurrentActiveBoard,
+} from "src/redux/activeBoard/activeBoardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card, Column as ColumnType } from "src/types/board.type";
 
@@ -111,11 +115,7 @@ function Column({ column }: { column: ColumnType }) {
     })
       .then(({ confirmed }) => {
         if (confirmed) {
-          if (!board) return;
-          const newBoard = { ...board };
-          newBoard.columns = newBoard.columns.filter((col) => col._id !== column._id);
-          newBoard.columnOrderIds = newBoard.columnOrderIds.filter((_id) => _id !== column._id);
-          dispatch(updateCurrentActiveBoard(newBoard));
+          removeColumnFromBoard();
 
           deleteColumnDetailsAPI(column._id).then((res) => {
             toast.success(res?.deleteResult);
@@ -123,6 +123,25 @@ function Column({ column }: { column: ColumnType }) {
         }
       })
       .catch(() => {});
+  };
+
+  const removeColumnFromBoard = () => {
+    if (!board) return;
+    const newBoard = { ...board };
+    newBoard.columns = newBoard.columns.filter((col) => col._id !== column._id);
+    newBoard.columnOrderIds = newBoard.columnOrderIds.filter((_id) => _id !== column._id);
+    dispatch(updateCurrentActiveBoard(newBoard));
+  };
+
+  const handleArchiveColumn = () => {
+    removeColumnFromBoard();
+    updateColumnDetailsAPI(column._id, { archived: true })
+      .then(() => {
+        toast.success("Column archived");
+      })
+      .catch(() => {
+        dispatch(fetchBoardDetailsAPI(column.boardId));
+      });
   };
 
   const onUpdateColumnTitle = (newTitle: string) => {
@@ -238,7 +257,7 @@ function Column({ column }: { column: ColumnType }) {
                 </ListItemIcon>
                 <ListItemText>Delete this column</ListItemText>
               </MenuItem>
-              <MenuItem>
+              <MenuItem onClick={handleArchiveColumn}>
                 <ListItemIcon>
                   <Cloud fontSize='small' />
                 </ListItemIcon>

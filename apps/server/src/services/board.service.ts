@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { cloneDeep } from "lodash";
 import { Document, ObjectId } from "mongodb";
 
+import { CARD_ACTIVITY_TYPES } from "@workspace/shared/schemas/activity.schema";
 import {
   CreateNewBoardType,
   MoveCardToDifferentColumnType,
@@ -15,8 +16,10 @@ import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { invitationModel } from "src/models/invitation.model";
+import { userModel } from "src/models/user.model";
 import { addItem, isPossiblyPresent, probeAndRead } from "src/providers/bloom.provider";
 import { getOrLoad, invalidate } from "src/providers/cache.provider";
+import { activityService } from "src/services/activity.service";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
 
@@ -139,7 +142,7 @@ const getBoardSnapshot = async (boardId: string) => {
   return groupCardsIntoColumns(boardDetails);
 };
 
-const boardCacheKey = (boardId: string): string => `c:v2:board:${boardId}`;
+const boardCacheKey = (boardId: string): string => `c:v3:board:${boardId}`;
 
 const invalidateBoardCache = async (boardId: string): Promise<void> => {
   await invalidate(boardCacheKey(boardId));
@@ -173,6 +176,27 @@ const update = async (userId: string, boardId: string, requestBody: UpdateBoardT
   const updatedBoard = await boardModel.update(boardId, updateData);
   await invalidateBoardMembership(boardId);
   return updatedBoard;
+};
+
+const setStarred = async (userId: string, boardId: string, isStarred: boolean): Promise<{ starred: boolean }> => {
+  if (isStarred) await assertBoardAccess(userId, boardId);
+  await userModel.setStarredBoard(userId, boardId, isStarred);
+  return { starred: isStarred };
+};
+
+const getStarred = async (userId: string) => {
+  const boardIds = await userModel.findStarredBoardIds(userId);
+  if (boardIds.length === 0) return [];
+  return await boardModel.findAccessibleTitles(boardIds, userId);
+};
+
+const getArchived = async (userId: string, boardId: string) => {
+  await assertBoardAccess(userId, boardId);
+  const [cards, columns] = await Promise.all([
+    cardModel.findArchivedByBoard(boardId),
+    columnModel.findArchivedByBoard(boardId),
+  ]);
+  return { cards, columns };
 };
 
 const deleteItem = async (userId: string, boardId: string): Promise<{ deleteResult: string }> => {
@@ -213,19 +237,24 @@ const moveCardToDifferentColumn = async (userId: string, requestBody: MoveCardTo
 
   await assertBoardAccess(userId, boardId);
 
-  await columnModel.update(requestBody.prevColumnId, {
-    cardOrderIds: requestBody.prevCardOrderIds,
-    updatedAt: new Date(),
-  });
-
-  await columnModel.update(requestBody.nextColumnId, {
-    cardOrderIds: requestBody.nextCardOrderIds,
-    updatedAt: new Date(),
-  });
-
-  await cardModel.update(requestBody.currentCardId, {
-    columnId: requestBody.nextColumnId,
-  });
+  const isCrossColumnMove = requestBody.prevColumnId !== requestBody.nextColumnId;
+  await Promise.all([
+    columnModel.update(requestBody.prevColumnId, {
+      cardOrderIds: requestBody.prevCardOrderIds,
+      updatedAt: new Date(),
+    }),
+    columnModel.update(requestBody.nextColumnId, {
+      cardOrderIds: requestBody.nextCardOrderIds,
+      updatedAt: new Date(),
+    }),
+    cardModel.update(requestBody.currentCardId, {
+      columnId: requestBody.nextColumnId,
+    }),
+    isCrossColumnMove &&
+      activityService.record(card, userId, [
+        { type: CARD_ACTIVITY_TYPES.CARD_MOVED, data: { from: previousColumn.title, to: nextColumn.title } },
+      ]),
+  ]);
 
   return { updateResult: "Successfully!", boardId };
 };
@@ -253,6 +282,9 @@ export const boardService = {
   getDetails,
   update,
   deleteItem,
+  getArchived,
+  setStarred,
+  getStarred,
   moveCardToDifferentColumn,
   getBoards,
   canUserAccessBoard,

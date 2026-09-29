@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ARCHIVED_POSITION_SCHEMA } from "@workspace/shared/schemas/archive.schema";
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from "@workspace/shared/utils/validators";
 
 export const COLUMN_COLLECTION_SCHEMA = z.object({
@@ -12,6 +13,8 @@ export const COLUMN_COLLECTION_SCHEMA = z.object({
   cardOrderIds: z
     .array(z.string({ error: "Error.CardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
     .default([]),
+  archivedAt: z.date({ error: "Error.ArchivedAtMustBeDate" }).nullable().default(null),
+  archivedPosition: ARCHIVED_POSITION_SCHEMA,
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
@@ -23,7 +26,10 @@ export const CREATE_NEW_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({
 });
 
 export const UPDATE_COLUMN_SCHEMA = COLUMN_COLLECTION_SCHEMA.pick({ title: true })
-  .extend({ cardOrderIds: COLUMN_COLLECTION_SCHEMA.shape.cardOrderIds.unwrap() })
+  .extend({
+    cardOrderIds: COLUMN_COLLECTION_SCHEMA.shape.cardOrderIds.unwrap(),
+    archived: z.boolean({ error: "Error.ArchivedMustBeBoolean" }),
+  })
   .partial();
 
 export const COLUMN_ID_PARAMS_SCHEMA = z.object({

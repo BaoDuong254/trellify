@@ -198,6 +198,7 @@ Run it standalone against a test you start yourself with `pnpm k6:watch --out k6
 | `SEED_BOARDS_PER_USER`        | `15`                         | Small boards per user; needs to exceed 12 for pagination to engage                                                                                                                                                                                                                                    |
 | `SEED_MEDIUM_BOARDS`          | `5`                          | Shared medium boards                                                                                                                                                                                                                                                                                  |
 | `SEED_LARGE_BOARDS`           | `5`                          | Shared large boards                                                                                                                                                                                                                                                                                   |
+| `SEED_COMMENTS_PER_CARD`      | `0`                          | Comments attached to every seeded card. Leave at 0 to compare against older baselines; raise it to measure payload-sensitive paths such as `board_details`                                                                                                                                            |
 
 Example:
 
@@ -217,6 +218,8 @@ $env:SEED_USERS = "10"; pnpm loadtest:seed
 | `docker-compose.multi.yml` | `loadtest:up:multi`, `loadtest:down:multi` | Same, with 3 server replicas behind nginx.                                                                                                                                                                      |
 
 Seed sizing is not in `loadtest.env` on purpose — it comes from `SEED_*` environment variables so CI can seed a small dataset without editing the file.
+
+The seed writes straight into MongoDB, around the `createNew` services that add every new id to the bloom filters. The server builds those filters at startup, which on a fresh stack is before the seed has run. Left alone, every seeded board, column and card then reads as absent: `smoke` fails on `board_details` 404s and `column_create` 403s, and every later number is meaningless. So `loadtest:seed` finishes by deleting `bf:v1:boards`/`bf:v1:columns`/`bf:v1:cards` in the stack's Redis and rebuilding them from Mongo, the same `ENSURE_BLOOM_FILTERS` the server runs. It deletes first because the seed's own cleanup hard-deletes the previous run's rows. After a re-seed the old filter can hold more ids than the collection has documents, and the size check would skip a rebuild the filter needs. No restart or `FLUSHALL` is needed between seeding and running k6.
 
 ## Output
 

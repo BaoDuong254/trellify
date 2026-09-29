@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { ObjectId } from "mongodb";
+import { Document, ObjectId, WithId } from "mongodb";
 
 import { CreateNewColumnType, UpdateColumnType } from "@workspace/shared/schemas/column.schema";
 
@@ -10,6 +10,7 @@ import { columnModel } from "src/models/column.model";
 import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
 import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
+import { captureArchivedPosition, resolveRestorePosition } from "src/utils/order-position";
 
 const assertColumnAccess = async (userId: string, columnId: string) => {
   if (!(await isPossiblyPresent(COLUMN_BLOOM, columnId))) {
@@ -40,10 +41,40 @@ const createNew = async (userId: string, requestBody: CreateNewColumnType) => {
   return newlyCreatedColumn;
 };
 
-const update = async (userId: string, columnId: string, requestBody: UpdateColumnType) => {
-  await assertColumnAccess(userId, columnId);
+const setArchived = async (column: WithId<Document>, isArchived: boolean): Promise<WithId<Document> | null> => {
+  if (isArchived === Boolean(column.archivedAt)) return column;
 
-  const updateData = { ...requestBody, updatedAt: new Date() };
+  const columnId = String(column._id);
+  const board = await boardModel.findOneById(new ObjectId(String(column.boardId)));
+  const columnOrderIds: unknown = board?.columnOrderIds;
+
+  if (isArchived) {
+    const updatedColumn = await columnModel.update(columnId, {
+      archivedAt: new Date(),
+      archivedPosition: captureArchivedPosition(columnOrderIds, column._id),
+      updatedAt: new Date(),
+    });
+    await boardModel.pullColumnOrderIds(column);
+    return updatedColumn;
+  }
+
+  const position = resolveRestorePosition(columnOrderIds, column.archivedPosition);
+  const updatedColumn = await columnModel.update(columnId, {
+    archivedAt: null,
+    archivedPosition: null,
+    updatedAt: new Date(),
+  });
+  await boardModel.insertColumnOrderId(String(column.boardId), columnId, position);
+  return updatedColumn;
+};
+
+const update = async (userId: string, columnId: string, requestBody: UpdateColumnType) => {
+  const column = await assertColumnAccess(userId, columnId);
+
+  const { archived, ...fields } = requestBody;
+  if (archived !== undefined) return await setArchived(column, archived);
+
+  const updateData = { ...fields, updatedAt: new Date() };
   const updatedColumn = await columnModel.update(columnId, updateData);
   return updatedColumn;
 };

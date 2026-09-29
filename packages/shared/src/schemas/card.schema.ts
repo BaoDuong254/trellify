@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ARCHIVED_POSITION_SCHEMA } from "@workspace/shared/schemas/archive.schema";
 import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
@@ -54,6 +55,8 @@ export const CARD_COLLECTION_SCHEMA = z.object({
   dueComplete: z.boolean({ error: "Error.DueCompleteMustBeBoolean" }).default(false),
   labelIds: z.array(CARD_SUBITEM_ID).max(50, { error: "Error.TooManyLabels" }).default([]),
   checklist: z.array(CHECKLIST_ITEM_SCHEMA).max(100, { error: "Error.TooManyChecklistItems" }).default([]),
+  archivedAt: z.date({ error: "Error.ArchivedAtMustBeDate" }).nullable().default(null),
+  archivedPosition: ARCHIVED_POSITION_SCHEMA,
   createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
@@ -79,6 +82,7 @@ export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({ title: true, des
     dueComplete: CARD_COLLECTION_SCHEMA.shape.dueComplete.unwrap(),
     labelIds: CARD_COLLECTION_SCHEMA.shape.labelIds.unwrap(),
     checklist: CARD_COLLECTION_SCHEMA.shape.checklist.unwrap(),
+    archived: z.boolean({ error: "Error.ArchivedMustBeBoolean" }),
     commentToUpdate: z.object({ _id: CARD_SUBITEM_ID, content: COMMENT_CONTENT }),
     commentToDelete: z.object({ _id: CARD_SUBITEM_ID }),
     commentToAdd: z.object({

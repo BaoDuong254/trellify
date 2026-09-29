@@ -7,12 +7,16 @@ import {
   updateCurrentActiveBoard,
 } from "src/redux/activeBoard/activeBoardSlice";
 import { buildBoard, buildCard, buildColumn } from "src/test/fixtures";
+import { EMPTY_CARD_FILTER } from "src/utils/cardFilter";
 
 describe("activeBoardSlice", () => {
   it("replaces the whole board on updateCurrentActiveBoard", () => {
     const board = buildBoard();
 
-    const state = activeBoardReducer({ currentActiveBoard: null }, updateCurrentActiveBoard(board));
+    const state = activeBoardReducer(
+      { currentActiveBoard: null, cardFilter: EMPTY_CARD_FILTER },
+      updateCurrentActiveBoard(board)
+    );
 
     expect(state.currentActiveBoard).toEqual(board);
   });
@@ -23,7 +27,7 @@ describe("activeBoardSlice", () => {
     });
 
     const state = activeBoardReducer(
-      { currentActiveBoard: board },
+      { currentActiveBoard: board, cardFilter: EMPTY_CARD_FILTER },
       updateCardInBoard({ _id: "card-1", columnId: "column-1", title: "New" })
     );
 
@@ -36,7 +40,7 @@ describe("activeBoardSlice", () => {
     const board = buildBoard({ columns: [buildColumn({ cards: [buildCard()] })] });
 
     const state = activeBoardReducer(
-      { currentActiveBoard: board },
+      { currentActiveBoard: board, cardFilter: EMPTY_CARD_FILTER },
       updateCardInBoard({ _id: "card-1", columnId: "other-column", title: "New" })
     );
 
@@ -47,7 +51,7 @@ describe("activeBoardSlice", () => {
     const board = buildBoard({ columnOrderIds: ["column-1"], columns: [buildColumn({ _id: "column-1" })] });
 
     const state = activeBoardReducer(
-      { currentActiveBoard: null },
+      { currentActiveBoard: null, cardFilter: EMPTY_CARD_FILTER },
       fetchBoardDetailsAPI.fulfilled(board, "request-id", "board-1")
     );
 

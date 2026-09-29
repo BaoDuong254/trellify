@@ -11,13 +11,18 @@ export interface Card {
   description?: string | null;
   cover?: string | null;
   memberIds?: string[];
-  comments?: CardCommentType[];
+  commentCount?: number;
+  updatedAt?: string | null;
   attachments?: string[];
   dueDate?: string | null;
   dueComplete?: boolean;
   labelIds?: string[];
   checklist?: ChecklistItemType[];
   FE_PlaceholderCard?: boolean;
+}
+
+export interface CardWithComments extends Card {
+  comments?: CardCommentType[];
 }
 
 export interface Column {
@@ -40,3 +45,13 @@ export interface Board extends BoardCollectionType {
 }
 
 type BoardType = "public" | "private";
+
+export interface BoardLink {
+  _id: string;
+  title: string;
+}
+
+export interface ArchivedItems {
+  cards: { _id: string; title: string; columnId: string; archivedAt: string }[];
+  columns: { _id: string; title: string; archivedAt: string }[];
+}

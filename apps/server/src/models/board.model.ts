@@ -44,7 +44,7 @@ const getDetailsById = async (boardId: string) => {
           localField: "_id",
           foreignField: "boardId",
           as: "columns",
-          pipeline: [{ $match: { _destroy: false } }],
+          pipeline: [{ $match: { _destroy: false, archivedAt: null } }],
         },
       },
       {
@@ -53,7 +53,11 @@ const getDetailsById = async (boardId: string) => {
           localField: "_id",
           foreignField: "boardId",
           as: "cards",
-          pipeline: [{ $match: { _destroy: false } }],
+          pipeline: [
+            { $match: { _destroy: false, archivedAt: null } },
+            { $set: { commentCount: { $size: { $ifNull: ["$comments", []] } } } },
+            { $unset: "comments" },
+          ],
         },
       },
       {
@@ -62,7 +66,7 @@ const getDetailsById = async (boardId: string) => {
           localField: "ownerIds",
           foreignField: "_id",
           as: "owners",
-          pipeline: [{ $project: { password: 0, verifyToken: 0 } }],
+          pipeline: [{ $project: userModel.PUBLIC_USER_PROJECTION }],
         },
       },
       {
@@ -71,7 +75,7 @@ const getDetailsById = async (boardId: string) => {
           localField: "memberIds",
           foreignField: "_id",
           as: "members",
-          pipeline: [{ $project: { password: 0, verifyToken: 0 } }],
+          pipeline: [{ $project: userModel.PUBLIC_USER_PROJECTION }],
         },
       },
     ])
@@ -92,12 +96,25 @@ const findMembership = async (boardId: string) => {
     .findOne({ _id: new ObjectId(boardId), _destroy: false }, { projection: { ownerIds: 1, memberIds: 1, type: 1 } });
 };
 
+const insertColumnOrderId = async (parentId: string, childId: string, position: number | null) => {
+  const child = new ObjectId(childId);
+  return await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .findOneAndUpdate(
+      { _id: new ObjectId(parentId), _destroy: false, columnOrderIds: { $ne: child } },
+      {
+        $push: { columnOrderIds: { $each: [child], ...(position !== null && { $position: position }) } },
+      } as unknown as UpdateFilter<Document>,
+      { returnDocument: "after" }
+    );
+};
+
 const pushColumnOrderIds = async (column) => {
   return await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
     .findOneAndUpdate(
       { _id: new ObjectId(column.boardId as string) },
-      { $push: { columnOrderIds: new ObjectId(column._id as string) } } as unknown as UpdateFilter<Document>,
+      { $addToSet: { columnOrderIds: new ObjectId(column._id as string) } } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );
 };
@@ -131,6 +148,19 @@ const deleteOneById = async (boardId: string) => {
   return await GET_DB()
     .collection(BOARD_COLLECTION_NAME)
     .updateOne({ _id: new ObjectId(boardId), _destroy: false }, { $set: { _destroy: true, updatedAt: new Date() } });
+};
+
+const findAccessibleTitles = async (boardIds: ObjectId[], userId: string) => {
+  const user = new ObjectId(userId);
+  return await GET_DB()
+    .collection(BOARD_COLLECTION_NAME)
+    .find(
+      { _id: { $in: boardIds }, _destroy: false, $or: [{ ownerIds: user }, { memberIds: user }] },
+      { projection: { title: 1 } }
+    )
+    .sort({ title: 1 })
+    .collation({ locale: "en" })
+    .toArray();
 };
 
 const getBoards = async (userId: string, page: number, itemsPerPage: number, queryFilters?: Record<string, string>) => {
@@ -203,8 +233,10 @@ export const boardModel = {
   countAll,
   findMembership,
   pushColumnOrderIds,
+  insertColumnOrderId,
   update,
   deleteOneById,
+  findAccessibleTitles,
   pullColumnOrderIds,
   getBoards,
   pushMemberIds,

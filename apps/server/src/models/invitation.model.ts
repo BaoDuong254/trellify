@@ -75,7 +75,7 @@ const findByUser = async (userId: string) => {
           localField: "inviterId",
           foreignField: "_id",
           as: "inviter",
-          pipeline: [{ $project: { password: 0, verifyToken: 0 } }],
+          pipeline: [{ $project: userModel.PUBLIC_USER_PROJECTION }],
         },
       },
       {
@@ -84,7 +84,7 @@ const findByUser = async (userId: string) => {
           localField: "inviteeId",
           foreignField: "_id",
           as: "invitee",
-          pipeline: [{ $project: { password: 0, verifyToken: 0 } }],
+          pipeline: [{ $project: userModel.PUBLIC_USER_PROJECTION }],
         },
       },
       {

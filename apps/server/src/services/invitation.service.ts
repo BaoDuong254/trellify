@@ -1,13 +1,16 @@
 import { StatusCodes } from "http-status-codes";
+import { escape as escapeHtml } from "lodash";
 import { ObjectId } from "mongodb";
 
 import { InvitationCreateType } from "@workspace/shared/schemas/invitation.schema";
 import type { UserInvitedToBoardPayloadType } from "@workspace/shared/schemas/socket.schema";
 import { BOARD_INVITATION_STATUS, INVITATION_TYPES } from "@workspace/shared/utils/constants";
 
+import environmentConfig from "src/config/environment";
 import { boardModel } from "src/models/board.model";
 import { invitationModel } from "src/models/invitation.model";
 import { userModel } from "src/models/user.model";
+import { enqueueEmail } from "src/queues/email/email.queue";
 import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
 import { pickUser } from "src/utils/formatters";
@@ -48,6 +51,18 @@ const createNewBoardInvitation = async (
   if (!createdInvitationDetails || !publicInviter || !publicInvitee) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Error.InvitationNotFound");
   }
+
+  await enqueueEmail(
+    String(invitee.email),
+    `Trellify - ${String(inviter.displayName)} invited you to "${board.title}"`,
+    `
+    <h1>You have been invited to a board</h1>
+    <p><strong>${escapeHtml(String(inviter.displayName))}</strong> invited you to join the board
+    <strong>${escapeHtml(String(board.title))}</strong> on Trellify.</p>
+    <a href="${environmentConfig.CLIENT_URL}/boards">Open Trellify to accept or decline</a>
+    <p>Best regards,<br/>The Trellify Team</p>
+  `
+  );
 
   return {
     _id: createdInvitationDetails._id.toString(),

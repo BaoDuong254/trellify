@@ -3,6 +3,7 @@ import { CreateIndexesOptions, IndexSpecification } from "mongodb";
 import logger from "@workspace/shared/utils/logger";
 
 import { GET_DB } from "src/config/database";
+import { activityModel } from "src/models/activity.model";
 import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
@@ -33,6 +34,17 @@ const INDEX_PLAN: IndexPlan[] = [
     options: { partialFilterExpression: { verifyToken: { $type: "string" } } },
   },
   { collection: invitationModel.INVITATION_COLLECTION_NAME, spec: { inviteeId: 1, _destroy: 1 } },
+  { collection: activityModel.ACTIVITY_COLLECTION_NAME, spec: { cardId: 1, createdAt: -1 } },
+  {
+    collection: cardModel.CARD_COLLECTION_NAME,
+    spec: { boardId: 1, archivedAt: -1 },
+    options: { partialFilterExpression: { archivedAt: { $type: "date" } } },
+  },
+  {
+    collection: columnModel.COLUMN_COLLECTION_NAME,
+    spec: { boardId: 1, archivedAt: -1 },
+    options: { partialFilterExpression: { archivedAt: { $type: "date" } } },
+  },
 ];
 
 export const ENSURE_INDEXES = async (): Promise<void> => {

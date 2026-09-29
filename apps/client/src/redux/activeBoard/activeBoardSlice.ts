@@ -1,17 +1,20 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { type PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import envConfig from "src/config/env";
 import type { Board } from "src/types/board.type";
 import { normalizeBoard } from "src/utils/board";
+import { type CardFilter, EMPTY_CARD_FILTER } from "src/utils/cardFilter";
 import http from "src/utils/http";
 import { recordBoardLoadTime } from "src/utils/metrics";
 
 export interface ActiveBoardState {
   currentActiveBoard: Board | null;
+  cardFilter: CardFilter;
 }
 
 const initialState: ActiveBoardState = {
   currentActiveBoard: null,
+  cardFilter: EMPTY_CARD_FILTER,
 };
 
 export const fetchBoardDetailsAPI = createAsyncThunk("activeBoard/fetchBoardDetailsAPI", async (boardId: string) => {
@@ -27,6 +30,9 @@ const activeBoardSlice = createSlice({
   reducers: {
     updateCurrentActiveBoard: (state, action) => {
       state.currentActiveBoard = action.payload;
+    },
+    setCardFilter: (state, action: PayloadAction<CardFilter>) => {
+      state.cardFilter = action.payload;
     },
     updateCardInBoard: (state, action) => {
       const incomingCard = action.payload;
@@ -48,10 +54,12 @@ const activeBoardSlice = createSlice({
   },
 });
 
-export const { updateCurrentActiveBoard, updateCardInBoard } = activeBoardSlice.actions;
+export const { updateCurrentActiveBoard, updateCardInBoard, setCardFilter } = activeBoardSlice.actions;
 
 export const selectCurrentActiveBoard = (state: { activeBoard: ActiveBoardState }) => {
   return state.activeBoard.currentActiveBoard;
 };
+
+export const selectCardFilter = (state: { activeBoard: ActiveBoardState }) => state.activeBoard.cardFilter;
 
 export const activeBoardReducer = activeBoardSlice.reducer;

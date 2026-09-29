@@ -45,7 +45,9 @@ import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 import { deleteCardDetailsAPI, updateBoardDetailsAPI, updateCardDetailsAPI } from "src/apis";
 import ToggleFocusInput from "src/components/Form/ToggleFocusInput";
 import VisuallyHiddenInput from "src/components/Form/VisuallyHiddenInput";
+import { useCardComments } from "src/hooks/useCardComments";
 import {
+  fetchBoardDetailsAPI,
   selectCurrentActiveBoard,
   updateCardInBoard,
   updateCurrentActiveBoard,
@@ -58,6 +60,7 @@ import {
 } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser } from "src/redux/user/userSlice";
+import { cardVersion, normalizeBoard } from "src/utils/board";
 import { cloudinaryImage } from "src/utils/formatters";
 import { singleFileValidator } from "src/utils/validators";
 
@@ -65,6 +68,7 @@ import CardActivitySection from "./CardActivitySection";
 import { CardLabelChips, DueDateChip } from "./CardBadges";
 import CardChecklistSection from "./CardChecklistSection";
 import CardDatesPopover from "./CardDatesPopover";
+import CardHistorySection from "./CardHistorySection";
 import CardLabelsPopover from "./CardLabelsPopover";
 import CardUserGroup from "./CardUserGroup";
 
@@ -103,6 +107,12 @@ function ActiveCard() {
   const boardLabels = board?.labels ?? [];
   const cardLabelIds = (activeCard?.labelIds ?? []).filter((id) => boardLabels.some((label) => label._id === id));
   const checklist = activeCard?.checklist ?? [];
+  const activeCardVersion = cardVersion(activeCard);
+  const {
+    comments,
+    isLoading: isLoadingComments,
+    replaceComments,
+  } = useCardComments(activeCard?._id, activeCardVersion);
 
   const handleCloseModal = () => {
     setIsChecklistOpen(false);
@@ -110,10 +120,15 @@ function ActiveCard() {
   };
 
   const callApiUpdateCard = async (updatedCardData: UpdateCardInputType) => {
-    const updatedCard = await updateCardDetailsAPI(activeCard?._id || "", updatedCardData);
-    dispatch(updateCurrentActiveCard(updatedCard));
-    dispatch(updateCardInBoard(updatedCard));
-    return updatedCard;
+    const { comments: updatedComments, ...updatedCard } = await updateCardDetailsAPI(
+      activeCard?._id || "",
+      updatedCardData
+    );
+    const boardCard = { ...updatedCard, commentCount: updatedComments?.length ?? updatedCard.commentCount };
+    if (updatedComments) replaceComments(boardCard._id, updatedComments);
+    dispatch(updateCurrentActiveCard(boardCard));
+    dispatch(updateCardInBoard(boardCard));
+    return boardCard;
   };
 
   const onUpdateCardTitle = (newTitle: string) => {
@@ -188,6 +203,31 @@ function ActiveCard() {
     });
   };
 
+  const removeActiveCardFromBoard = () => {
+    if (!board || !activeCard) return;
+    const newBoard = cloneDeep(board);
+    const targetColumn = newBoard.columns.find((col) => col._id === activeCard.columnId);
+    if (targetColumn) {
+      targetColumn.cards = targetColumn.cards.filter((c) => c._id !== activeCard._id);
+      targetColumn.cardOrderIds = targetColumn.cardOrderIds.filter((id) => id !== activeCard._id);
+    }
+    dispatch(updateCurrentActiveBoard(normalizeBoard(newBoard)));
+    handleCloseModal();
+  };
+
+  const handleArchiveCard = () => {
+    if (!activeCard) return;
+    const { _id: cardId, boardId } = activeCard;
+    removeActiveCardFromBoard();
+    updateCardDetailsAPI(cardId, { archived: true })
+      .then(() => {
+        toast.success("Card archived");
+      })
+      .catch(() => {
+        dispatch(fetchBoardDetailsAPI(boardId));
+      });
+  };
+
   const handleDeleteCard = () => {
     confirmDeleteCard({
       title: "Delete Card?",
@@ -197,18 +237,11 @@ function ActiveCard() {
     })
       .then(({ confirmed }) => {
         if (confirmed) {
-          if (!board || !activeCard) return;
+          if (!activeCard) return;
+          const cardId = activeCard._id;
+          removeActiveCardFromBoard();
 
-          const newBoard = cloneDeep(board);
-          const targetColumn = newBoard.columns.find((col) => col._id === activeCard.columnId);
-          if (targetColumn) {
-            targetColumn.cards = targetColumn.cards.filter((c) => c._id !== activeCard._id);
-            targetColumn.cardOrderIds = targetColumn.cardOrderIds.filter((id) => id !== activeCard._id);
-          }
-          dispatch(updateCurrentActiveBoard(newBoard));
-          dispatch(clearAndHideCurrentActiveCard());
-
-          deleteCardDetailsAPI(activeCard._id).then((res) => {
+          deleteCardDetailsAPI(cardId).then((res) => {
             toast.success(res?.deleteResult);
           });
         }
@@ -327,12 +360,23 @@ function ActiveCard() {
                 </Typography>
               </Box>
               <CardActivitySection
-                cardComments={activeCard?.comments}
+                cardComments={comments}
+                isLoading={isLoadingComments}
                 onAddCardComment={onAddCardComment}
                 onUpdateComment={onUpdateComment}
                 onDeleteComment={onDeleteComment}
               />
             </Box>
+
+            {activeCard && (
+              <Box sx={{ mb: 3 }}>
+                <CardHistorySection
+                  cardId={activeCard._id}
+                  version={activeCardVersion}
+                  boardUsers={board?.FE_allUsers ?? []}
+                />
+              </Box>
+            )}
           </Box>
 
           {/* Right side */}
@@ -451,7 +495,7 @@ function ActiveCard() {
                 <AutoAwesomeOutlinedIcon fontSize='small' />
                 Make Template
               </SidebarItem>
-              <SidebarItem>
+              <SidebarItem className='active' onClick={handleArchiveCard}>
                 <ArchiveOutlinedIcon fontSize='small' />
                 Archive
               </SidebarItem>

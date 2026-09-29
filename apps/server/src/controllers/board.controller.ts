@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import {
   CreateNewBoardType,
   MoveCardToDifferentColumnType,
+  StarBoardType,
   UpdateBoardType,
 } from "@workspace/shared/schemas/board.schema";
 import { BOARD_UPDATE_REASONS } from "@workspace/shared/utils/socket-events";
@@ -51,6 +52,42 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
       data: updatedBoard,
     });
     broadcastBoardUpdate(request, boardId, BOARD_UPDATE_REASONS.BOARD_UPDATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const setStarred = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const boardId = (request.params.id as string) ?? "";
+    const { starred } = request.body as StarBoardType;
+    const result = await boardService.setStarred(actorId(request), boardId, starred);
+    response.status(StatusCodes.OK).json({ statusCode: StatusCodes.OK, message: "Board star updated", data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getStarred = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const boards = await boardService.getStarred(actorId(request));
+    response
+      .status(StatusCodes.OK)
+      .json({ statusCode: StatusCodes.OK, message: "Starred boards fetched", data: boards });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getArchived = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
+  try {
+    const boardId = (request.params.id as string) ?? "";
+    const archived = await boardService.getArchived(actorId(request), boardId);
+    response.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Archived items fetched successfully",
+      data: archived,
+    });
   } catch (error) {
     next(error);
   }
@@ -134,6 +171,9 @@ export const boardController = {
   getDetails,
   update,
   deleteItem,
+  getArchived,
+  setStarred,
+  getStarred,
   moveCardToDifferentColumn,
   getBoards,
   removeMember,
