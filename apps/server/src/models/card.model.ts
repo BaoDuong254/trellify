@@ -142,7 +142,7 @@ const deleteOwnComment = async (cardId: string, commentId: string, userId: strin
 const updateMembers = async (cardId: string, incomingMemberInfo: IncomingCardMemberInfoType) => {
   const updateCondition: Record<string, unknown> =
     incomingMemberInfo.action === CARD_MEMBER_ACTIONS.ADD
-      ? { $push: { memberIds: new ObjectId(incomingMemberInfo.userId) }, $set: { updatedAt: new Date() } }
+      ? { $addToSet: { memberIds: new ObjectId(incomingMemberInfo.userId) }, $set: { updatedAt: new Date() } }
       : { $pull: { memberIds: new ObjectId(incomingMemberInfo.userId) }, $set: { updatedAt: new Date() } };
 
   const result = await GET_DB()

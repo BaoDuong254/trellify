@@ -8,8 +8,10 @@ import { useEffect, useState } from "react";
 import { CARD_ACTIVITY_TYPES, type CardActivityEntryType } from "@workspace/shared/schemas/activity.schema";
 
 import { fetchCardActivitiesAPI } from "src/apis";
+import { useDelayedFlag } from "src/hooks/useDelayedFlag";
 import type { User } from "src/types/user.type";
 import { cloudinaryThumb, formatDateTime } from "src/utils/formatters";
+import { createRecentCache } from "src/utils/recentCache";
 
 type BoardUser = Pick<User, "displayName"> & { _id: string };
 
@@ -56,6 +58,8 @@ const describeActivity = (entry: CardActivityEntryType, users: BoardUser[]): str
 
 const HISTORY_SKELETON_ROWS = [0, 1, 2];
 
+const historyCache = createRecentCache<CardActivityEntryType[]>();
+
 function CardHistorySection({
   cardId,
   version,
@@ -71,20 +75,24 @@ function CardHistorySection({
     let cancelled = false;
     fetchCardActivitiesAPI(cardId)
       .then((entries) => {
-        if (!cancelled) setLoaded({ cardId, entries });
+        if (cancelled) return;
+        historyCache.set(cardId, entries);
+        setLoaded({ cardId, entries });
       })
       .catch(() => {
-        if (!cancelled) setLoaded({ cardId, entries: [] });
+        if (!cancelled && !historyCache.get(cardId)) setLoaded({ cardId, entries: [] });
       });
     return () => {
       cancelled = true;
     };
   }, [cardId, version]);
 
-  const isLoading = loaded?.cardId !== cardId;
-  const entries = isLoading ? [] : loaded.entries;
+  const knownEntries = loaded?.cardId === cardId ? loaded.entries : historyCache.get(cardId);
+  const isLoading = knownEntries === undefined;
+  const showSkeleton = useDelayedFlag(isLoading);
+  const entries = knownEntries ?? [];
 
-  if (!isLoading && entries.length === 0) return null;
+  if (isLoading ? !showSkeleton : entries.length === 0) return null;
 
   return (
     <Box>
@@ -94,7 +102,7 @@ function CardHistorySection({
           History
         </Typography>
       </Box>
-      {isLoading &&
+      {showSkeleton &&
         HISTORY_SKELETON_ROWS.map((row) => (
           <Box key={row} data-testid='card-history-skeleton' sx={{ display: "flex", gap: 1, mb: 1 }}>
             <Skeleton variant='circular' width={28} height={28} />

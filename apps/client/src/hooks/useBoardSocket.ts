@@ -12,7 +12,7 @@ import type {
 import { SOCKET_ACK_ERRORS, SOCKET_CLIENT_EVENTS, SOCKET_SERVER_EVENTS } from "@workspace/shared/utils/socket-events";
 
 import { fetchBoardDetailsAPI, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
-import { updateCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
+import { clearAndHideCurrentActiveCard, updateCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import { ensureSocket, getSocket } from "src/socketClient";
 import type { Board, Card } from "src/types/board.type";
@@ -45,7 +45,12 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
       const openCardId = activeCardIdRef.current;
       if (openCardId) {
         const openCard = board.columns.flatMap((column) => column.cards).find((card: Card) => card._id === openCardId);
-        if (openCard) dispatch(updateCurrentActiveCard(openCard));
+        if (openCard) {
+          dispatch(updateCurrentActiveCard(openCard));
+        } else {
+          dispatch(clearAndHideCurrentActiveCard());
+          toast.info("This card was archived or deleted by another member.");
+        }
       }
     };
 
@@ -119,6 +124,13 @@ export const useBoardSocket = (boardId?: string, activeCardId?: string): { prese
       setPresentUserIds([]);
     };
   }, [boardId, dispatch, navigate]);
+
+  useEffect(
+    () => (): void => {
+      dispatch(clearAndHideCurrentActiveCard());
+    },
+    [boardId, dispatch]
+  );
 
   return { presentUserIds };
 };

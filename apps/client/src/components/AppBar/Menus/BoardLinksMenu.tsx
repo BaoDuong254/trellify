@@ -4,9 +4,10 @@ import Button from "@mui/material/Button";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { useDelayedFlag } from "src/hooks/useDelayedFlag";
 import type { BoardLink } from "src/types/board.type";
 
 function BoardLinksMenu({
@@ -22,21 +23,27 @@ function BoardLinksMenu({
 }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [boards, setBoards] = useState<BoardLink[] | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const open = Boolean(anchorEl);
+  const showLoading = useDelayedFlag(boards === null);
 
-  const latestRequestRef = useRef(0);
+  useEffect(() => {
+    let cancelled = false;
+    loadBoards()
+      .then((result) => {
+        if (!cancelled) setBoards(result);
+      })
+      .catch(() => {
+        if (!cancelled) setBoards((previous) => previous ?? []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadBoards, reloadKey]);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
-    setBoards(null);
-    const request = ++latestRequestRef.current;
-    loadBoards()
-      .then((result) => {
-        if (request === latestRequestRef.current) setBoards(result);
-      })
-      .catch(() => {
-        if (request === latestRequestRef.current) setBoards([]);
-      });
+    setReloadKey((key) => key + 1);
   };
   const handleClose = () => {
     setAnchorEl(null);
@@ -62,7 +69,7 @@ function BoardLinksMenu({
         onClose={handleClose}
         slotProps={{ list: { "aria-labelledby": `basic-button-${id}` } }}
       >
-        {!boards && (
+        {!boards && showLoading && (
           <MenuItem disabled>
             <ListItemText>Loading...</ListItemText>
           </MenuItem>

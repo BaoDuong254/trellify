@@ -10,7 +10,7 @@ import { columnModel } from "src/models/column.model";
 import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
 import { boardService } from "src/services/board.service";
 import ApiError from "src/utils/api-error";
-import { captureArchivedPosition, resolveRestorePosition } from "src/utils/order-position";
+import { captureArchivedPosition, reconcileOrder, resolveRestorePosition } from "src/utils/order-position";
 
 const assertColumnAccess = async (userId: string, columnId: string) => {
   if (!(await isPossiblyPresent(COLUMN_BLOOM, columnId))) {
@@ -73,7 +73,11 @@ const update = async (userId: string, columnId: string, requestBody: UpdateColum
 
   const { archived, ...fields } = requestBody;
   if (archived !== undefined) return await setArchived(column, archived);
+  if (column.archivedAt) {
+    throw new ApiError(StatusCodes.CONFLICT, "Error.ColumnUnavailable");
+  }
 
+  if (fields.cardOrderIds) fields.cardOrderIds = reconcileOrder(fields.cardOrderIds, column.cardOrderIds);
   const updateData = { ...fields, updatedAt: new Date() };
   const updatedColumn = await columnModel.update(columnId, updateData);
   return updatedColumn;

@@ -25,3 +25,9 @@ export const resolveRestorePosition = (orderIds: unknown, savedPosition: unknown
   if (nextIndex !== -1) return nextIndex;
   return saved.index;
 };
+
+export const reconcileOrder = (clientIds: unknown, serverIds: unknown): string[] => {
+  const known = toIdList(serverIds);
+  const kept = [...new Set(toIdList(clientIds))].filter((id) => known.includes(id));
+  return [...kept, ...known.filter((id) => !kept.includes(id))];
+};

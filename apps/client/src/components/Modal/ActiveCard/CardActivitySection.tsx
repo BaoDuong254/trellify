@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 
 import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
 
+import { useDelayedFlag } from "src/hooks/useDelayedFlag";
 import { selectCurrentUser } from "src/redux/user/userSlice";
 import { cloudinaryThumb, formatDateTime } from "src/utils/formatters";
 
@@ -29,6 +30,7 @@ function CardActivitySection({
   onDeleteComment: (commentId: string) => Promise<void>;
 }) {
   const currentUser = useSelector(selectCurrentUser);
+  const showSkeleton = useDelayedFlag(isLoading);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
 
   const handleAddCardComment = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -82,7 +84,7 @@ function CardActivitySection({
         />
       </Box>
 
-      {isLoading &&
+      {showSkeleton &&
         COMMENT_SKELETON_ROWS.map((row) => (
           <Box key={row} data-testid='card-comment-skeleton' sx={{ display: "flex", gap: 1, mb: 1.5 }}>
             <Skeleton variant='circular' width={36} height={36} />

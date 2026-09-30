@@ -42,7 +42,7 @@ describe("useCardComments", () => {
   it("does not let a slower in-flight load overwrite comments replaced after a mutation", async () => {
     let releaseSlowLoad: () => void = () => {};
     server.use(
-      mock.get(apiUrl("/api/v1/cards/card-1/comments"), async () => {
+      mock.get(apiUrl("/api/v1/cards/card-2/comments"), async () => {
         await new Promise<void>((resolve) => {
           releaseSlowLoad = resolve;
         });
@@ -50,14 +50,26 @@ describe("useCardComments", () => {
       })
     );
 
-    const { result } = renderHook(() => useCardComments("card-1", "v1"));
+    const { result } = renderHook(() => useCardComments("card-2", "v1"));
     await waitFor(() => expect(result.current.isLoading).toBe(true));
 
-    act(() => result.current.replaceComments("card-1", [comment("fresh")]));
+    act(() => result.current.replaceComments("card-2", [comment("fresh")]));
     releaseSlowLoad();
 
     await waitFor(() => expect(result.current.comments.map((item) => item.content)).toEqual(["fresh"]));
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(result.current.comments.map((item) => item.content)).toEqual(["fresh"]);
+  });
+
+  it("returns the cached comments straight away when the same card is opened again", async () => {
+    server.use(mock.get(apiUrl("/api/v1/cards/card-3/comments"), () => HttpResponse.json({ data: [comment("kept")] })));
+    const first = renderHook(() => useCardComments("card-3", "v1"));
+    await waitFor(() => expect(first.result.current.comments).toHaveLength(1));
+    first.unmount();
+
+    const second = renderHook(() => useCardComments("card-3", "v1"));
+
+    expect(second.result.current.isLoading).toBe(false);
+    expect(second.result.current.comments.map((item) => item.content)).toEqual(["kept"]);
   });
 });

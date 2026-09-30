@@ -15,7 +15,11 @@ import { useBoardLoader } from "src/hooks/useBoardLoader";
 import { useBoardSocket } from "src/hooks/useBoardSocket";
 import BoardBar from "src/pages/Boards/BoardBar/BoardBar";
 import BoardContent from "src/pages/Boards/BoardContent/BoardContent";
-import { selectCurrentActiveBoard, updateCurrentActiveBoard } from "src/redux/activeBoard/activeBoardSlice";
+import {
+  fetchBoardDetailsAPI,
+  selectCurrentActiveBoard,
+  updateCurrentActiveBoard,
+} from "src/redux/activeBoard/activeBoardSlice";
 import { selectCurrentActiveCard } from "src/redux/activeCard/activeCardSlice";
 import type { AppDispatch } from "src/redux/store";
 import type { Card, Column } from "src/types/board.type";
@@ -39,6 +43,10 @@ function Board() {
     if (loadedBoardId && loadedBoardTitle) rememberRecentBoard({ _id: loadedBoardId, title: loadedBoardTitle });
   }, [loadedBoardId, loadedBoardTitle]);
 
+  const resyncBoard = (): void => {
+    if (boardId) dispatch(fetchBoardDetailsAPI(boardId));
+  };
+
   const moveColumns = async (dndOrderedColumns: Column[]): Promise<void> => {
     if (!board?._id) return;
     const dndOrderedColumnsIds = dndOrderedColumns.map((col) => col._id);
@@ -47,7 +55,7 @@ function Board() {
     newBoard.columnOrderIds = dndOrderedColumnsIds;
     dispatch(updateCurrentActiveBoard(newBoard));
 
-    await updateBoardDetailsAPI(board._id, { columnOrderIds: dndOrderedColumnsIds });
+    await updateBoardDetailsAPI(board._id, { columnOrderIds: dndOrderedColumnsIds }).catch(resyncBoard);
   };
 
   const moveCardInTheSameColumn = async (
@@ -64,8 +72,9 @@ function Board() {
     }
     dispatch(updateCurrentActiveBoard(newBoard));
 
-    await updateColumnDetailsAPI(columnId, { cardOrderIds: dndOrderedCardIds });
-    recordCardMoved("same_column");
+    await updateColumnDetailsAPI(columnId, { cardOrderIds: dndOrderedCardIds })
+      .then(() => recordCardMoved("same_column"))
+      .catch(resyncBoard);
   };
 
   const moveCardToDifferentColumn = (
@@ -82,7 +91,7 @@ function Board() {
     dispatch(updateCurrentActiveBoard(newBoard));
 
     let prevCardOrderIds = dndOrderedColumns.find((col) => col._id === prevColumnId)?.cardOrderIds || [];
-    if (prevCardOrderIds[0].includes("placeholder-card")) prevCardOrderIds = [];
+    if (prevCardOrderIds[0]?.includes("placeholder-card")) prevCardOrderIds = [];
 
     moveCardToDifferentColumnAPI({
       currentCardId,
@@ -90,7 +99,9 @@ function Board() {
       prevCardOrderIds,
       nextColumnId,
       nextCardOrderIds: dndOrderedColumns.find((col) => col._id === nextColumnId)?.cardOrderIds || [],
-    }).then(() => recordCardMoved("other_column"));
+    })
+      .then(() => recordCardMoved("other_column"))
+      .catch(resyncBoard);
   };
 
   if (!board && loadError) {
@@ -124,7 +135,7 @@ function Board() {
 
   return (
     <Container sx={{ height: "100vh", backgroundColor: "primary.main" }} disableGutters maxWidth={false}>
-      <ActiveCard />
+      <ActiveCard key={activeCard?._id} />
       <AppBar />
       <BoardBar board={board} presentUserIds={presentUserIds} />
       <BoardContent

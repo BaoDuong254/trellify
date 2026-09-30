@@ -60,6 +60,22 @@ describe("archiving cards", () => {
     expect(archivedAfterRestore.cards).toEqual([]);
   });
 
+  it("rejects edits to an archived card but still lets it be restored", async () => {
+    const { owner, cardIds } = await setUpColumnWithCards(["Card A"]);
+    const [a] = cardIds;
+
+    await put(owner, `/api/v1/cards/${a}`, { archived: true }).expect(200);
+
+    const renamed = await put(owner, `/api/v1/cards/${a}`, { title: "Renamed" }).expect(409);
+    expect(renamed.body.message).toBe("Error.CardUnavailable");
+    await put(owner, `/api/v1/cards/${a}`, {
+      commentToAdd: { userAvatar: null, userDisplayName: "Owner", content: "late" },
+    }).expect(409);
+
+    await put(owner, `/api/v1/cards/${a}`, { archived: false }).expect(200);
+    await put(owner, `/api/v1/cards/${a}`, { title: "Renamed" }).expect(200);
+  });
+
   it("follows the previous neighbour when the column was reordered", async () => {
     const { owner, boardId, columnId, cardIds } = await setUpColumnWithCards(["Card A", "Card B", "Card C"]);
     const [a, b, c] = cardIds;
@@ -118,6 +134,22 @@ describe("archiving cards", () => {
 });
 
 describe("archiving columns", () => {
+  it("rejects edits to an archived column and to the cards inside it until it is restored", async () => {
+    const { owner, columnId, cardIds } = await setUpColumnWithCards(["Card A"]);
+    const [a] = cardIds;
+
+    await put(owner, `/api/v1/columns/${columnId}`, { archived: true }).expect(200);
+
+    const renamedColumn = await put(owner, `/api/v1/columns/${columnId}`, { title: "Renamed" }).expect(409);
+    expect(renamedColumn.body.message).toBe("Error.ColumnUnavailable");
+    const renamedCard = await put(owner, `/api/v1/cards/${a}`, { title: "Renamed" }).expect(409);
+    expect(renamedCard.body.message).toBe("Error.CardUnavailable");
+
+    await put(owner, `/api/v1/columns/${columnId}`, { archived: false }).expect(200);
+    await put(owner, `/api/v1/columns/${columnId}`, { title: "Renamed" }).expect(200);
+    await put(owner, `/api/v1/cards/${a}`, { title: "Renamed" }).expect(200);
+  });
+
   it("removes the column and its cards from the board until it is restored in place", async () => {
     const owner = await createActiveUser("owner");
     const boardId = await createBoardVia(owner);

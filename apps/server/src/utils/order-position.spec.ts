@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { captureArchivedPosition, resolveRestorePosition } from "src/utils/order-position";
+import { captureArchivedPosition, reconcileOrder, resolveRestorePosition } from "src/utils/order-position";
 
 const A = "a".repeat(24);
 const B = "b".repeat(24);
@@ -37,5 +37,19 @@ describe("resolveRestorePosition", () => {
   it("appends when nothing was saved", () => {
     expect(resolveRestorePosition([A, C], null)).toBeNull();
     expect(resolveRestorePosition([A, C], undefined)).toBeNull();
+  });
+});
+
+describe("reconcileOrder", () => {
+  it("keeps the client's order for ids the server knows", () => {
+    expect(reconcileOrder([C, A, B], [A, B, C])).toEqual([C, A, B]);
+  });
+
+  it("appends ids the client never saw and drops ones the server no longer has", () => {
+    expect(reconcileOrder([B, D, A], [A, B, C])).toEqual([B, A, C]);
+  });
+
+  it("drops duplicates sent by the client", () => {
+    expect(reconcileOrder([A, A, B], [A, B])).toEqual([A, B]);
   });
 });

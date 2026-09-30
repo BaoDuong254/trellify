@@ -3,6 +3,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { GET_DB } from "src/config/database";
+import { boardModel } from "src/models/board.model";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { emailQueue } from "src/queues/email/email.queue";
@@ -63,6 +64,78 @@ describe("card placement rules", () => {
       nextCardOrderIds: [cardId],
     }).expect(409);
     expect(moved.body.message).toBe("Error.ColumnUnavailable");
+  });
+
+  it("refuses a move built from a stale board, where the card already left its column", async () => {
+    const owner = await createActiveUser("owner");
+    const boardId = await createBoardVia(owner);
+    const todo = await createColumnVia(owner, boardId, "To do");
+    const doing = await createColumnVia(owner, boardId, "Doing");
+    const done = await createColumnVia(owner, boardId, "Done");
+    const cardId = await createCardVia(owner, boardId, todo);
+    const move = (previousColumnId: string, nextColumnId: string) =>
+      put(owner, "/api/v1/boards/supports/moving_card", {
+        currentCardId: cardId,
+        prevColumnId: previousColumnId,
+        prevCardOrderIds: [],
+        nextColumnId,
+        nextCardOrderIds: [cardId],
+      });
+
+    await move(todo, doing).expect(200);
+    const stale = await move(todo, done).expect(409);
+
+    expect(stale.body.message).toBe("Error.CardUnavailable");
+    const card = await findById(cardModel.CARD_COLLECTION_NAME, cardId);
+    expect(String(card?.columnId)).toBe(doing);
+  });
+
+  it("keeps cards created meanwhile, and drops ids that do not belong, when saving a reordered column", async () => {
+    const owner = await createActiveUser("owner");
+    const boardId = await createBoardVia(owner);
+    const todo = await createColumnVia(owner, boardId, "To do");
+    const a = await createCardVia(owner, boardId, todo, "Card A");
+    const b = await createCardVia(owner, boardId, todo, "Card B");
+    const archivedCard = await createCardVia(owner, boardId, todo, "Card C");
+    await put(owner, `/api/v1/cards/${archivedCard}`, { archived: true }).expect(200);
+    const created = await createCardVia(owner, boardId, todo, "Card D");
+    const foreign = new ObjectId().toString();
+
+    await put(owner, `/api/v1/columns/${todo}`, { cardOrderIds: [b, archivedCard, foreign, a] }).expect(200);
+
+    const column = await findById(columnModel.COLUMN_COLLECTION_NAME, todo);
+    expect(column?.cardOrderIds.map(String)).toEqual([b, a, created]);
+  });
+
+  it("keeps a column created meanwhile when saving a reordered board", async () => {
+    const owner = await createActiveUser("owner");
+    const boardId = await createBoardVia(owner);
+    const todo = await createColumnVia(owner, boardId, "To do");
+    const done = await createColumnVia(owner, boardId, "Done");
+    const created = await createColumnVia(owner, boardId, "Later");
+
+    await put(owner, `/api/v1/boards/${boardId}`, { columnOrderIds: [done, todo] }).expect(200);
+
+    const board = await findById(boardModel.BOARD_COLLECTION_NAME, boardId);
+    expect(board?.columnOrderIds.map(String)).toEqual([done, todo, created]);
+  });
+
+  it("adds a card member once, and only when they belong to the board", async () => {
+    const owner = await createActiveUser("owner");
+    const outsider = await createActiveUser("outsider");
+    const boardId = await createBoardVia(owner);
+    const todo = await createColumnVia(owner, boardId);
+    const cardId = await createCardVia(owner, boardId, todo);
+    const addMember = (userId: string) =>
+      put(owner, `/api/v1/cards/${cardId}`, { incomingMemberInfo: { userId, action: "ADD" } });
+
+    await addMember(owner.userId).expect(200);
+    await addMember(owner.userId).expect(200);
+    const rejected = await addMember(outsider.userId).expect(422);
+
+    expect(rejected.body.message).toBe("Error.UserIsNotBoardMember");
+    const card = await findById(cardModel.CARD_COLLECTION_NAME, cardId);
+    expect(card?.memberIds.map(String)).toEqual([owner.userId]);
   });
 
   it("deletes an archived card together with its column, so it can never be restored as an orphan", async () => {

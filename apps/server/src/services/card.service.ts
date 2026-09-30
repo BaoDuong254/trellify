@@ -3,6 +3,7 @@ import { Document, ObjectId, WithId } from "mongodb";
 
 import { CARD_ACTIVITY_TYPES } from "@workspace/shared/schemas/activity.schema";
 import { CardCommentType, CreateNewCardType, UpdateCardType } from "@workspace/shared/schemas/card.schema";
+import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 
 import { CARD_BLOOM, COLUMN_BLOOM } from "src/config/bloom";
 import { cardModel } from "src/models/card.model";
@@ -26,6 +27,13 @@ const assertCardAccess = async (userId: string, cardId: string) => {
   }
   await boardService.assertBoardAccess(userId, String(card.boardId));
   return card;
+};
+
+const assertCardEditable = async (card: WithId<Document>): Promise<void> => {
+  const column = card.archivedAt ? null : await columnModel.findOneById(new ObjectId(String(card.columnId)));
+  if (!column || column.archivedAt) {
+    throw new ApiError(StatusCodes.CONFLICT, "Error.CardUnavailable");
+  }
 };
 
 const createNew = async (userId: string, requestBody: CreateNewCardType) => {
@@ -96,6 +104,7 @@ const update = async (
   userInfo?: { _id: string; email: string }
 ) => {
   const card = await assertCardAccess(userId, cardId);
+  if (requestBody.archived === undefined) await assertCardEditable(card);
 
   const changes = activityService.describeCardChanges(card, requestBody, Boolean(cardCoverFile));
   const { commentToAdd, commentToUpdate, commentToDelete, incomingMemberInfo, archived, ...fields } = requestBody;
@@ -123,6 +132,12 @@ const update = async (
   } else if (archived !== undefined) {
     updatedCard = await setArchived(card, archived);
   } else if (incomingMemberInfo) {
+    if (
+      incomingMemberInfo.action === CARD_MEMBER_ACTIONS.ADD &&
+      !(await boardService.canUserAccessBoard(incomingMemberInfo.userId, String(card.boardId)))
+    ) {
+      throw new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, "Error.UserIsNotBoardMember");
+    }
     updatedCard = await cardModel.updateMembers(cardId, incomingMemberInfo);
   } else {
     updatedCard = await cardModel.update(cardId, { ...fields, updatedAt: new Date() });

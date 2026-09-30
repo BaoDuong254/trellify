@@ -22,6 +22,7 @@ import { getOrLoad, invalidate } from "src/providers/cache.provider";
 import { activityService } from "src/services/activity.service";
 import ApiError from "src/utils/api-error";
 import slugify from "src/utils/formatters";
+import { reconcileOrder } from "src/utils/order-position";
 
 const createNew = async (userId: string, requestBody: CreateNewBoardType) => {
   const newBoard = {
@@ -173,6 +174,10 @@ const update = async (userId: string, boardId: string, requestBody: UpdateBoardT
   await (isMetadataEdit ? assertBoardOwner : assertBoardAccess)(userId, boardId);
 
   const updateData = { ...requestBody, updatedAt: new Date() };
+  if (requestBody.columnOrderIds) {
+    const board = await boardModel.findOneById(new ObjectId(boardId));
+    updateData.columnOrderIds = reconcileOrder(requestBody.columnOrderIds, board?.columnOrderIds);
+  }
   const updatedBoard = await boardModel.update(boardId, updateData);
   await invalidateBoardMembership(boardId);
   return updatedBoard;
@@ -242,18 +247,25 @@ const moveCardToDifferentColumn = async (userId: string, requestBody: MoveCardTo
 
   await assertBoardAccess(userId, boardId);
 
-  if (nextColumn.archivedAt || card.archivedAt) {
+  if (card.archivedAt || previousColumn.archivedAt || String(card.columnId) !== requestBody.prevColumnId) {
+    throw new ApiError(StatusCodes.CONFLICT, "Error.CardUnavailable");
+  }
+  if (nextColumn.archivedAt) {
     throw new ApiError(StatusCodes.CONFLICT, "Error.ColumnUnavailable");
   }
 
+  const cardId = String(card._id);
+  const withoutCard = (orderIds: unknown): string[] =>
+    (Array.isArray(orderIds) ? orderIds.map(String) : []).filter((id) => id !== cardId);
   const isCrossColumnMove = requestBody.prevColumnId !== requestBody.nextColumnId;
   await Promise.all([
-    columnModel.update(requestBody.prevColumnId, {
-      cardOrderIds: requestBody.prevCardOrderIds,
-      updatedAt: new Date(),
-    }),
+    isCrossColumnMove &&
+      columnModel.update(requestBody.prevColumnId, {
+        cardOrderIds: reconcileOrder(requestBody.prevCardOrderIds, withoutCard(previousColumn.cardOrderIds)),
+        updatedAt: new Date(),
+      }),
     columnModel.update(requestBody.nextColumnId, {
-      cardOrderIds: requestBody.nextCardOrderIds,
+      cardOrderIds: reconcileOrder(requestBody.nextCardOrderIds, [...withoutCard(nextColumn.cardOrderIds), cardId]),
       updatedAt: new Date(),
     }),
     cardModel.update(requestBody.currentCardId, {

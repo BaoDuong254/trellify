@@ -3,8 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
 
 import { fetchCardCommentsAPI } from "src/apis";
+import { createRecentCache } from "src/utils/recentCache";
 
 type LoadedComments = { cardId: string; comments: CardCommentType[] };
+
+const commentsCache = createRecentCache<CardCommentType[]>();
 
 export const useCardComments = (
   cardId: string | undefined,
@@ -24,24 +27,28 @@ export const useCardComments = (
     const isCurrent = (): boolean => !cancelled && request === latestRequestRef.current;
     fetchCardCommentsAPI(cardId)
       .then((comments) => {
-        if (isCurrent()) setLoaded({ cardId, comments });
+        if (!isCurrent()) return;
+        commentsCache.set(cardId, comments);
+        setLoaded({ cardId, comments });
       })
       .catch(() => {
-        if (isCurrent()) setLoaded({ cardId, comments: [] });
+        if (isCurrent() && !commentsCache.get(cardId)) setLoaded({ cardId, comments: [] });
       });
     return () => {
       cancelled = true;
     };
   }, [cardId, version]);
 
-  const isLoading = Boolean(cardId) && loaded?.cardId !== cardId;
+  const current = cardId && loaded?.cardId === cardId ? loaded.comments : undefined;
+  const comments = current ?? (cardId ? commentsCache.get(cardId) : undefined);
 
   return {
-    comments: isLoading ? [] : (loaded?.comments ?? []),
-    isLoading,
-    replaceComments: (nextCardId, comments) => {
+    comments: comments ?? [],
+    isLoading: Boolean(cardId) && comments === undefined,
+    replaceComments: (nextCardId, nextComments) => {
       latestRequestRef.current++;
-      setLoaded({ cardId: nextCardId, comments });
+      commentsCache.set(nextCardId, nextComments);
+      setLoaded({ cardId: nextCardId, comments: nextComments });
     },
   };
 };
