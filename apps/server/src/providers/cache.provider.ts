@@ -21,14 +21,14 @@ end
 return 0
 `;
 
-type CacheOptions<T> = {
+interface CacheOptions<T> {
   cacheName: string;
   key: string;
   ttlSeconds: number;
   negativeTtlSeconds: number;
   load: () => Promise<T | null>;
   cachedRaw?: string | null;
-};
+}
 
 type Decision<T> =
   | { kind: "value"; value: T | null }

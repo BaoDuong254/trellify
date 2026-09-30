@@ -15,12 +15,12 @@ const VERDICT_UNUSABLE = 2;
 const INSERT_BATCH_SIZE = 1000;
 const FILTER_EXPANSION = 2;
 
-export type BloomFilter = {
+export interface BloomFilter {
   name: string;
   key: string;
   capacity: number;
   errorRate: number;
-};
+}
 
 const MIGHT_EXIST_SCRIPT = `
 if redis.call("type", KEYS[1]).ok ~= "${BLOOM_TYPE}" then return ${VERDICT_UNUSABLE} end
@@ -71,7 +71,10 @@ export const isPossiblyPresent = async (filter: BloomFilter, item: string): Prom
   }
 };
 
-type GuardedCacheRead = { mightExist: boolean; cached: string | null | undefined };
+interface GuardedCacheRead {
+  mightExist: boolean;
+  cached: string | null | undefined;
+}
 
 export const probeAndRead = async (filter: BloomFilter, item: string, cacheKey: string): Promise<GuardedCacheRead> => {
   if (!environmentConfig.BLOOM_FILTER_ENABLED) {

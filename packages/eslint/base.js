@@ -62,6 +62,7 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
+      "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
       "no-lonely-if": "error",
       "no-console": "error",
     },

@@ -13,7 +13,7 @@ import type { User } from "src/types/user.type";
 import { cloudinaryThumb, formatDateTime } from "src/utils/formatters";
 import { createRecentCache } from "src/utils/recentCache";
 
-type BoardUser = Pick<User, "displayName"> & { _id: string };
+type BoardUser = Pick<User, "_id" | "displayName">;
 
 const describeMember = (entry: CardActivityEntryType, users: BoardUser[], self: string, other: string): string => {
   const userId = String(entry.data.userId ?? "");

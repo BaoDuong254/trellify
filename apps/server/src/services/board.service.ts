@@ -46,7 +46,11 @@ const groupCardsIntoColumns = (boardDetails: Document) => {
 
 const IS_PUBLIC_BOARD_READ_ALLOWED = false;
 
-type BoardMembership = { ownerIds: unknown[]; memberIds: unknown[]; type?: string };
+interface BoardMembership {
+  ownerIds: unknown[];
+  memberIds: unknown[];
+  type?: string;
+}
 
 const membershipCacheKey = (boardId: string): string => `c:v1:board-membership:${boardId}`;
 

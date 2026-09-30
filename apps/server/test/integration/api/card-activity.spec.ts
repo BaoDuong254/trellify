@@ -12,7 +12,11 @@ import {
   getApp,
 } from "test/integration/helpers";
 
-type ActivityEntry = { type: string; data: Record<string, unknown>; actor: { displayName: string } };
+interface ActivityEntry {
+  type: string;
+  data: Record<string, unknown>;
+  actor: { displayName: string };
+}
 
 const getActivities = async (actor: TestUser, cardId: string): Promise<ActivityEntry[]> => {
   const response = await request(getApp())

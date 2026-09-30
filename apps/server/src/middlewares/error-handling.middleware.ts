@@ -3,12 +3,8 @@ import { StatusCodes } from "http-status-codes";
 
 import environmentConfig from "src/config/environment";
 
-interface ApiError extends Error {
-  statusCode: number;
-}
-
 export const errorHandlingMiddleware = (
-  error: ApiError,
+  error: Error & { statusCode?: number },
   _request: ExpressRequest,
   response: ExpressResponse,
   _next: NextFunction

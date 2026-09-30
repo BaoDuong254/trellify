@@ -7,11 +7,11 @@ import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
 import { BloomFilter, buildFilter, registerBloomRecovery } from "src/providers/bloom.provider";
 
-type BloomPlan = {
+interface BloomPlan {
   filter: BloomFilter;
   findAllIds: () => FindCursor<{ _id: ObjectId }>;
   countAll: () => Promise<number>;
-};
+}
 
 const ERROR_RATE = 0.001;
 

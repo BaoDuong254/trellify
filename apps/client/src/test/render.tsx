@@ -29,10 +29,10 @@ const createTestStore = (preloadedState?: Partial<TestState>) =>
 
 type TestStore = ReturnType<typeof createTestStore>;
 
-type RenderOptions = {
+interface RenderOptions {
   store?: TestStore;
   route?: string;
-};
+}
 
 export const renderWithProviders = (
   ui: ReactElement,

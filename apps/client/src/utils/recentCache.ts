@@ -1,4 +1,7 @@
-type RecentCache<T> = { get: (key: string) => T | undefined; set: (key: string, value: T) => void };
+interface RecentCache<T> {
+  get: (key: string) => T | undefined;
+  set: (key: string, value: T) => void;
+}
 
 export const createRecentCache = <T>(maxEntries = 50): RecentCache<T> => {
   const entries = new Map<string, T>();

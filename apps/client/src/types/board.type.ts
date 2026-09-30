@@ -1,7 +1,7 @@
 import type { BoardCollectionType } from "@workspace/shared/schemas/board.schema";
 import type { CardCommentType, ChecklistItemType } from "@workspace/shared/schemas/card.schema";
 
-import type { User } from "src/types/user.type";
+import type { PublicUser } from "src/types/user.type";
 
 export interface Card {
   _id: string;
@@ -35,16 +35,13 @@ export interface Column {
 
 export interface Board extends BoardCollectionType {
   _id: string;
-  type: BoardType;
   ownerIds: string[];
   memberIds: string[];
   columns: Column[];
-  FE_allUsers: Omit<User, "password" | "verifyToken">[];
-  owners: Omit<User, "password" | "verifyToken">[];
-  members: Omit<User, "password" | "verifyToken">[];
+  FE_allUsers: PublicUser[];
+  owners: PublicUser[];
+  members: PublicUser[];
 }
-
-type BoardType = "public" | "private";
 
 export interface BoardLink {
   _id: string;

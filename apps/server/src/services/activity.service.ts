@@ -8,7 +8,10 @@ import logger from "@workspace/shared/utils/logger";
 
 import { activityModel } from "src/models/activity.model";
 
-type CardChange = { type: CardActivityType; data?: Record<string, unknown> };
+interface CardChange {
+  type: CardActivityType;
+  data?: Record<string, unknown>;
+}
 
 const describeCardChanges = (card: Document, body: UpdateCardType, hasCoverChanged = false): CardChange[] => {
   const changes: CardChange[] = [];

@@ -5,7 +5,10 @@ import type { CardCommentType } from "@workspace/shared/schemas/card.schema";
 import { fetchCardCommentsAPI } from "src/apis";
 import { createRecentCache } from "src/utils/recentCache";
 
-type LoadedComments = { cardId: string; comments: CardCommentType[] };
+interface LoadedComments {
+  cardId: string;
+  comments: CardCommentType[];
+}
 
 const commentsCache = createRecentCache<CardCommentType[]>();
 

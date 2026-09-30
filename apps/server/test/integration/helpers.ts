@@ -23,11 +23,11 @@ export const getApp = (): Express => {
   return app;
 };
 
-export type TestUser = {
+export interface TestUser {
   userId: string;
   email: string;
   cookie: string;
-};
+}
 
 export const createActiveUser = async (name: string): Promise<TestUser> => {
   const email = `${name}@trellify.test`;

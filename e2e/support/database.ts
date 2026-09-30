@@ -3,7 +3,10 @@ import { MongoClient } from "mongodb";
 
 import { DATABASE_NAME, MONGODB_URI } from "./environment";
 
-type SeedUser = { email: string; password: string };
+interface SeedUser {
+  email: string;
+  password: string;
+}
 
 export const seedActiveUser = async ({ email, password }: SeedUser): Promise<void> => {
   const client = new MongoClient(MONGODB_URI);

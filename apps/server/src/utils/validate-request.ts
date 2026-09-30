@@ -5,10 +5,10 @@ import type { ZodType } from "zod";
 import type { AsyncRequestHandler } from "src/types/middleware.type";
 import ApiError from "src/utils/api-error";
 
-type RequestSchemas = {
+interface RequestSchemas {
   params?: ZodType;
   body?: ZodType;
-};
+}
 
 export const validateRequest =
   (schemas: RequestSchemas): AsyncRequestHandler =>

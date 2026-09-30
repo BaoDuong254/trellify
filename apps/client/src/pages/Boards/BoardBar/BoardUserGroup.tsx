@@ -21,10 +21,8 @@ import { removeBoardMemberAPI } from "src/apis";
 import { fetchBoardDetailsAPI } from "src/redux/activeBoard/activeBoardSlice";
 import type { AppDispatch } from "src/redux/store";
 import { selectCurrentUser } from "src/redux/user/userSlice";
-import type { User } from "src/types/user.type";
+import type { PublicUser } from "src/types/user.type";
 import { cloudinaryThumb } from "src/utils/formatters";
-
-type BoardUser = Omit<User, "password" | "verifyToken">;
 
 function BoardUserGroup({
   boardId,
@@ -34,7 +32,7 @@ function BoardUserGroup({
   presentUserIds,
 }: {
   boardId?: string;
-  boardUsers?: BoardUser[];
+  boardUsers?: PublicUser[];
   limit?: number;
   ownerIds?: string[];
   presentUserIds?: string[];
@@ -46,7 +44,7 @@ function BoardUserGroup({
 
   const [anchorPopoverElement, setAnchorPopoverElement] = useState<HTMLElement | null>(null);
   const [menuAnchorElement, setMenuAnchorElement] = useState<HTMLElement | null>(null);
-  const [menuUser, setMenuUser] = useState<BoardUser | null>(null);
+  const [menuUser, setMenuUser] = useState<PublicUser | null>(null);
 
   const isOpenPopover = Boolean(anchorPopoverElement);
   const popoverId = isOpenPopover ? "board-all-users-popover" : undefined;
@@ -58,17 +56,17 @@ function BoardUserGroup({
   const ownerIdSet = useMemo(() => new Set(ownerIds ?? []), [ownerIds]);
   const isCurrentUserOwner = currentUser ? ownerIdSet.has(currentUser._id) : false;
 
-  const canRemoveUser = (user: BoardUser): boolean =>
+  const canRemoveUser = (user: PublicUser): boolean =>
     isCurrentUserOwner && !ownerIdSet.has(user._id) && user._id !== currentUser?._id;
-  const canLeaveAsUser = (user: BoardUser): boolean => user._id === currentUser?._id && !ownerIdSet.has(user._id);
-  const hasMenuActions = (user: BoardUser): boolean => canRemoveUser(user) || canLeaveAsUser(user);
+  const canLeaveAsUser = (user: PublicUser): boolean => user._id === currentUser?._id && !ownerIdSet.has(user._id);
+  const hasMenuActions = (user: PublicUser): boolean => canRemoveUser(user) || canLeaveAsUser(user);
 
   const closeMenu = () => {
     setMenuAnchorElement(null);
     setMenuUser(null);
   };
 
-  const handleRemoveMember = (user: BoardUser) => {
+  const handleRemoveMember = (user: PublicUser) => {
     const isSelfLeaving = user._id === currentUser?._id;
     closeMenu();
     setAnchorPopoverElement(null);
@@ -96,7 +94,7 @@ function BoardUserGroup({
       .catch(() => {});
   };
 
-  const renderUserAvatar = (user: BoardUser) => {
+  const renderUserAvatar = (user: PublicUser) => {
     const isViewing = presentUserIds?.includes(user?._id) ?? false;
     const tooltipTitle = isViewing ? `${user?.displayName} (viewing)` : user?.displayName;
     const avatarBadge = (

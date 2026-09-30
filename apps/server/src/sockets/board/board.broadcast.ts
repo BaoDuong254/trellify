@@ -27,7 +27,11 @@ const resolveBoardId = (boardId: unknown): string | undefined => {
   return undefined;
 };
 
-type BoardUpdate = { reason: BoardUpdateReason; actorId: string; actorSocketId: string };
+interface BoardUpdate {
+  reason: BoardUpdateReason;
+  actorId: string;
+  actorSocketId: string;
+}
 
 const sendBoardUpdate = async (io: AppServer, boardId: string, update: BoardUpdate): Promise<void> => {
   const { reason, actorId, actorSocketId } = update;

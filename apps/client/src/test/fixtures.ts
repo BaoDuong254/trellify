@@ -1,7 +1,5 @@
 import type { Board, Card, Column } from "src/types/board.type";
-import type { User } from "src/types/user.type";
-
-type PublicUser = Omit<User, "password" | "verifyToken">;
+import type { PublicUser } from "src/types/user.type";
 
 export const buildUser = (overrides: Partial<PublicUser> = {}): PublicUser => ({
   _id: "user-1",
