@@ -26,7 +26,7 @@ export const INVITATION_COLLECTION_SCHEMA = z.object({
       }),
     })
     .optional(),
-  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
+  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(() => new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });

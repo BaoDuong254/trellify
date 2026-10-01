@@ -162,7 +162,7 @@ function ActiveCard() {
       });
   };
 
-  const onAddCardComment = async (commentToAdd: { userAvatar: string; userDisplayName: string; content: string }) => {
+  const onAddCardComment = async (commentToAdd: { content: string }) => {
     await callApiUpdateCard({
       commentToAdd,
     });

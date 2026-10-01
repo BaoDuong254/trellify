@@ -7,14 +7,13 @@ import { BOARD_UPDATE_REASONS } from "@workspace/shared/utils/socket-events";
 
 import { invitationService } from "src/services/invitation.service";
 import { broadcastBoardUpdate, notifyUserInvitedToBoard } from "src/sockets/board/board.broadcast";
+import { actorId } from "src/utils/request-user";
 
 const createNewBoardInvitation = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const inviterId =
-      typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
     const resultInvitation = await invitationService.createNewBoardInvitation(
       request.body as InvitationCreateType,
-      inviterId!
+      actorId(request)
     );
     response.status(StatusCodes.CREATED).json({
       statusCode: StatusCodes.CREATED,
@@ -29,8 +28,8 @@ const createNewBoardInvitation = async (request: ExpressRequest, response: Expre
 
 const getInvitations = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
-    const resultInvitations = await invitationService.getInvitations(userId!);
+    const userId = actorId(request);
+    const resultInvitations = await invitationService.getInvitations(userId);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Get invitations successfully",
@@ -43,10 +42,10 @@ const getInvitations = async (request: ExpressRequest, response: ExpressResponse
 
 const updateBoardInvitation = async (request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
   try {
-    const userId = typeof request?.jwtDecoded === "object" ? (request.jwtDecoded._id.toString() as string) : undefined;
+    const userId = actorId(request);
     const { invitationId } = request.params;
     const { status } = request.body as { status: string };
-    const updatedInvitation = await invitationService.updateBoardInvitation(invitationId as string, status, userId!);
+    const updatedInvitation = await invitationService.updateBoardInvitation(invitationId as string, status, userId);
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,
       message: "Invitation updated successfully",

@@ -26,13 +26,11 @@ const update = async (request: ExpressRequest, response: ExpressResponse, next: 
   try {
     const cardId = request.params.id;
     const cardCoverFile = request.file;
-    const userInfo = request.jwtDecoded as { _id: string; email: string };
     const updatedCard = await cardService.update(
       actorId(request),
       cardId as string,
       request.body as UpdateCardType,
-      cardCoverFile,
-      userInfo
+      cardCoverFile
     );
     response.status(StatusCodes.OK).json({
       statusCode: StatusCodes.OK,

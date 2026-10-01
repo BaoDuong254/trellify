@@ -15,7 +15,7 @@ const addComment = (actor: TestUser, cardId: string, content: string) =>
   request(getApp())
     .put(`/api/v1/cards/${cardId}`)
     .set("Cookie", actor.cookie)
-    .send({ commentToAdd: { userAvatar: null, userDisplayName: "owner", content } })
+    .send({ commentToAdd: { content } })
     .expect(200);
 
 describe("board snapshot payload", () => {

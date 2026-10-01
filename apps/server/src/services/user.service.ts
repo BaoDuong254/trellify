@@ -36,7 +36,7 @@ const createNew = async (requestBody: UserRegistrationType) => {
     email: requestBody.email,
     password: bcryptjs.hashSync(requestBody.password, 10),
     username: nameFromEmail!,
-    displayName: nameFromEmail!,
+    displayName: nameFromEmail!.slice(0, 50),
     verifyToken: uuidv4(),
   };
   let createdUser: Awaited<ReturnType<typeof userModel.createNew>>;

@@ -69,7 +69,7 @@ describe("archiving cards", () => {
     const renamed = await put(owner, `/api/v1/cards/${a}`, { title: "Renamed" }).expect(409);
     expect(renamed.body.message).toBe("Error.CardUnavailable");
     await put(owner, `/api/v1/cards/${a}`, {
-      commentToAdd: { userAvatar: null, userDisplayName: "Owner", content: "late" },
+      commentToAdd: { content: "late" },
     }).expect(409);
 
     await put(owner, `/api/v1/cards/${a}`, { archived: false }).expect(200);

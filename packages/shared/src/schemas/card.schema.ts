@@ -60,7 +60,7 @@ export const CARD_COLLECTION_SCHEMA = z.object({
   checklist: z.array(CHECKLIST_ITEM_SCHEMA).max(100, { error: "Error.TooManyChecklistItems" }).default([]),
   archivedAt: z.date({ error: "Error.ArchivedAtMustBeDate" }).nullable().default(null),
   archivedPosition: ARCHIVED_POSITION_SCHEMA,
-  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
+  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(() => new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });
@@ -88,11 +88,7 @@ export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({ title: true, des
     archived: z.boolean({ error: "Error.ArchivedMustBeBoolean" }),
     commentToUpdate: z.object({ _id: CARD_SUBITEM_ID, content: COMMENT_CONTENT }),
     commentToDelete: z.object({ _id: CARD_SUBITEM_ID }),
-    commentToAdd: z.object({
-      userAvatar: z.url({ message: "Error.UserAvatarMustBeURL" }).nullable().default(null),
-      userDisplayName: z.string({ error: "Error.UserDisplayNameMustBeString" }),
-      content: COMMENT_CONTENT,
-    }),
+    commentToAdd: z.object({ content: COMMENT_CONTENT }),
     incomingMemberInfo: INCOMING_CARD_MEMBER_INFO_SCHEMA,
   })
   .partial();

@@ -15,7 +15,7 @@ export const COLUMN_COLLECTION_SCHEMA = z.object({
     .default([]),
   archivedAt: z.date({ error: "Error.ArchivedAtMustBeDate" }).nullable().default(null),
   archivedPosition: ARCHIVED_POSITION_SCHEMA,
-  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
+  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(() => new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });

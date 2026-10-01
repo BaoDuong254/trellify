@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  BOARD_COLLECTION_SCHEMA,
   BOARD_ID_PARAMS_SCHEMA,
   MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA,
   REMOVE_BOARD_MEMBER_PARAMS_SCHEMA,
@@ -63,5 +64,18 @@ describe("MOVE_CARD_TO_DIFFERENT_COLUMN_SCHEMA", () => {
 
     expect(parsed.prevCardOrderIds).toEqual([]);
     expect(parsed.nextCardOrderIds).toEqual([]);
+  });
+});
+
+describe("BOARD_COLLECTION_SCHEMA createdAt", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("stamps the time of the parse, not the time the module loaded", () => {
+    const now = new Date("2030-01-01T00:00:00Z");
+    vi.useFakeTimers({ now });
+    const board = BOARD_COLLECTION_SCHEMA.parse({ title: "Board", slug: "board", description: "desc", type: "public" });
+    expect(board.createdAt).toEqual(now);
   });
 });

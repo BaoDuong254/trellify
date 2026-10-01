@@ -178,6 +178,8 @@ function AccountTab() {
                 }}
                 {...register("displayName", {
                   required: FIELD_REQUIRED_MESSAGE,
+                  validate: (value) => Boolean(value?.trim()) || FIELD_REQUIRED_MESSAGE,
+                  maxLength: { value: 50, message: "Max Length is 50 characters" },
                 })}
                 error={!!errors["displayName"]}
               />

@@ -8,6 +8,7 @@ import { CARD_MEMBER_ACTIONS } from "@workspace/shared/utils/constants";
 import { CARD_BLOOM, COLUMN_BLOOM } from "src/config/bloom";
 import { cardModel } from "src/models/card.model";
 import { columnModel } from "src/models/column.model";
+import { userModel } from "src/models/user.model";
 import { addItem, isPossiblyPresent } from "src/providers/bloom.provider";
 import { CloudinaryProvider } from "src/providers/cloudinary.provider";
 import { scheduleDueReminder } from "src/queues/email/email.queue";
@@ -100,8 +101,7 @@ const update = async (
   userId: string,
   cardId: string,
   requestBody: UpdateCardType,
-  cardCoverFile?: Express.Multer.File,
-  userInfo?: { _id: string; email: string }
+  cardCoverFile?: Express.Multer.File
 ) => {
   const card = await assertCardAccess(userId, cardId);
   if (requestBody.archived === undefined) await assertCardEditable(card);
@@ -115,13 +115,17 @@ const update = async (
     };
     updatedCard = await cardModel.update(cardId, { cover: uploadResult.secure_url, updatedAt: new Date() });
   } else if (commentToAdd) {
-    const commentData = {
-      ...commentToAdd,
+    const author = await userModel.findOneById(userId);
+    if (!author) throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized!");
+    const commentData: CardCommentType = {
       _id: new ObjectId().toString(),
+      userId,
+      userEmail: author.email,
+      userAvatar: author.avatar ?? null,
+      userDisplayName: author.displayName,
+      content: commentToAdd.content,
       commentedAt: new Date(),
-      userId: userInfo?._id,
-      userEmail: userInfo?.email,
-    } as CardCommentType;
+    };
     updatedCard = await cardModel.unshiftNewComment(cardId, commentData);
   } else if (commentToUpdate) {
     updatedCard = await cardModel.updateOwnComment(cardId, commentToUpdate._id, userId, commentToUpdate.content);

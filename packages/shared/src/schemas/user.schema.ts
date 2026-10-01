@@ -18,7 +18,11 @@ export const USER_COLLECTION_SCHEMA = z.object({
   email: z.email({ error: "Error.EmailIsInvalid" }).regex(EMAIL_RULE, { error: EMAIL_RULE_MESSAGE }),
   password: z.string({ error: "Error.PasswordMustBeString" }).regex(PASSWORD_RULE, { error: PASSWORD_RULE_MESSAGE }),
   username: z.string({ error: "Error.UsernameMustBeString" }).trim(),
-  displayName: z.string({ error: "Error.DisplayNameMustBeString" }).trim(),
+  displayName: z
+    .string({ error: "Error.DisplayNameMustBeString" })
+    .trim()
+    .min(1, { error: "Error.DisplayNameTooShort" })
+    .max(50, { error: "Error.DisplayNameTooLong" }),
   avatar: z.string({ error: "Error.AvatarMustBeString" }).nullable().default(null),
   role: z
     .enum([USER_ROLES.CLIENT, USER_ROLES.ADMIN], { error: "Error.RoleMustBeClientOrAdmin" })
@@ -29,7 +33,7 @@ export const USER_COLLECTION_SCHEMA = z.object({
   starredBoardIds: z
     .array(z.string({ error: "Error.BoardIdMustBeString" }).regex(OBJECT_ID_RULE, { error: OBJECT_ID_RULE_MESSAGE }))
     .default([]),
-  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(new Date()),
+  createdAt: z.date({ error: "Error.CreatedAtMustBeDate" }).default(() => new Date()),
   updatedAt: z.date({ error: "Error.UpdatedAtMustBeDate" }).nullable().default(null),
   _destroy: z.boolean({ error: "Error._destroyMustBeBoolean" }).default(false),
 });

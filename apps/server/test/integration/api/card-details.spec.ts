@@ -56,7 +56,7 @@ describe("PUT /api/v1/cards/:id details", () => {
     await addBoardMember(boardId, member.userId);
 
     const added = await putCard(owner, cardId, {
-      commentToAdd: { userAvatar: null, userDisplayName: "owner", content: "hello" },
+      commentToAdd: { content: "hello" },
     }).expect(200);
     const commentId = added.body.data.comments[0]._id as string;
     expect(commentId).toBeTruthy();

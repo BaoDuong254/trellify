@@ -176,7 +176,7 @@ describe("PUT /api/v1/cards/:id", () => {
     await request(getApp())
       .put(`/api/v1/cards/${cardId}`)
       .set("Cookie", owner.cookie)
-      .send({ commentToAdd: { userAvatar: null, userDisplayName: "owner", content: "First!" } })
+      .send({ commentToAdd: { content: "First!" } })
       .expect(200);
     await request(getApp())
       .put(`/api/v1/cards/${cardId}`)
@@ -193,6 +193,35 @@ describe("PUT /api/v1/cards/:id", () => {
     const card = await findById(cardModel.CARD_COLLECTION_NAME, cardId);
     expect(card?.comments).toHaveLength(1);
     expect(idStrings(card?.memberIds)).toEqual([owner.userId]);
+  });
+
+  it("takes the comment author from the account, not the request body", async () => {
+    const owner = await createActiveUser("owner");
+    const boardId = await createBoardVia(owner);
+    const columnId = await createColumnVia(owner, boardId);
+    const cardId = await createCardVia(owner, boardId, columnId);
+
+    await request(getApp())
+      .put(`/api/v1/cards/${cardId}`)
+      .set("Cookie", owner.cookie)
+      .send({
+        commentToAdd: {
+          userAvatar: "https://evil.example/avatar.png",
+          userDisplayName: "Admin",
+          userId: new ObjectId().toString(),
+          content: "hi",
+        },
+      })
+      .expect(200);
+
+    const card = await findById(cardModel.CARD_COLLECTION_NAME, cardId);
+    expect(card?.comments[0]).toMatchObject({
+      userId: owner.userId,
+      userEmail: owner.email,
+      userDisplayName: "owner",
+      userAvatar: null,
+      content: "hi",
+    });
   });
 
   it("ignores archive state, archived position and comment fields", async () => {

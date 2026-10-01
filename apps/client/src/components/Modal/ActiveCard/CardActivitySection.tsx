@@ -25,7 +25,7 @@ function CardActivitySection({
 }: {
   cardComments?: CardCommentType[];
   isLoading?: boolean;
-  onAddCardComment: (commentToAdd: { userAvatar: string; userDisplayName: string; content: string }) => Promise<void>;
+  onAddCardComment: (commentToAdd: { content: string }) => Promise<void>;
   onUpdateComment: (commentToUpdate: { _id: string; content: string }) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
 }) {
@@ -39,12 +39,7 @@ function CardActivitySection({
       const target = event.target as HTMLInputElement;
       if (!target.value.trim()) return;
 
-      const commentToAdd = {
-        userAvatar: currentUser?.avatar || "",
-        userDisplayName: currentUser?.displayName || "Unknown User",
-        content: target.value.trim(),
-      };
-      onAddCardComment(commentToAdd)
+      onAddCardComment({ content: target.value.trim() })
         .then(() => {
           target.value = "";
         })
