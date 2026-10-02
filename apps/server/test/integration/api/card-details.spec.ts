@@ -1,6 +1,11 @@
+import { ObjectId } from "mongodb";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
+import { CARD_ACTIVITY_TYPES } from "@workspace/shared/schemas/activity.schema";
+
+import { GET_DB } from "src/config/database";
+import { cardModel } from "src/models/card.model";
 import {
   type TestUser,
   addBoardMember,
@@ -48,6 +53,24 @@ describe("PUT /api/v1/cards/:id details", () => {
     const { owner, cardId } = await setUpCard();
     const response = await putCard(owner, cardId, { dueDate: "tomorrow" }).expect(422);
     expect(response.body.statusCode).toBe(422);
+  });
+
+  it("removes the cover but never accepts a cover URL", async () => {
+    const { owner, cardId } = await setUpCard();
+    await GET_DB()
+      .collection(cardModel.CARD_COLLECTION_NAME)
+      .updateOne({ _id: new ObjectId(cardId) }, { $set: { cover: "https://example.com/cover.png" } });
+
+    await putCard(owner, cardId, { cover: "https://evil.example/x.png" }).expect(422);
+
+    const removed = await putCard(owner, cardId, { cover: null }).expect(200);
+    expect(removed.body.data.cover).toBeNull();
+
+    const activities = await request(getApp())
+      .get(`/api/v1/cards/${cardId}/activities`)
+      .set("Cookie", owner.cookie)
+      .expect(200);
+    expect(activities.body.data[0].type).toBe(CARD_ACTIVITY_TYPES.COVER_REMOVED);
   });
 
   it("lets only the author edit or delete a comment", async () => {

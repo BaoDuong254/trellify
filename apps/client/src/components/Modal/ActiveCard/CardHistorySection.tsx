@@ -49,6 +49,8 @@ const describeActivity = (entry: CardActivityEntryType, users: BoardUser[]): str
       return describeMember(entry, users, "left this card", "removed {name} from this card");
     case CARD_ACTIVITY_TYPES.COVER_CHANGED:
       return "changed the cover";
+    case CARD_ACTIVITY_TYPES.COVER_REMOVED:
+      return "removed the cover";
     case CARD_ACTIVITY_TYPES.ARCHIVED:
       return "archived this card";
     case CARD_ACTIVITY_TYPES.RESTORED:

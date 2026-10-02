@@ -11,6 +11,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
@@ -23,9 +24,11 @@ import WatchLaterOutlinedIcon from "@mui/icons-material/WatchLaterOutlined";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import Modal from "@mui/material/Modal";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 import { cloneDeep } from "lodash";
@@ -75,6 +78,7 @@ import CardUserGroup from "./CardUserGroup";
 const CardDescriptionMdEditor = lazy(() => import("./CardDescriptionMdEditor"));
 
 const SidebarItem = styled(Box)(({ theme }) => ({
+  position: "relative",
   display: "flex",
   alignItems: "center",
   gap: "6px",
@@ -286,12 +290,29 @@ function ActiveCard() {
         </Box>
 
         {activeCard?.cover && (
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 4, position: "relative" }}>
             <img
               style={{ width: "100%", height: "320px", borderRadius: "6px", objectFit: "cover" }}
               src={cloudinaryImage(activeCard.cover, 900)}
               alt='card cover'
             />
+            <Tooltip title='Remove cover'>
+              <IconButton
+                aria-label='Remove cover'
+                size='small'
+                onClick={() => updateCardQuietly({ cover: null })}
+                sx={{
+                  position: "absolute",
+                  bottom: 8,
+                  right: 8,
+                  bgcolor: "rgba(0,0,0,0.5)",
+                  color: "#fff",
+                  "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                }}
+              >
+                <DeleteOutlineOutlinedIcon fontSize='small' />
+              </IconButton>
+            </Tooltip>
           </Box>
         )}
 

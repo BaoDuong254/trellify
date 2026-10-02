@@ -16,6 +16,7 @@ interface CardChange {
 const describeCardChanges = (card: Document, body: UpdateCardType, hasCoverChanged = false): CardChange[] => {
   const changes: CardChange[] = [];
   if (hasCoverChanged) changes.push({ type: CARD_ACTIVITY_TYPES.COVER_CHANGED });
+  if (body.cover === null && card.cover) changes.push({ type: CARD_ACTIVITY_TYPES.COVER_REMOVED });
 
   if (body.archived !== undefined && body.archived !== Boolean(card.archivedAt)) {
     changes.push({ type: body.archived ? CARD_ACTIVITY_TYPES.ARCHIVED : CARD_ACTIVITY_TYPES.RESTORED });

@@ -78,6 +78,7 @@ const INCOMING_CARD_MEMBER_INFO_SCHEMA = z.object({
 
 export const UPDATE_CARD_SCHEMA = CARD_COLLECTION_SCHEMA.pick({ title: true, description: true })
   .extend({
+    cover: z.null({ error: "Error.CoverCanOnlyBeRemoved" }),
     dueDate: z.iso
       .datetime({ offset: true, error: "Error.DueDateMustBeISODate" })
       .transform((value) => new Date(value))
