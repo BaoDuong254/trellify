@@ -111,3 +111,6 @@ k6/results/*
 # Unlighthouse
 .unlighthouse/
 .env.unlighthouse
+
+# Rollup-plugin-visualizer
+stats.html

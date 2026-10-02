@@ -1,6 +1,7 @@
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from "@vitejs/plugin-react-swc";
-import type { Plugin } from "vite";
+import { visualizer } from "rollup-plugin-visualizer";
+import type { Plugin, PluginOption } from "vite";
 import svgr from "vite-plugin-svgr";
 import { defineConfig } from "vitest/config";
 
@@ -101,6 +102,10 @@ export default defineConfig({
       release: { setCommits: false },
       sourcemaps: { filesToDeleteAfterUpload: ["dist/**/*.map"] },
     }),
+    visualizer({
+      gzipSize: true,
+      brotliSize: true,
+    }) as PluginOption,
   ],
   css: {
     devSourcemap: true,
