@@ -10,7 +10,9 @@ import CardMui from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
+import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { CardLabelChips, DueDateChip } from "src/components/Modal/ActiveCard/CardBadges";
@@ -25,6 +27,9 @@ function Card({ card }: { card: CardType }) {
   const dispatch = useDispatch<AppDispatch>();
   const boardLabels = useSelector(selectCurrentActiveBoard)?.labels ?? [];
   const checklist = card.checklist ?? [];
+  const [loadedCover, setLoadedCover] = useState<string | null>(null);
+  const coverSrc = card?.cover ? cloudinaryImage(card.cover, 272) : null;
+  const isCoverLoaded = coverSrc !== null && loadedCover === coverSrc;
   const cardFilter = useSelector(selectCardFilter);
   const isFiltering = countActiveFilters(cardFilter) > 0;
   const isHidden = card?.FE_PlaceholderCard || (isFiltering && !matchesCardFilter(card, cardFilter));
@@ -68,12 +73,19 @@ function Card({ card }: { card: CardType }) {
         "&:hover": { borderColor: (theme) => theme.palette.primary.main },
       }}
     >
-      {card?.cover && (
-        <CardMedia
-          sx={{ height: 140 }}
-          image={cloudinaryImage(card.cover, 272)}
-          title={card.description || "Card cover image"}
-        />
+      {coverSrc && (
+        <Box sx={{ position: "relative" }}>
+          {!isCoverLoaded && <Skeleton variant='rectangular' sx={{ position: "absolute", inset: 0, height: "100%" }} />}
+          <CardMedia
+            component='img'
+            loading='lazy'
+            image={coverSrc}
+            alt={card?.title ?? "Card Cover"}
+            onLoad={() => setLoadedCover(coverSrc)}
+            onError={() => setLoadedCover(coverSrc)}
+            sx={{ height: 140, objectFit: "cover", visibility: isCoverLoaded ? "visible" : "hidden" }}
+          />
+        </Box>
       )}
       <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
         <Box sx={{ mb: card?.labelIds?.length ? 0.5 : 0 }}>
