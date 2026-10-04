@@ -108,6 +108,9 @@ function ActiveCard() {
   const [datesAnchor, setDatesAnchor] = useState<HTMLElement | null>(null);
   const [labelsAnchor, setLabelsAnchor] = useState<HTMLElement | null>(null);
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+  const [loadedCover, setLoadedCover] = useState<string | null>(null);
+  const coverSrc = activeCard?.cover ? cloudinaryImage(activeCard.cover, 900) : null;
+  const isCoverLoaded = coverSrc !== null && loadedCover === coverSrc;
   const boardLabels = board?.labels ?? [];
   const cardLabelIds = (activeCard?.labelIds ?? []).filter((id) => boardLabels.some((label) => label._id === id));
   const checklist = activeCard?.checklist ?? [];
@@ -289,12 +292,27 @@ function ActiveCard() {
           <CancelIcon color='error' sx={{ "&:hover": { color: "error.light" } }} onClick={handleCloseModal} />
         </Box>
 
-        {activeCard?.cover && (
+        {coverSrc && (
           <Box sx={{ mb: 4, position: "relative" }}>
+            {!isCoverLoaded && (
+              <Skeleton
+                variant='rounded'
+                sx={{ position: "absolute", inset: 0, height: "100%", borderRadius: "6px" }}
+              />
+            )}
             <img
-              style={{ width: "100%", height: "320px", borderRadius: "6px", objectFit: "cover" }}
-              src={cloudinaryImage(activeCard.cover, 900)}
+              style={{
+                width: "100%",
+                height: "320px",
+                borderRadius: "6px",
+                objectFit: "cover",
+                display: "block",
+                visibility: isCoverLoaded ? "visible" : "hidden",
+              }}
+              src={coverSrc}
               alt='card cover'
+              onLoad={() => setLoadedCover(coverSrc)}
+              onError={() => setLoadedCover(coverSrc)}
             />
             <Tooltip title='Remove cover'>
               <IconButton
