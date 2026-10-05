@@ -22,7 +22,9 @@ import SubjectRoundedIcon from "@mui/icons-material/SubjectRounded";
 import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
 import WatchLaterOutlinedIcon from "@mui/icons-material/WatchLaterOutlined";
 import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
 import Checkbox from "@mui/material/Checkbox";
+import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Modal from "@mui/material/Modal";
@@ -109,8 +111,15 @@ function ActiveCard() {
   const [labelsAnchor, setLabelsAnchor] = useState<HTMLElement | null>(null);
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [loadedCover, setLoadedCover] = useState<string | null>(null);
+  const [brokenCover, setBrokenCover] = useState<string | null>(null);
+  const [previewCover, setPreviewCover] = useState<string | null>(null);
+  const [loadedFullCover, setLoadedFullCover] = useState<string | null>(null);
+  const [brokenFullCover, setBrokenFullCover] = useState<string | null>(null);
   const coverSrc = activeCard?.cover ? cloudinaryImage(activeCard.cover, 900) : null;
+  const fullCoverSrc = activeCard?.cover ? cloudinaryImage(activeCard.cover, 1600) : null;
   const isCoverLoaded = coverSrc !== null && loadedCover === coverSrc;
+  const isFullCoverLoaded = fullCoverSrc !== null && loadedFullCover === fullCoverSrc;
+  const isFullCoverBroken = fullCoverSrc !== null && brokenFullCover === fullCoverSrc;
   const boardLabels = board?.labels ?? [];
   const cardLabelIds = (activeCard?.labelIds ?? []).filter((id) => boardLabels.some((label) => label._id === id));
   const checklist = activeCard?.checklist ?? [];
@@ -300,20 +309,82 @@ function ActiveCard() {
                 sx={{ position: "absolute", inset: 0, height: "100%", borderRadius: "6px" }}
               />
             )}
-            <img
-              style={{
-                width: "100%",
-                height: "320px",
-                borderRadius: "6px",
-                objectFit: "cover",
+            <ButtonBase
+              aria-label='View full cover'
+              disabled={!isCoverLoaded || brokenCover === coverSrc}
+              onClick={() => setPreviewCover(fullCoverSrc)}
+              sx={{
                 display: "block",
-                visibility: isCoverLoaded ? "visible" : "hidden",
+                width: "100%",
+                borderRadius: "6px",
+                overflow: "hidden",
+                cursor: "zoom-in",
               }}
-              src={coverSrc}
-              alt='card cover'
-              onLoad={() => setLoadedCover(coverSrc)}
-              onError={() => setLoadedCover(coverSrc)}
-            />
+            >
+              <Box
+                component='img'
+                sx={{
+                  width: "100%",
+                  height: "320px",
+                  objectFit: "cover",
+                  display: "block",
+                  visibility: isCoverLoaded ? "visible" : "hidden",
+                }}
+                src={coverSrc}
+                alt='card cover'
+                onLoad={() => setLoadedCover(coverSrc)}
+                onError={() => {
+                  setLoadedCover(coverSrc);
+                  setBrokenCover(coverSrc);
+                }}
+              />
+            </ButtonBase>
+            {fullCoverSrc && (
+              <Modal
+                open={previewCover === fullCoverSrc}
+                onClose={() => setPreviewCover(null)}
+                slotProps={{ backdrop: { sx: { bgcolor: "rgba(0,0,0,0.85)" } } }}
+                sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <Box
+                  onClick={() => setPreviewCover(null)}
+                  sx={{ position: "relative", outline: 0, cursor: "zoom-out" }}
+                >
+                  {!isFullCoverLoaded && (
+                    <CircularProgress
+                      sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        mt: "-20px",
+                        ml: "-20px",
+                        color: "#fff",
+                      }}
+                    />
+                  )}
+                  <Box
+                    component='img'
+                    src={isFullCoverBroken ? coverSrc : fullCoverSrc}
+                    alt='card cover full size'
+                    onLoad={() => setLoadedFullCover(fullCoverSrc)}
+                    onError={() => {
+                      if (isFullCoverBroken) setLoadedFullCover(fullCoverSrc);
+                      else setBrokenFullCover(fullCoverSrc);
+                    }}
+                    sx={{
+                      display: "block",
+                      minWidth: isFullCoverLoaded ? 0 : 80,
+                      minHeight: isFullCoverLoaded ? 0 : 80,
+                      maxWidth: "90vw",
+                      maxHeight: "90vh",
+                      objectFit: "contain",
+                      borderRadius: "6px",
+                      visibility: isFullCoverLoaded ? "visible" : "hidden",
+                    }}
+                  />
+                </Box>
+              </Modal>
+            )}
             <Tooltip title='Remove cover'>
               <IconButton
                 aria-label='Remove cover'
