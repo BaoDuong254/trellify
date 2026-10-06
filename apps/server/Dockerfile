@@ -48,7 +48,8 @@ FROM node:24.21.0-alpine
 
 # renovate: datasource=npm depName=pnpm
 ARG PNPM_VERSION=12.4.0
-RUN npm install -g pnpm@${PNPM_VERSION} && npm cache clean --force
+RUN npm install -g pnpm@${PNPM_VERSION} && npm cache clean --force \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 ENV NODE_ENV=production
 
 # Set workdir to monorepo root for proper workspace resolution
