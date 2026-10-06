@@ -1,0 +1,110 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trellify-mongodb-restore-drill
+spec:
+  schedule: "0 22 * * 0" # Every Sunday at 22:00 UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            fsGroup: 999
+          initContainers:
+            - name: fetch
+              image: rclone/rclone:1.75
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  RECENT=$(rclone lsf offsite: --files-only --max-age 36h)
+                  FILE=$(echo "$RECENT" | grep '^trellify-.*\.gz$' | sort | tail -n1) || true
+                  if [ -z "$FILE" ]; then
+                    echo "ABORT: no off-site backup newer than 36h. Check the trellify-mongodb-backup CronJob."
+                    exit 1
+                  fi
+                  rclone copy "offsite:$FILE" /restore --stats-one-line --stats 0
+                  echo "$FILE" > /restore/.latest
+                  ls -lh "/restore/$FILE"
+              env:
+                - name: HOME
+                  value: /tmp
+                - name: XDG_CACHE_HOME
+                  value: /tmp
+                - name: RCLONE_CONFIG
+                  value: /dev/null
+                - name: RCLONE_CONFIG_R2_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_R2_PROVIDER
+                  value: Cloudflare
+                - name: RCLONE_CONFIG_R2_REGION
+                  value: auto
+                - name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET
+                  value: "true"
+                - name: RCLONE_CONFIG_OFFSITE_TYPE
+                  value: crypt
+                - name: RCLONE_CONFIG_OFFSITE_REMOTE
+                  value: "r2:trellify-k3s-backups/mongodb"
+                - name: RCLONE_CONFIG_OFFSITE_FILENAME_ENCRYPTION
+                  value: "off"
+                - name: RCLONE_CONFIG_OFFSITE_DIRECTORY_NAME_ENCRYPTION
+                  value: "false"
+              envFrom:
+                - secretRef:
+                    name: trellify-r2-backup
+              resources:
+                requests: { cpu: 50m, memory: 128Mi }
+                limits: { memory: 256Mi }
+              volumeMounts:
+                - { name: restore, mountPath: /restore }
+                - { name: tmp, mountPath: /tmp }
+          containers:
+            - name: verify
+              image: mongo:8.0
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  FILE=$(cat /restore/.latest)
+                  mkdir -p /data/db
+                  mongod --fork --dbpath /data/db --logpath /data/mongod.log --bind_ip 127.0.0.1 --wiredTigerCacheSizeGB 0.25
+                  mongorestore --quiet --archive="/restore/$FILE" --gzip --nsInclude='trellify.*'
+                  STATUS=0
+                  mongosh --quiet trellify --eval '
+                    const counts = Object.fromEntries(
+                      ["users", "boards", "columns", "cards"].map((name) => [name, db.getCollection(name).countDocuments()])
+                    );
+                    printjson(counts);
+                    if (Object.values(counts).some((count) => count === 0)) quit(1);
+                  ' || STATUS=$?
+                  mongod --dbpath /data/db --shutdown > /dev/null
+                  if [ "$STATUS" -ne 0 ]; then
+                    echo "FAIL: $FILE restored but a core collection is empty."
+                    exit 1
+                  fi
+                  echo "OK: $FILE restores cleanly."
+              resources:
+                requests: { cpu: 100m, memory: 512Mi }
+                limits: { memory: 1Gi }
+              volumeMounts:
+                - { name: restore, mountPath: /restore, readOnly: true }
+                - { name: data, mountPath: /data }
+          volumes:
+            - name: restore
+              emptyDir:
+                sizeLimit: 2Gi
+            - name: data
+              emptyDir:
+                sizeLimit: 5Gi
+            - name: tmp
+              emptyDir: {}

@@ -10,8 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 env:
   REGISTRY: ghcr.io
@@ -22,6 +21,12 @@ jobs:
   build-and-push:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      security-events: write
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
       changed: ${{ steps.changes.outputs.changed }}
@@ -69,9 +74,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push server image
+        id: build-server
         if: steps.changes.outputs.changed == 'true'
         uses: docker/build-push-action@v7
         with:
+          sbom: true
+          provenance: mode=max
           context: .
           file: ./apps/server/Dockerfile
           push: true
@@ -82,9 +90,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push client image
+        id: build-client
         if: steps.changes.outputs.changed == 'true'
         uses: docker/build-push-action@v7
         with:
+          sbom: true
+          provenance: mode=max
           context: .
           file: ./apps/client/Dockerfile
           push: true
@@ -100,10 +111,93 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Scan server image for fixable critical CVEs
+        if: steps.changes.outputs.changed == 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server@${{ steps.build-server.outputs.digest }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Report server image CVEs
+        if: always() && steps.build-server.outputs.digest != ''
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server@${{ steps.build-server.outputs.digest }}
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-server.sarif
+          exit-code: "0"
+
+      - name: Upload server scan to code scanning
+        if: always() && steps.build-server.outputs.digest != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-server.sarif
+          ref: ${{ github.ref }}
+          sha: ${{ env.SOURCE_SHA }}
+          category: trivy-server
+
+      - name: Scan client image for fixable critical CVEs
+        if: steps.changes.outputs.changed == 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client@${{ steps.build-client.outputs.digest }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Report client image CVEs
+        if: always() && steps.build-client.outputs.digest != ''
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client@${{ steps.build-client.outputs.digest }}
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-client.sarif
+          exit-code: "0"
+
+      - name: Upload client scan to code scanning
+        if: always() && steps.build-client.outputs.digest != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-client.sarif
+          ref: ${{ github.ref }}
+          sha: ${{ env.SOURCE_SHA }}
+          category: trivy-client
+
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        if: steps.changes.outputs.changed == 'true'
+
+      - name: Sign images
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server@${{ steps.build-server.outputs.digest }}
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client@${{ steps.build-client.outputs.digest }}
+
+      - name: Notify Telegram that the build or scan blocked the deploy
+        if: failure()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          curl -fsS -o /dev/null "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_TO}" \
+            --data-urlencode "text=⛔ Image build or CVE scan failed, nothing deployed.
+          🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
   bump-manifest:
     needs: build-and-push
     if: ${{ needs.build-and-push.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -136,36 +230,40 @@ jobs:
 
       - name: Notify Telegram on success
         if: success()
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            🚀 Image k3s build successful.
-            🏷️ Tag: ${{ needs.build-and-push.outputs.tag }}
-            📦 ghcr.io/${{ env.OWNER }}/trellify-{server,client}
-            👀 ArgoCD will sync automatically
-            🔗 https://github.com/${{ github.repository }}/commit/${{ env.SOURCE_SHA }}
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          curl -fsS -o /dev/null "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_TO}" \
+            --data-urlencode "text=🚀 Image k3s build successful.
+          🏷️ Tag: ${{ needs.build-and-push.outputs.tag }}
+          📦 ghcr.io/${{ env.OWNER }}/trellify-{server,client}
+          👀 ArgoCD will sync automatically
+          🔗 https://github.com/${{ github.repository }}/commit/${{ env.SOURCE_SHA }}"
 
       - name: Notify Telegram on failure
         if: failure()
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            ❌ Build image k3s failed.
-            🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          curl -fsS -o /dev/null "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_TO}" \
+            --data-urlencode "text=❌ Build image k3s failed.
+          🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   notify-blocked:
     if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Notify Telegram that CI blocked the deploy
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            ⛔ CI failed on main, image not built or deployed.
-            🔗 ${{ github.event.workflow_run.html_url }}
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          curl -fsS -o /dev/null "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_TO}" \
+            --data-urlencode "text=⛔ CI failed on main, image not built or deployed.
+          🔗 ${{ github.event.workflow_run.html_url }}"

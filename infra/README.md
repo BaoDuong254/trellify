@@ -217,7 +217,10 @@ git push origin main
         ├─ skip if only infra/** or *.md changed since the pinned tag
         ├─ tag = sha-$(git rev-parse --short HEAD)      ← immutable, never reused
         ├─ build apps/server/Dockerfile  → ghcr.io/baoduong254/trellify-server:<tag>
-        └─ build apps/client/Dockerfile  → ghcr.io/baoduong254/trellify-client:<tag>
+        ├─ build apps/client/Dockerfile  → ghcr.io/baoduong254/trellify-client:<tag>
+        ├─ SBOM + provenance attestations attached by BuildKit
+        ├─ Trivy: a fixable CRITICAL CVE fails the job → no bump, nothing deployed
+        └─ cosign keyless signature on both digests
         │
         ▼
         │  job: bump-manifest
@@ -232,6 +235,8 @@ Three details worth knowing:
 
 - **`[skip ci]` is what stops the loop.** The bump commit lands on `main`, the same branch the build workflow watches. That marker keeps GitHub from starting a second run, which would build a new tag, which would commit again, forever.
 - **`latest` exists but is never what gets deployed.** The overlay always pins the `sha-<short>` tag, so whatever is running traces back to exactly one commit - and a rollback is a Git operation, not a registry operation.
+- **Manifests are validated before ArgoCD sees them.** `.github/workflows/infra.yml` runs on every change under `infra/**`: `kustomize build overlays/prod` and every plain manifest go through `kubeconform -strict`, with CRD schemas (SealedSecret, ServiceMonitor, PrometheusRule, Application) from the datreeio CRDs catalog. Helm `values.yaml` files are skipped because they are not Kubernetes objects.
+- **Images are signed and scanned, not verified in-cluster.** Admission-time verification (Kyverno, policy-controller) would cost the node RAM for little gain on a single-owner cluster. Check a deployed digest by hand: `cosign verify ghcr.io/baoduong254/trellify-server@<digest> --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp 'github.com/BaoDuong254/trellify'`. HIGH and CRITICAL findings, fixable or not, land in the repository's Security tab.
 - **The client is built with an empty `VITE_API_ENDPOINT`.** The client and API share one host, so the browser calls `/api/v1/...` on its own origin and the Ingress routes it. Nothing in the bundle hardcodes a backend URL.
 
 ## Alerting
@@ -260,6 +265,14 @@ Commit and sync that **before** syncing `values.yaml`, or Alertmanager crashloop
 
 > **Note**
 > `platform-observability` and `platform-observability-extras` have no `syncPolicy.automated`. Changes to the chart values, the dashboard or that SealedSecret need a manual Sync in the ArgoCD UI. Only `trellify-prod` reconciles on its own.
+
+**Deadman switch.** Every alert above travels through the cluster, so a dead node, a crashed Alertmanager or a cut uplink means silence rather than a page. kube-prometheus-stack's `Watchdog` alert is always firing; a dedicated route sends it every 5 minutes to a [healthchecks.io](https://healthchecks.io) check (period 5m, grace 10m, Telegram integration on the healthchecks side), which raises the alarm when the pings **stop**. The ping URL is a third key in the same secret, read through `url_file`, so it never appears in `values.yaml`:
+
+```bash
+kubectl create secret generic alertmanager-telegram   --namespace observability   --from-literal=healthchecks-url='https://hc-ping.com/<uuid>'   --dry-run=client -o yaml | kubeseal --format yaml     --controller-namespace sealed-secrets     --controller-name sealed-secrets-controller     --merge-into infra/observability/manifests/sealedsecret-alertmanager-telegram.yaml
+```
+
+Sync `platform-observability-extras` (the secret) before `platform-observability` (the route). If the key is missing, the config still loads but every Watchdog notification fails, and healthchecks.io reports the cluster as down, which is the safe direction to fail in.
 
 **Prove the notification path** with a synthetic alert. It travels the real route tree, so it exercises the matcher, the mounted secret and the message template - the parts most likely to be misconfigured - without touching the application:
 
@@ -392,6 +405,16 @@ kubectl -n trellify logs job/r2-restore -f
 ```bash
 mongorestore --archive=/backup/restore/trellify-<stamp>.gz --gzip --nsFrom='trellify.*' --nsTo='trellify_restore_test.*'
 ```
+
+**Restore drill.** `trellify-mongodb-restore-drill` does that rehearsal every Sunday at 22:00 UTC so nobody has to remember it. It picks the newest archive in R2 that is under 36h old (no such archive fails the drill, so it also catches a backup job that silently stopped), decrypts it into an `emptyDir`, restores it into a throwaway `mongod` on `127.0.0.1` inside the same pod, and fails if `users`, `boards`, `columns` or `cards` comes back empty. Production MongoDB is never touched. The decrypted copy never leaves the pod and is deleted with it. That is why the drill runs in the cluster rather than on a GitHub runner, which would need the crypt passphrase as a repository secret. It holds about 512Mi for a few minutes a week.
+
+```bash
+kubectl -n trellify create job --from=cronjob/trellify-mongodb-restore-drill drill-manual-1
+kubectl -n trellify logs job/drill-manual-1 -c fetch
+kubectl -n trellify logs job/drill-manual-1 -c verify -f
+```
+
+Two rules in the `trellify-backups` group watch both CronJobs by the time of their last **success**, not by failed Jobs, which stay listed under `failedJobsHistoryLimit` and would keep an alert firing after a later run recovered: `TrellifyBackupStale` (nothing since 26h) and `TrellifyRestoreDrillStale` (nothing since 8 days). Before a first success both rules fall back to the CronJob's creation time, so a drill that has never passed starts alerting 8 days after it was deployed. Run it once by hand after the first deploy.
 
 The sealed-secrets private key is **not** covered by this CronJob. Back it up by hand, and not into this same bucket under this same token - a single leaked credential should not hand over both the data and the key to everything else.
 

@@ -162,3 +162,41 @@ spec:
               reads are hitting the HDD. The cache is set to 0.5GB by --wiredTigerCacheSizeGB
               while the container is allowed 1536Mi, so there is headroom to raise it in
               mongodb/statefulset.yaml before considering anything larger.
+
+    - name: trellify-backups
+      interval: 5m
+      rules:
+        - alert: TrellifyBackupStale
+          expr: >-
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="trellify",cronjob="trellify-mongodb-backup"}) > 26 * 3600)
+            or
+            (time() - max(kube_cronjob_created{namespace="trellify",cronjob="trellify-mongodb-backup"}) > 26 * 3600
+              unless on() max(kube_cronjob_status_last_successful_time{namespace="trellify",cronjob="trellify-mongodb-backup"}))
+          for: 10m
+          labels:
+            severity: critical
+            service: trellify
+          annotations:
+            summary: No successful MongoDB backup in over 26 hours
+            description: >-
+              The daily trellify-mongodb-backup CronJob has not completed since yesterday, so the
+              newest off-site copy is getting older. Check
+              "kubectl -n trellify get jobs -l batch.kubernetes.io/cronjob-name=trellify-mongodb-backup"
+              and the dump and upload container logs. The R2 size guardrail is the usual cause.
+
+        - alert: TrellifyRestoreDrillStale
+          expr: >-
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="trellify",cronjob="trellify-mongodb-restore-drill"}) > 8 * 86400)
+            or
+            (time() - max(kube_cronjob_created{namespace="trellify",cronjob="trellify-mongodb-restore-drill"}) > 8 * 86400
+              unless on() max(kube_cronjob_status_last_successful_time{namespace="trellify",cronjob="trellify-mongodb-restore-drill"}))
+          for: 10m
+          labels:
+            severity: warning
+            service: trellify
+          annotations:
+            summary: The weekly restore drill has not passed in over 8 days
+            description: >-
+              Either no backup newer than 36h exists in R2, the archive could not be decrypted
+              or restored, or a core collection came back empty. The backups may not be usable.
+              Read "kubectl -n trellify logs job/<latest drill job> -c fetch" and "-c verify".

@@ -21,6 +21,7 @@ resources:
   - mongodb/statefulset.yaml
   - mongodb/services.yaml
   - mongodb/backup-cronjob.yaml
+  - mongodb/restore-drill-cronjob.yaml
 
 configMapGenerator:
   - name: trellify-server-config
