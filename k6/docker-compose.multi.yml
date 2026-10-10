@@ -27,7 +27,7 @@ x-server: &server
 
 services:
   mongo:
-    image: mongo:8.3
+    image: mongo:9.0
     restart: unless-stopped
     ports:
       - "27018:27017"
