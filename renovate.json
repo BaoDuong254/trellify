@@ -5,6 +5,15 @@
   "schedule": ["* 0-3 * * *"],
   "minimumReleaseAge": "3 days",
   "ignoreDeps": ["node", "typescript"],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* 0-3 * * 1"]
+  },
   "packageRules": [
     {
       "matchUpdateTypes": ["patch"],
