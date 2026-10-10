@@ -3,6 +3,7 @@ import express, { Router } from "express";
 import { userController } from "src/controllers/user.controller";
 import { authMiddleware } from "src/middlewares/auth.middleware";
 import { multerMiddleware } from "src/middlewares/multer.middleware";
+import { rateLimitMiddleware } from "src/middlewares/rate-limit.middleware";
 import { turnstileMiddleware } from "src/middlewares/turnstile.middleware";
 import { userValidation } from "src/validations/user.validation";
 
@@ -28,6 +29,7 @@ router
   .route("/update")
   .put(
     authMiddleware.isAuthorized,
+    rateLimitMiddleware.write,
     multerMiddleware.upload.single("avatar"),
     userValidation.update,
     userController.update

@@ -57,6 +57,10 @@ RUN --mount=type=secret,id=sentry_auth_token \
 # Production stage
 FROM nginxinc/nginx-unprivileged:alpine
 
+USER root
+RUN apk upgrade --no-cache
+USER 101
+
 # Copy custom nginx configuration (default.conf includes security-headers.conf)
 COPY apps/client/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY apps/client/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
