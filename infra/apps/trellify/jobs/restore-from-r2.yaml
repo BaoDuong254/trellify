@@ -1,0 +1,109 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-restore-r2
+  namespace: trellify
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels:
+        job: mongo-restore-r2
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+      initContainers:
+        - name: fetch
+          image: rclone/rclone:1.75
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              FILE="$ARCHIVE"
+              if [ -z "$FILE" ]; then
+                FILE=$(rclone lsf offsite: --files-only | grep '^trellify-.*\.gz$' | sort | tail -n1) || true
+              fi
+              if [ -z "$FILE" ]; then
+                echo "ABORT: no archive found in offsite:"
+                exit 1
+              fi
+              echo "Restoring from $FILE"
+              rclone copy "offsite:$FILE" /restore --stats-one-line --stats 0
+              echo "$FILE" > /restore/.latest
+              ls -lh "/restore/$FILE"
+          env:
+            - name: ARCHIVE
+              value: ""
+            - name: HOME
+              value: /tmp
+            - name: XDG_CACHE_HOME
+              value: /tmp
+            - name: RCLONE_CONFIG
+              value: /dev/null
+            - name: RCLONE_CONFIG_R2_TYPE
+              value: s3
+            - name: RCLONE_CONFIG_R2_PROVIDER
+              value: Cloudflare
+            - name: RCLONE_CONFIG_R2_REGION
+              value: auto
+            - name: RCLONE_CONFIG_R2_NO_CHECK_BUCKET
+              value: "true"
+            - name: RCLONE_CONFIG_OFFSITE_TYPE
+              value: crypt
+            - name: RCLONE_CONFIG_OFFSITE_REMOTE
+              value: "r2:trellify-k3s-backups/mongodb"
+            - name: RCLONE_CONFIG_OFFSITE_FILENAME_ENCRYPTION
+              value: "off"
+            - name: RCLONE_CONFIG_OFFSITE_DIRECTORY_NAME_ENCRYPTION
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: trellify-r2-backup
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 256Mi }
+          volumeMounts:
+            - { name: restore, mountPath: /restore }
+            - { name: tmp, mountPath: /tmp }
+      containers:
+        - name: restore
+          image: mongo:8.0
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              FILE=$(cat /restore/.latest)
+              mongorestore --uri="$MONGODB_URI" --archive="/restore/$FILE" --gzip --nsInclude='trellify.*' --drop
+              mongosh "$MONGODB_URI" --quiet --eval '
+                const d = db.getSiblingDB("trellify");
+                const counts = Object.fromEntries(
+                  ["users", "boards", "columns", "cards"].map((name) => [name, d.getCollection(name).countDocuments()])
+                );
+                printjson(counts);
+                if (Object.values(counts).some((count) => count === 0)) quit(1);
+              '
+              echo "OK: $FILE restored. Now clear the bloom filters and restart server + worker."
+          env:
+            - name: MONGO_USERNAME
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: username } }
+            - name: MONGO_PASSWORD
+              valueFrom: { secretKeyRef: { name: trellify-mongodb-auth, key: password } }
+            - name: MONGODB_URI
+              value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@trellify-mongodb:27017/?authSource=admin&directConnection=true"
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { memory: 1Gi }
+          volumeMounts:
+            - { name: restore, mountPath: /restore, readOnly: true }
+      volumes:
+        - name: restore
+          emptyDir:
+            sizeLimit: 5Gi
+        - name: tmp
+          emptyDir: {}

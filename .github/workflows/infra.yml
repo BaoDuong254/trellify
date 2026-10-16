@@ -26,6 +26,7 @@ concurrency:
 env:
   KUSTOMIZE_VERSION: v5.8.1
   KUBECONFORM_VERSION: v0.8.0
+  TERRAFORM_VERSION: 1.16.6
 
 jobs:
   validate:
@@ -43,6 +44,30 @@ jobs:
         run: |
           set -o pipefail
           KC="kubeconform -strict -summary -output text -kubernetes-version 1.34.0 -schema-location default -schema-location https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
-          kustomize build infra/trellify/overlays/prod | $KC -
-          find infra/argocd infra/cloudflared infra/observability/manifests infra/storage infra/trellify/jobs \
-            -name '*.yaml' ! -name 'values.yaml' -print0 | xargs -0 $KC
+          for dir in $(find infra -name kustomization.yaml -not -path '*/.terraform/*' -exec dirname {} \; | sort); do
+            echo "::group::$dir"
+            kustomize build "$dir" | $KC -
+            echo "::endgroup::"
+          done
+          $KC infra/clusters/homelab/bootstrap/*.yaml infra/apps/trellify/jobs/*.yaml
+
+  terraform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        stack: [bootstrap, cloudflare, cluster]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Format
+        run: terraform -chdir=infra/clusters/aws/terraform/${{ matrix.stack }} fmt -check -diff
+
+      - name: Validate
+        run: |
+          terraform -chdir=infra/clusters/aws/terraform/${{ matrix.stack }} init -backend=false -input=false
+          terraform -chdir=infra/clusters/aws/terraform/${{ matrix.stack }} validate

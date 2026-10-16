@@ -254,11 +254,11 @@ Production runs on a self-hosted **k3s** cluster and is deployed by **GitOps** �
 
 **2. Tag** — each image gets the immutable tag `sha-<short-commit>` alongside `latest`. Only the `sha-` tag is ever deployed, so whatever is running traces back to exactly one commit.
 
-**3. Bump** — the `bump-manifest` job runs `kustomize edit set image` against `infra/trellify/overlays/prod` and commits the result as `chore(deploy): trellify -> sha-xxxxxxx [skip ci]`. The `[skip ci]` marker is what stops the workflow from re-triggering itself.
+**3. Bump** — the `bump-manifest` job runs `kustomize edit set image` against `infra/apps/trellify/overlays/prod` and commits the result as `chore(deploy): trellify -> sha-xxxxxxx [skip ci]`. The `[skip ci]` marker is what stops the workflow from re-triggering itself.
 
 **4. Sync** — ArgoCD sees the new commit and rolls the Deployments forward. CI runs in parallel with the build rather than gating it; the Docker build itself runs `pnpm apps:build`, so code that does not compile never produces an image.
 
-See [`infra/README.md`](infra/README.md) for the full infrastructure reference — cluster bootstrap, ArgoCD project layout, SealedSecrets, and the operations runbook.
+See [`infra/README.md`](infra/README.md) for the infrastructure reference — architecture, ArgoCD project layout, SealedSecrets, backups and the AWS failover.
 
 ### Cluster topology
 
@@ -284,7 +284,7 @@ All three public paths share one host: `/` goes to the client, `/api` to the ser
 | `SONAR_TOKEN`                   | SonarCloud scan in the CI workflow              |
 
 > **Important**
-> Runtime configuration for the cluster does **not** come from these secrets — it comes from `infra/trellify/base/config-server.env` and the SealedSecrets in `infra/trellify/overlays/prod/`. When you add a new environment variable, update those as well, or the pod fails Zod validation at startup and never becomes ready.
+> Runtime configuration for the cluster does **not** come from these secrets — it comes from `infra/apps/trellify/base/config-server.env` and the SealedSecrets in `infra/apps/trellify/overlays/prod/`. When you add a new environment variable, update those as well, or the pod fails Zod validation at startup and never becomes ready.
 
 ### Legacy: Docker Compose deployment
 

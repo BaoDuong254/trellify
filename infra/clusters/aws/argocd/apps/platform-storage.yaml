@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-storage
+  namespace: argocd
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/BaoDuong254/trellify.git
+    targetRevision: main
+    path: infra/clusters/aws/storage
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true

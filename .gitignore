@@ -114,3 +114,12 @@ k6/results/*
 
 # Rollup-plugin-visualizer
 stats.html
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+crash.log

@@ -1,0 +1,51 @@
+variable "region" {
+  type    = string
+  default = "ap-southeast-1"
+}
+
+variable "state_bucket" {
+  description = "Output state_bucket of infra/clusters/aws/terraform/bootstrap; the Cloudflare stack's state is read from it"
+  type        = string
+}
+
+variable "cluster_name" {
+  type    = string
+  default = "trellify-dr"
+}
+
+variable "kubernetes_version" {
+  type    = string
+  default = "1.36"
+}
+
+variable "vpc_cidr" {
+  description = "Must match proxy-real-ip-cidr in infra/clusters/aws/ingress-nginx/values.yaml"
+  type        = string
+  default     = "10.60.0.0/16"
+}
+
+variable "node_instance_types" {
+  type    = list(string)
+  default = ["m7i.large"]
+}
+
+variable "node_count" {
+  type    = number
+  default = 3
+}
+
+variable "endpoint_public_access_cidrs" {
+  description = "Who may reach the EKS API. IAM still gates every call; narrow this to your own IP when it is stable."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
+variable "git_repo_url" {
+  type    = string
+  default = "https://github.com/BaoDuong254/trellify.git"
+}
+
+variable "git_revision" {
+  type    = string
+  default = "main"
+}

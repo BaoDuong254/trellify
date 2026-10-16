@@ -48,7 +48,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          deployed=$(git show origin/main:infra/trellify/overlays/prod/kustomization.yaml | sed -n 's/^ *newTag: sha-//p' | head -n1)
+          deployed=$(git show origin/main:infra/apps/trellify/overlays/prod/kustomization.yaml | sed -n 's/^ *newTag: sha-//p' | head -n1)
           if [ -z "$deployed" ] || ! git cat-file -e "$deployed^{commit}" 2>/dev/null; then
             echo "Deployed commit unknown, building."
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -211,7 +211,7 @@ jobs:
           kustomize version
 
       - name: Pin new image tags
-        working-directory: infra/trellify/overlays/prod
+        working-directory: infra/apps/trellify/overlays/prod
         run: |
           kustomize edit set image \
             ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ needs.build-and-push.outputs.tag }} \

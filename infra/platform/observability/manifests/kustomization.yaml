@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap-dashboard-mongodb.yaml
+  - configmap-dashboard-trellify.yaml
+  - ingress-grafana.yaml
+  - sealedsecret-alertmanager-telegram.yaml
+  - sealedsecret-grafana.yaml

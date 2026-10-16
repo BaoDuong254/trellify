@@ -1,0 +1,6 @@
+controller:
+  service:
+    type: LoadBalancer
+
+  config:
+    proxy-real-ip-cidr: "10.42.0.0/16"

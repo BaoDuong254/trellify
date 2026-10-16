@@ -1,0 +1,1 @@
+state_bucket = "<terraform -chdir=infra/clusters/aws/terraform/bootstrap output -raw state_bucket>"
