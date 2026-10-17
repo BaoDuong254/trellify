@@ -48,6 +48,9 @@ provider "kubernetes" {
 }
 
 provider "helm" {
+  repository_config_path = "${path.module}/.terraform/helm/repositories.yaml"
+  repository_cache       = "${path.module}/.terraform/helm/cache"
+
   kubernetes = {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)

@@ -34,6 +34,16 @@ variable "node_count" {
   default = 3
 }
 
+variable "cluster_admin_arns" {
+  description = "IAM principals with cluster-admin on EKS, independent of who runs terraform. Use the IAM role ARN of the SSO permission set (arn:aws:iam::<account>:role/aws-reserved/sso.amazonaws.com/<region>/AWSReservedSSO_...), not the assumed-role session ARN. The identity running terraform must be in this list."
+  type        = list(string)
+
+  validation {
+    condition     = length(var.cluster_admin_arns) > 0 && alltrue([for arn in var.cluster_admin_arns : can(regex("^arn:aws:iam::[0-9]{12}:(role|user)/", arn))])
+    error_message = "cluster_admin_arns needs at least one IAM role or user ARN (arn:aws:iam::...:role/... or :user/...), not an sts assumed-role ARN."
+  }
+}
+
 variable "endpoint_public_access_cidrs" {
   description = "Who may reach the EKS API. IAM still gates every call; narrow this to your own IP when it is stable."
   type        = list(string)

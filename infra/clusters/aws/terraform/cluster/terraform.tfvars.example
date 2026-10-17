@@ -1,1 +1,5 @@
 state_bucket = "<terraform -chdir=infra/clusters/aws/terraform/bootstrap output -raw state_bucket>"
+
+cluster_admin_arns = [
+  "<MSYS_NO_PATHCONV=1 aws iam list-roles --path-prefix /aws-reserved/sso.amazonaws.com/ --query 'Roles[].Arn' --output text>",
+]

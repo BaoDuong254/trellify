@@ -16,7 +16,16 @@ terraform {
   }
 }
 
-provider "cloudflare" {}
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
+variable "cloudflare_api_token" {
+  description = "Tunnel:Edit + DNS:Edit token. Falls back to the CLOUDFLARE_API_TOKEN environment variable when null."
+  type        = string
+  sensitive   = true
+  default     = null
+}
 
 variable "account_id" {
   type = string

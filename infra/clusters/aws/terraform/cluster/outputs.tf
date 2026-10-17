@@ -3,7 +3,7 @@ output "cluster_name" {
 }
 
 output "kubeconfig_command" {
-  value = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name} --alias trellify-aws"
+  value = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name} --alias trellify-aws --profile trellify"
 }
 
 output "vpc_cidr" {

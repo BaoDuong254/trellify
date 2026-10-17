@@ -1,5 +1,6 @@
-account_id = "<cloudflare account id>"
-zone_id    = "<duonggiabao.com zone id>"
+cloudflare_api_token = "<cloudflare account token>"
+account_id           = "<cloudflare account id>"
+zone_id              = "<duonggiabao.com zone id>"
 
 tunnel_records = {
   "trellify.duonggiabao.com" = "<record id>"
