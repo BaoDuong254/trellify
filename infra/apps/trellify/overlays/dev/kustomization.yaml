@@ -1,0 +1,141 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: trellify
+
+resources:
+  - ../../base
+
+replicas:
+  - name: trellify-server
+    count: 1
+  - name: trellify-client
+    count: 1
+
+configMapGenerator:
+  - name: trellify-server-config
+    behavior: merge
+    literals:
+      - NODE_ENV=development
+      - CLIENT_URL=http://localhost
+
+secretGenerator:
+  - name: trellify-redis-auth
+    literals:
+      - password=dev-password
+  - name: trellify-mongodb-auth
+    literals:
+      - root-username=root
+      - root-password=dev-password
+      - username=app
+      - password=dev-password
+
+patches:
+  - target:
+      kind: HorizontalPodAutoscaler
+    patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: unused
+  - target:
+      kind: PodDisruptionBudget
+    patch: |-
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: unused
+  - target:
+      kind: ServiceMonitor
+    patch: |-
+      $patch: delete
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: unused
+  - target:
+      kind: PrometheusRule
+    patch: |-
+      $patch: delete
+      apiVersion: monitoring.coreos.com/v1
+      kind: PrometheusRule
+      metadata:
+        name: unused
+  - target:
+      kind: CronJob
+    patch: |-
+      $patch: delete
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: unused
+  - target:
+      kind: PersistentVolumeClaim
+      name: trellify-mongodb-backups
+    patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: unused
+  - target:
+      kind: StatefulSet
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: standard
+  - target:
+      kind: Ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: localhost
+  - target:
+      kind: Ingress
+      name: trellify-web
+    patch: |-
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: trellify-web
+        annotations:
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  - target:
+      kind: Deployment
+      name: trellify-server
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 100m, memory: 256Mi }
+          limits: { memory: 1Gi }
+  - target:
+      kind: Deployment
+      name: trellify-worker
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/command
+        value: ["node_modules/.bin/tsx", "watch", "src/worker.ts"]
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 50m, memory: 256Mi }
+          limits: { memory: 768Mi }
+  - target:
+      kind: Deployment
+      name: trellify-client
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 50m, memory: 256Mi }
+          limits: { memory: 1Gi }
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/path
+        value: /
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/path
+        value: /

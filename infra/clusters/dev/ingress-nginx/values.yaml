@@ -1,0 +1,16 @@
+controller:
+  hostPort:
+    enabled: true
+
+  service:
+    type: NodePort
+
+  nodeSelector:
+    ingress-ready: "true"
+
+  config:
+    worker-processes: "2"
+
+  metrics:
+    serviceMonitor:
+      enabled: false

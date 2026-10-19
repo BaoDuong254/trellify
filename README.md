@@ -17,6 +17,7 @@ A full-stack project management platform with real-time collaboration, drag-and-
     - [4. Environment Configuration](#4-environment-configuration)
   - [🏃‍♂️ Running the Project](#️-running-the-project)
     - [Development mode](#development-mode)
+    - [Dev cluster (kind + Tilt)](#dev-cluster-kind--tilt)
     - [Production build](#production-build)
   - [🚀 Deployment](#-deployment)
     - [Cluster topology](#cluster-topology)
@@ -230,6 +231,22 @@ pnpm be start:debug
 
 > **Note**
 > The worker is a separate process from the API server (`apps/server/src/worker.ts`). If you start only `pnpm be start:dev`, the API still enqueues jobs but nothing consumes them - queued work such as unverified-account cleanup will silently never run.
+
+### Dev cluster (kind + Tilt)
+
+To run the same Kubernetes manifests production uses - `infra/apps/trellify/base` through the `overlays/dev` overlay, with in-cluster MongoDB, Redis and ingress-nginx - use [kind](https://kind.sigs.k8s.io/) and [Tilt](https://tilt.dev/). Requires Docker, `kind`, `kubectl`, `helm` and `tilt` on PATH.
+
+```bash
+kind create cluster --config infra/clusters/dev/kind.yaml   # once; context kind-trellify, binds host ports 80/443
+tilt up                                                     # open http://localhost
+tilt up -- --server-replicas=3                              # or `tilt args -- --server-replicas=3` while running
+tilt down
+kind delete cluster --name trellify                         # drops the Mongo/Redis volumes too
+```
+
+The images build from the `dev` stage of each Dockerfile: the server and worker run `tsx watch`, the client runs the Vite dev server, and Tilt syncs `src/` (plus `packages/shared/src`) into the running pods, so an edit restarts or hot-reloads without an image rebuild. Changing `package.json`, the lockfile or a Dockerfile triggers a full rebuild. Brevo, Cloudinary and the JWT secrets are read from `apps/server/.env`; MongoDB and Redis always point at the in-cluster pods, and Turnstile uses Cloudflare's always-pass test keys. MongoDB is forwarded to `localhost:27020` and Redis to `localhost:6382`. The Tiltfile refuses to run against any context other than `kind-trellify`.
+
+The API server runs one replica by default. Production runs 3-6 behind an `/api` Ingress with no session affinity, so a bug that only shows across pods - a broadcast gated on process-local adapter state, a Redis adapter regression - never shows up with one. Pass `--server-replicas=3` before testing anything realtime.
 
 ### Production build
 

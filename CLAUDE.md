@@ -39,6 +39,16 @@ pnpm start:prod
 pnpm cz
 ```
 
+### Dev cluster (kind + Tilt)
+
+```bash
+kind create cluster --config infra/clusters/dev/kind.yaml   # once; context kind-trellify
+tilt up                                                     # http://localhost
+tilt up -- --server-replicas=3                              # multi-pod, like prod; `tilt args` changes it live
+```
+
+The root `Tiltfile` installs ingress-nginx (same chart and platform values as ArgoCD, plus `infra/clusters/dev/ingress-nginx/values.yaml`), applies `infra/apps/trellify/overlays/dev`, and builds both images from the `dev` stage of each Dockerfile, which sits **between** `builder` and the production stage so the default (last) target stays production. `live_update` syncs `src/` and `packages/shared/src` into `tsx watch` / Vite. The overlay deletes what needs CRDs or R2 (ServiceMonitor, PrometheusRule, backup CronJobs) plus the HPA/PDB, and generates fixed dev Mongo/Redis secrets; `trellify-server-secrets` comes from the Tiltfile, which reads Brevo/Cloudinary/JWT from `apps/server/.env`. The server dev stage creates an empty `.env` because `src/config/environment.ts` throws when `NODE_ENV` is not production and the file is missing. The Tiltfile fails on any context other than `kind-trellify`.
+
 ### Tests
 
 ```bash

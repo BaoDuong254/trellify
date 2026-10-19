@@ -43,6 +43,14 @@ WORKDIR /workspace/apps/server
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm run apps:build
 
+# Dev stage for Tilt: live_update syncs src/ into the running pod
+FROM builder AS dev
+ENV NODE_OPTIONS=""
+RUN touch .env && chown -R node:node /workspace/apps/server /workspace/packages/shared
+USER node
+EXPOSE 3000
+CMD ["node_modules/.bin/tsx", "watch", "src/index.ts"]
+
 # Production stage
 FROM node:24.21.0-alpine
 

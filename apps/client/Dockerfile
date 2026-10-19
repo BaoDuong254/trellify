@@ -54,6 +54,14 @@ RUN --mount=type=secret,id=sentry_auth_token \
     SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
     pnpm run apps:build
 
+# Dev stage for Tilt: Vite dev server, live_update syncs src/ into the running pod
+FROM builder AS dev
+ENV NODE_OPTIONS=""
+RUN chown -R 101:101 /workspace/apps/client /workspace/packages/shared
+USER 101
+EXPOSE 8080
+CMD ["node_modules/.bin/vite", "--host", "0.0.0.0", "--port", "8080", "--strictPort"]
+
 # Production stage
 FROM nginxinc/nginx-unprivileged:alpine
 

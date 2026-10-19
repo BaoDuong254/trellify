@@ -65,7 +65,7 @@ infra/
 │   ├── sealed-secrets/    Helm values
 │   └── observability/     kube-prometheus-stack values + manifests/ (dashboards, Grafana Ingress, secrets)
 ├── apps/                  WHAT the workloads are. Cluster-agnostic
-│   └── trellify/          base/ + overlays/prod/ (secrets, image tags) + jobs/ (one-off, applied by hand)
+│   └── trellify/          base/ + overlays/prod/ (secrets, image tags) + overlays/dev/ (kind + Tilt) + jobs/ (one-off, applied by hand)
 └── clusters/              WHERE things run. Only what differs per cluster
     ├── homelab/           k3s on Proxmox - production
     │   ├── bootstrap/     root-app.yaml, applied once by hand
@@ -73,6 +73,9 @@ infra/
     │   ├── cloudflared/   locally managed tunnel: config file + credentials SealedSecret
     │   ├── ingress-nginx/ LoadBalancer (klipper) + k3s pod CIDR
     │   └── storage/       local-path-retain → rancher.io/local-path
+    ├── dev/               local kind cluster driven by the root Tiltfile - not managed by ArgoCD
+    │   ├── kind.yaml      single node, host ports 80/443, ingress-ready label
+    │   └── ingress-nginx/ hostPort + NodePort, no ServiceMonitor
     └── aws/               EKS failover - see AWS Failover
         ├── terraform/     bootstrap/ (state bucket), cloudflare/ (tunnel + DNS switch), cluster/ (EKS)
         ├── argocd/        kustomization.yaml = platform/argocd/manifests + apps/*.yaml (root created by Terraform)
