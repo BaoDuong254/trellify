@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.21.0"
+          node-version: "24.22.1"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
@@ -98,7 +98,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
@@ -107,7 +107,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.21.0"
+          node-version: "24.22.1"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6

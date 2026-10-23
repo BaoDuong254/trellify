@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - configmap-dashboard-k6.yaml
   - configmap-dashboard-mongodb.yaml
   - configmap-dashboard-trellify.yaml
   - ingress-grafana.yaml

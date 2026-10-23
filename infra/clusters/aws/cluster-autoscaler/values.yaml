@@ -1,0 +1,27 @@
+cloudProvider: aws
+awsRegion: ap-southeast-1
+
+autoDiscovery:
+  clusterName: trellify-dr
+
+image:
+  tag: v1.36.1
+
+rbac:
+  serviceAccount:
+    create: true
+    name: cluster-autoscaler
+
+extraArgs:
+  logtostderr: true
+  v: 2
+  expander: least-waste
+  balance-similar-node-groups: true
+  scale-down-unneeded-time: 10m
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi

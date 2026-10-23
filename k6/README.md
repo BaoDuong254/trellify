@@ -1,10 +1,10 @@
 # k6 performance testing
 
-Load tests for the Trellify REST API, run against an isolated docker-compose stack built from the production Dockerfile with its own MongoDB and Redis. Nothing here touches real data.
+Load tests for the Trellify REST API. Locally they run against the kind dev cluster in loadtest mode: the production server image, deployed from the same manifests as prod (ingress-nginx, its rate limit, Redis with RedisBloom, the pod resource limits), with its own MongoDB and Redis. Nothing here touches real data. `--aws` runs the same scenarios from a pod inside a throwaway EKS cluster - see [AWS](#aws).
 
 ## Prerequisites
 
-- Docker Desktop running
+- Docker Desktop running, plus `kind`, `tilt` and `kubectl` (see the dev cluster section of the root `CLAUDE.md`)
 - k6 on your PATH:
 
 ```powershell
@@ -17,30 +17,28 @@ If `k6 version` fails right after installing, open a new terminal — an existin
 ## Quick start
 
 ```powershell
-pnpm loadtest:up      # build the production image, start server/worker/mongo/redis
+kind create cluster --config infra/clusters/dev/kind.yaml   # once
+tilt up -- --loadtest # production server image, overlays/loadtest; wait until every resource is green
 pnpm loadtest:seed    # create users/boards/cards, mint JWTs into k6/data/users.json
 pnpm k6 smoke         # gate: 1 VU through every flow, all checks must pass
 pnpm k6 mixed load    # the main run
-pnpm loadtest:down    # remove containers and volumes
+tilt down
 ```
 
 `pnpm k6 smoke` is a gate. If it fails, stop — the payloads or the auth setup are wrong, and every later number is meaningless.
 
-`loadtest:down` removes the volumes too, so re-seed after it. Otherwise `users.json` points at documents that no longer exist and every request returns 403 or 404.
+`tilt down` keeps the MongoDB and Redis PVCs. Loadtest mode signs tokens with the JWT secrets from `loadtest.env`, so seed again after switching modes or recreating the cluster.
 
 ## Scripts
 
-| Script                                  | What it does                                          | Typical duration    |
-| --------------------------------------- | ----------------------------------------------------- | ------------------- |
-| `loadtest:up`                           | Build and start the single-replica stack              | 2-10 min first time |
-| `loadtest:up:multi`                     | Same, but 3 server replicas behind nginx              | 2-10 min first time |
-| `loadtest:down` / `loadtest:down:multi` | Stop and delete containers plus volumes               | seconds             |
-| `loadtest:seed`                         | Seed users, boards, cards; write `k6/data/users.json` | ~90s at defaults    |
-| `loadtest:clean`                        | Delete every `k6-` prefixed document, no re-seed      | seconds             |
-| `k6`                                    | Run any scenario against any profile                  | 10s to 30 min       |
-| `k6:peak-rps`                           | Peak RPS from a time-series output file               | seconds             |
-| `k6:watch`                              | Sample server CPU and event loop during a run         | seconds             |
-| `k6:traffic-mix`                        | Derive the real traffic mix from Prometheus           | seconds             |
+| Script           | What it does                                          | Typical duration |
+| ---------------- | ----------------------------------------------------- | ---------------- |
+| `loadtest:seed`  | Seed users, boards, cards; write `k6/data/users.json` | ~90s at defaults |
+| `loadtest:clean` | Delete every `k6-` prefixed document, no re-seed      | seconds          |
+| `k6`             | Run any scenario against any profile                  | 10s to 30 min    |
+| `k6:peak-rps`    | Peak RPS from a time-series output file               | seconds          |
+| `k6:watch`       | Sample server CPU and event loop during a run         | seconds          |
+| `k6:traffic-mix` | Derive the real traffic mix from Prometheus           | seconds          |
 
 ## Running a test
 
@@ -53,7 +51,8 @@ pnpm k6 mixed load             # scenario and profile
 pnpm k6 board-read stress
 pnpm k6 mixed load --prom      # push to Prometheus using k6/prometheus.env
 pnpm k6 mixed load --ts        # also write a time-series file, see Peak RPS
-pnpm k6 mixed capacity --watch # also sample server CPU and event loop, see Capacity
+pnpm k6 mixed capacity --watch # also sample pod CPU and event loop, see Capacity
+pnpm k6 mixed load --aws       # run inside the EKS cluster, see AWS
 pnpm k6 mixed load -e VUS=100  # any other flag goes straight to k6
 pnpm k6 --help
 ```
@@ -141,9 +140,9 @@ Read the result from the ladder table the summary prints:
 
 One thing to know before reading a `--ts` file by hand: the `step` tag is attached when a request is **issued**, but its sample is timestamped when the request **completes**. Near the knee that gap is over a second, so a rung's samples appear in the time series slightly later than the rung's own window. That is deliberate — it is what keeps a rung's numbers free of traffic from the ramp below it.
 
-### Which container broke: `--watch`
+### Which pod broke: `--watch`
 
-The ladder measures the server from the outside, so it can say a rung was slow but not why. Add `--watch` and the run also samples `docker stats` and each replica's `/metrics`, then reports both tables against the same rungs:
+The ladder measures the server from the outside, so it can say a rung was slow but not why. Add `--watch` and the run also samples pod CPU from the kubelet (`kubectl get --raw /api/v1/nodes/<node>/proxy/stats/summary`, so no metrics-server is needed) and each server pod's `/metrics` through one `kubectl port-forward` per pod, then reports both tables against the same rungs. It uses the current kubectl context, so it works on kind and on the AWS cluster alike:
 
 ```powershell
 pnpm k6 mixed capacity --watch
@@ -157,14 +156,16 @@ pnpm k6 mixed capacity --watch
   s8      71-77s           329.9     93.9      3.3    112.7ms      69.9
 
   Worst event loop lag was 112.7ms at s8, with server CPU 330% and mongo CPU 94%.
-  The event loop was blocked while Mongo stayed cheap: the bottleneck is inside Node, not the database.
+  From s6 on, each of the 3 server replicas averaged 113% CPU - a full core for a single-threaded Node process, so the server tier is CPU-bound and requests queue for the event loop. More replicas, more CPU per replica, or less work per request raises the ceiling; tuning Mongo does not.
 ```
 
 `server%` sums every replica, so 300% means three saturated cores; `loop p99` and `heap MB` are the worst replica in that window. Read it next to the ladder table — in the run above the server tier flattens at about 330% from s6 onward while Mongo falls away, which is what "Node is the ceiling" looks like.
 
+The verdict checks, in order: Mongo using more CPU than the whole server tier (database first); any rung where `server%` divided by the number of reachable replicas reaches 85% (each Node process is single-threaded, so that is a saturated tier even when event loop lag stays under 100ms — a busy loop, not a blocked one); event loop lag above 100ms (something is blocking it, such as `bcryptjs.compareSync`); otherwise the time went to waiting. The replica count comes from how many `/metrics` endpoints answered, so a pod the HPA adds mid-run is not counted.
+
 Rung windows come from `k6 inspect` on the same script and the same `-e` flags, so they stay correct when `LADDER_SCALE` or `RATE` changes the shape.
 
-Two caveats. The watcher samples every 3 seconds because `docker stats --no-stream` costs about two seconds a call, and it runs on the same machine as k6 and the stack, so it takes CPU away from the thing it is measuring — treat a `--watch` run as diagnosis, not as the run you quote numbers from. And nothing here reads MongoDB's own metrics; `mongo%` is container CPU, which is enough to rule Mongo in or out but not to explain a slow query.
+A local `--watch` competes with k6 and the cluster for CPU, so treat it as diagnosis. Server pods are listed once at start, so pods the HPA adds mid-run are missing. `mongo%` is pod CPU, not MongoDB's own metrics.
 
 Run it standalone against a test you start yourself with `pnpm k6:watch --out k6/results/manual-server.ndjson`, stop it with Ctrl+C, or re-read a finished file with `pnpm k6:watch --report <file>`.
 
@@ -174,7 +175,7 @@ Run it standalone against a test you start yourself with `pnpm k6:watch --out k6
 
 | Variable                      | Default                      | Purpose                                                                                                                                                                                                                                                                                               |
 | ----------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BASE_URL`                    | `http://localhost:3000`      | API root                                                                                                                                                                                                                                                                                              |
+| `BASE_URL`                    | `http://localhost`           | API root                                                                                                                                                                                                                                                                                              |
 | `PROFILE`                     | `load`                       | Profile name from the table above                                                                                                                                                                                                                                                                     |
 | `VUS`                         | per profile                  | Override peak VUs for closed-model profiles                                                                                                                                                                                                                                                           |
 | `RATE`                        | per profile                  | Override peak iterations/s for `capacity`. Scales the rung targets, never the durations                                                                                                                                                                                                               |
@@ -188,12 +189,13 @@ Run it standalone against a test you start yourself with `pnpm k6:watch --out k6
 | `RUN_NAME`                    | derived by `pnpm k6`         | Base name of the summary files; the runner sets it, override only to name a run yourself                                                                                                                                                                                                              |
 | `VERBOSE`                     | unset                        | Print response bodies for failed checks                                                                                                                                                                                                                                                               |
 | `TURNSTILE_TOKEN`             | `loadtest`                   | Dummy token sent to the login endpoint; the stack runs the Cloudflare test secret so any value passes                                                                                                                                                                                                 |
-| `LOADTEST_PORT`               | `3000`                       | Host port the stack publishes                                                                                                                                                                                                                                                                         |
+| `SKIP_AUTH`                   | unset                        | `1` drops the auth flow from `smoke` and `mixed`. `--aws` sets it, because the cluster runs the real Turnstile secret                                                                                                                                                                                 |
 | `SOCKET_VIEWERS`              | `25`                         | Socket.io connections held open by `socket-fanout`                                                                                                                                                                                                                                                    |
 | `SOCKET_BOARDS`               | `5`                          | Boards viewers and writers converge on                                                                                                                                                                                                                                                                |
 | `SOCKET_WRITERS`              | `12`                         | Writing VUs during `socket-fanout`                                                                                                                                                                                                                                                                    |
 | `SOCKET_HOLD`                 | `300`                        | Seconds to hold connections                                                                                                                                                                                                                                                                           |
 | `SEED_USERS`                  | `50`                         | Users to seed                                                                                                                                                                                                                                                                                         |
+| `SEED_CONCURRENCY`            | `10`                         | Users seeded in parallel; columns and cards inside a board are created in parallel too                                                                                                                                                                                                                |
 | `WRITE_RATE_LIMIT_PER_MINUTE` | `10000000` in `loadtest.env` | Deliberately far above the production ceiling of 300. The limiter keys on the user id and the stack seeds only 50 users, so production values throttle every profile above `smoke`. Raised rather than switched off, so the middleware still runs and its Redis `INCR` stays inside the measured path |
 | `SEED_BOARDS_PER_USER`        | `15`                         | Small boards per user; needs to exceed 12 for pagination to engage                                                                                                                                                                                                                                    |
 | `SEED_MEDIUM_BOARDS`          | `5`                          | Shared medium boards                                                                                                                                                                                                                                                                                  |
@@ -209,13 +211,18 @@ $env:SEED_USERS = "10"; pnpm loadtest:seed
 
 ## Configuration files
 
-| File                       | Used by                                    | Contents                                                                                                                                                                                                        |
-| -------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `loadtest.env`             | both compose stacks, `loadtest:seed`       | Server configuration for the isolated stack. Every value is fake and safe to commit. Sets the Cloudflare test Turnstile key so k6 can send a dummy token.                                                       |
-| `prometheus.env`           | `pnpm k6 --prom`                           | Remote write endpoint, trend stats, push interval, stale markers. `K6_PROMETHEUS_RW_TREND_STATS` decides which `k6_http_req_duration_*` series exist, so it has to cover every stat a dashboard panel asks for. |
-| `nginx/loadtest.conf`      | `loadtest:up:multi`                        | Load balancer in front of the 3 replicas                                                                                                                                                                        |
-| `docker-compose.yml`       | `loadtest:up`, `loadtest:down`             | Single-replica stack: server, worker, MongoDB, Redis. Paths inside resolve from `k6/`, so the image builds with `context: ..` (repo root).                                                                      |
-| `docker-compose.multi.yml` | `loadtest:up:multi`, `loadtest:down:multi` | Same, with 3 server replicas behind nginx.                                                                                                                                                                      |
+| File             | Used by                             | Contents                                                                                                                                                                                                        |
+| ---------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loadtest.env`   | `loadtest:seed`, Tilt loadtest mode | Seed connection (through Tilt's port-forwards: Mongo 27020, Redis 6382) and the JWT secrets Tilt puts into `trellify-server-secrets`. Every value is fake and safe to commit.                                   |
+| `prometheus.env` | `pnpm k6 --prom`                    | Remote write endpoint, trend stats, push interval, stale markers. `K6_PROMETHEUS_RW_TREND_STATS` decides which `k6_http_req_duration_*` series exist, so it has to cover every stat a dashboard panel asks for. |
+
+The server-side settings live in `infra/apps/trellify/overlays/loadtest`, layered on the dev overlay: `NODE_ENV=production`, the raised `WRITE_RATE_LIMIT_PER_MINUTE`, the worker back on `node dist/worker.js`, and prod's resource limits on server and worker.
+
+### Ingress rate limit
+
+The `/api` Ingress allows 20 rps per client IP. Every k6 request carries a `CF-Connecting-IP` derived from the VU and the iteration (`lib/api.js`), which ingress-nginx trusts, so each iteration counts as one client.
+
+It answers 429 (`limit-req-status-code` in the controller config). 429s while `rate_limit_decisions_total{result="limited"}` stays flat come from this limit, not the application.
 
 Seed sizing is not in `loadtest.env` on purpose — it comes from `SEED_*` environment variables so CI can seed a small dataset without editing the file.
 
@@ -298,40 +305,22 @@ The k6 dashboard reads its `Peak RPS` stat from `sum(irate(k6_http_reqs_total[$_
 ## One replica or three
 
 ```powershell
-pnpm loadtest:up          # 1 replica, the default configuration
-pnpm loadtest:up:multi    # 3 replicas behind nginx, exercises the Redis adapter
+tilt up -- --loadtest                      # 1 replica
+tilt up -- --loadtest --server-replicas=3  # 3 replicas, exercises the Redis adapter
 ```
 
-Both stacks share a compose project name and host ports, so they cannot run at the same time — but switching does not need a `down` first, since the scripts pass `--remove-orphans`. Seed data survives a switch because the MongoDB container is not recreated; only `down -v` clears it.
+`tilt args -- --loadtest --server-replicas=3` changes it on a running Tilt. Use three replicas only for questions that involve several instances, such as broadcast fan-out through the Redis adapter. Do not compare numbers between the two configurations.
 
-Use the multi stack only for questions that involve several instances, such as broadcast fan-out through the Redis adapter. Do not compare numbers between the two configurations.
+## AWS
 
-Per-instance metrics are on ports 9464, 9465 and 9466; the worker uses 9467.
-
-## Port 3000 already in use
-
-The stack publishes port 3000 by default. If another process holds it — **VS Code often does** — you get a confusing failure: `curl localhost:3000` returns 200 while k6 reports 404.
-
-When 127.0.0.1:3000 is taken, Docker can only bind `::`. `curl` reaches nginx over IPv6, while k6 resolves `localhost` to IPv4 and hits the other process instead. Find the culprit:
-
-```powershell
-Get-NetTCPConnection -LocalPort 3000 -State Listen |
-  ForEach-Object { (Get-Process -Id $_.OwningProcess).ProcessName + " " + $_.LocalAddress }
-```
-
-Then move the stack to another port:
-
-```powershell
-$env:LOADTEST_PORT = "3100"
-pnpm loadtest:up
-k6 run -e PROFILE=smoke -e BASE_URL=http://localhost:3100 k6/scenarios/smoke.js
-```
+`--aws` runs k6 in a pod `loadtest/k6` on the EKS cluster's tainted `loadgen` node, so it never competes with the pods it measures. The pod resolves `trellify.duonggiabao.com` to the in-cluster ingress-nginx through `hostAliases`: requests go through the production Ingress, rate limits, server replicas and HPA, without Cloudflare. The runner only accepts a kubectl context whose cluster is `trellify-dr`, copies `config`, `lib`, `scenarios` and `data` into the pod, and copies the summary back to `k6/results/`. The auth flow is skipped (real Turnstile secret). `--prom` writes to that cluster's Prometheus.
 
 ## Server metrics
 
 The server and worker expose Prometheus metrics on `METRICS_PORT` (default 9464), separate from the API port.
 
 ```powershell
+kubectl -n trellify port-forward deploy/trellify-server 9464:9464
 curl http://localhost:9464/metrics
 ```
 
@@ -347,7 +336,7 @@ curl http://localhost:9464/metrics
 
 ## Thresholds
 
-If a write-heavy run suddenly reports `http_req_failed` near 100% with `checks` at 0%, look at `rate_limit_decisions_total{result="limited"}` on `:9464/metrics` before hunting for a performance bottleneck. `writeFlow` issues nine write requests per iteration and `userForVU` spreads load over only 50 seeded users, so the production ceiling of 300 requests per minute per user is reached within the first second; `writeFlow` then returns early on the first failed check, which turns every later iteration into a single rejected request. `loadtest.env` raises the ceiling for exactly this reason.
+A write-heavy run with `http_req_failed` near 100% usually means the application's write limit (300 per user per minute): check `rate_limit_decisions_total{result="limited"}`. Writes use a different seeded user every iteration (`userForIteration()`), and `writeFlow` still thinks after a failed check. The loadtest overlay raises the limit on kind; the AWS cluster keeps it.
 
 ```text
 http_req_failed                       rate<0.01
@@ -377,20 +366,11 @@ kubectl port-forward -n observability svc/kps-prometheus 9090:9090
 pnpm k6 mixed load --prom
 ```
 
-Then query `k6_http_req_duration_p95{testid="..."}` in Grafana, or import the official "k6 Prometheus" dashboard.
+Then open the **k6 Prometheus** dashboard (`uid` `k6-prometheus`), provisioned from `infra/platform/observability/manifests/configmap-dashboard-k6.yaml`. It is Grafana.com dashboard 19665 with the data source variable renamed to `datasource` and the `quantile_stat` query fixed (below).
 
 Point **Test ID** at the run you care about rather than `All`, which merges every run in the window.
 
-Then repair the **Trend Metrics Query** dropdown, which arrives broken. It is the `$quantile_stat` variable behind `HTTP Request Duration`, `HTTP Latency Timings` and `HTTP Latency Stats`, and upstream ships it with **Metric regex** set to `k6_http_req_duration_`. Grafana hands that straight to Prometheus as a label matcher, and PromQL anchors `=~` at both ends, so it matches only a metric named exactly `k6_http_req_duration_` — nothing:
-
-```bash
-curl -sG http://localhost:9090/api/v1/label/__name__/values --data-urlencode 'match[]={__name__=~"k6_http_req_duration_"}'    # []
-curl -sG http://localhost:9090/api/v1/label/__name__/values --data-urlencode 'match[]={__name__=~"k6_http_req_duration_.+"}'  # all seven
-```
-
-The variable resolves to zero options, silently, and the three panels query `k6_http_req_duration_` and read `No data` no matter what Prometheus holds. `Requests by URL` keeps working throughout because it names the stats directly instead of going through the variable, which is how you tell a broken variable apart from missing data.
-
-Fix it in Dashboard settings -> Variables -> `quantile_stat`: set **Metric regex** to `k6_http_req_duration_.+`, run the query to confirm seven values appear, apply, then select `p95`. Leave the **Regex** field below it alone — that one runs in the browser, is not anchored, and already extracts the suffix correctly. The dashboard is not in Git, but Grafana runs with persistence, so the repair survives a pod restart.
+Upstream's `quantile_stat` (behind the three latency panels) queries `metrics(k6_http_req_duration_)`, which PromQL anchors and so matches nothing; the provisioned copy uses `metrics(k6_http_req_duration_.+)`. Change the dashboard in the ConfigMap, not in the UI: provisioned dashboards cannot be saved from Grafana.
 
 `HTTP request failures` reading `No data` means nothing failed. It filters on `expected_response="false"`, and Prometheus has no series to show a zero for when no sample ever matched.
 

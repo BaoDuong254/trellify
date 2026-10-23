@@ -1,6 +1,10 @@
 controller:
   replicaCount: 2
 
+  resources:
+    requests:
+      cpu: 250m
+
   service:
     type: ClusterIP
 

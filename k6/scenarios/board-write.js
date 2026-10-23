@@ -1,4 +1,4 @@
-import { SYSTEM_TAGS, TEST_ID, userForVU } from "../config/env.js";
+import { SYSTEM_TAGS, TEST_ID, userForIteration } from "../config/env.js";
 import { scenariosFor } from "../config/profiles.js";
 import { thresholdsFor } from "../config/thresholds.js";
 import { writeFlow } from "../lib/flows.js";
@@ -12,7 +12,7 @@ export const options = {
 };
 
 export function write() {
-  writeFlow(userForVU());
+  writeFlow(userForIteration());
 }
 
 export function handleSummary(data) {

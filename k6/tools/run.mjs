@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 
@@ -28,7 +29,15 @@ const PROFILES = {
 const DEFAULT_PROFILE = "load";
 const RESULTS_DIR = "k6/results";
 const PROM_ENV_FILE = "k6/prometheus.env";
-const OWN_FLAGS = new Set(["--prom", "--ts", "--watch", "--help", "-h"]);
+const OWN_FLAGS = new Set(["--prom", "--ts", "--watch", "--aws", "--help", "-h"]);
+const AWS_CLUSTER_SUFFIX = ":cluster/trellify-dr";
+const AWS_NAMESPACE = "loadtest";
+const AWS_POD = "k6";
+const AWS_IMAGE = "grafana/k6:2.2.0";
+const AWS_HOST = "trellify.duonggiabao.com";
+const AWS_DIR = "/home/k6/trellify";
+const AWS_UPLOADS = ["config", "lib", "scenarios", "data"];
+const AWS_PROMETHEUS_URL = "http://kps-prometheus.observability.svc:9090/api/v1/write";
 const CAPACITY_PROFILE = "capacity";
 const WATCHER = "k6/tools/watch-server.mjs";
 const THRESHOLD_FAILURE_STATUS = 99;
@@ -100,7 +109,9 @@ Flags:
   --prom    Push results to Prometheus using ${PROM_ENV_FILE}
   --ts      Also write a time-series file for pnpm k6:peak-rps
   --watch   Sample server CPU and event loop lag during the run, then report
-            which container saturated
+            which pod saturated
+  --aws     Run k6 in a pod on the EKS loadgen node instead of locally; the
+            kubectl context must point at the trellify-dr EKS cluster. Skips the auth flow
   --help    Show this message
 
 Any other flag is passed straight through to k6, so -e VUS=100 and
@@ -173,6 +184,69 @@ const choose = async (rl, label, entries, fallback) => {
   }
 };
 
+const kubectl = (args, options = {}) => spawnSync("kubectl", args, { encoding: "utf8", ...options });
+
+const kubectlOrDie = (args, options) => {
+  const result = kubectl(args, options);
+  if (result.error?.code === "ENOENT") die("kubectl is not on your PATH.");
+  if (result.status !== 0) die(`kubectl ${args.join(" ")} failed:\n${result.stderr}`);
+  return result.stdout.trim();
+};
+
+const loadgenPod = (ingressIp) => ({
+  apiVersion: "v1",
+  kind: "List",
+  items: [
+    { apiVersion: "v1", kind: "Namespace", metadata: { name: AWS_NAMESPACE } },
+    {
+      apiVersion: "v1",
+      kind: "Pod",
+      metadata: { name: AWS_POD, namespace: AWS_NAMESPACE },
+      spec: {
+        nodeSelector: { "trellify/role": "loadgen" },
+        tolerations: [{ key: "loadgen", operator: "Equal", value: "true", effect: "NoSchedule" }],
+        hostAliases: [{ ip: ingressIp, hostnames: [AWS_HOST] }],
+        containers: [{ name: "k6", image: AWS_IMAGE, command: ["sleep", "infinity"] }],
+      },
+    },
+  ],
+});
+
+const prepareAwsPod = () => {
+  const context = kubectlOrDie(["config", "current-context"]);
+  const cluster = kubectlOrDie(["config", "view", "--minify", "-o", "jsonpath={.contexts[0].context.cluster}"]);
+  if (!cluster.endsWith(AWS_CLUSTER_SUFFIX)) {
+    die(`--aws only runs against the trellify-dr EKS cluster, and context "${context}" points at "${cluster}".`);
+  }
+  if (!existsSync("k6/data/users.json")) die("k6/data/users.json is missing. Seed the AWS cluster first.");
+
+  const ingressIp = kubectlOrDie([
+    "get",
+    "svc",
+    "-n",
+    "ingress-nginx",
+    "ingress-nginx-controller",
+    "-o",
+    "jsonpath={.spec.clusterIP}",
+  ]);
+  kubectlOrDie(["apply", "-f", "-"], { input: JSON.stringify(loadgenPod(ingressIp)) });
+  console.log(`Waiting for ${AWS_NAMESPACE}/${AWS_POD} on the loadgen node...`);
+  kubectlOrDie(["wait", "-n", AWS_NAMESPACE, `pod/${AWS_POD}`, "--for=condition=Ready", "--timeout=300s"]);
+
+  const target = `${AWS_NAMESPACE}/${AWS_POD}`;
+  kubectlOrDie([
+    "exec",
+    "-n",
+    AWS_NAMESPACE,
+    AWS_POD,
+    "--",
+    "sh",
+    "-c",
+    `rm -rf ${AWS_DIR} && mkdir -p ${AWS_DIR}/results`,
+  ]);
+  for (const folder of AWS_UPLOADS) kubectlOrDie(["cp", `k6/${folder}`, `${target}:${AWS_DIR}/${folder}`]);
+};
+
 const confirm = async (rl, label) => {
   const answer = (await rl.question(`${label} [y/N] `)).trim().toLowerCase();
   return answer === "y" || answer === "yes";
@@ -205,11 +279,14 @@ let profile = profileArg;
 let prom = flags.has("--prom");
 let timeSeries = flags.has("--ts");
 let watch = flags.has("--watch");
+let aws = flags.has("--aws");
 
 if (interactive) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    scenarioKey = await choose(rl, "Scenario", SCENARIOS, "mixed");
+    if (!aws) aws = await confirm(rl, "Run on the AWS EKS cluster (trellify-dr)?");
+    const scenarios = aws ? Object.fromEntries(Object.entries(SCENARIOS).filter(([key]) => key !== "auth")) : SCENARIOS;
+    scenarioKey = await choose(rl, "Scenario", scenarios, "mixed");
     if (SCENARIOS[scenarioKey].profile === undefined) {
       profile = await choose(rl, "Profile", PROFILES, DEFAULT_PROFILE);
     }
@@ -224,6 +301,9 @@ if (interactive) {
 
 const scenario = SCENARIOS[scenarioKey];
 if (!existsSync(scenario.file)) die(`Scenario file is missing: ${scenario.file}`);
+if (aws && scenarioKey === "auth") {
+  die("The auth scenario cannot run with --aws: the cluster runs the real Turnstile secret, which rejects k6's token.");
+}
 
 if (scenario.profile !== undefined) {
   if (profile !== undefined && profile !== scenario.profile) {
@@ -236,24 +316,32 @@ if (scenario.profile !== undefined) {
 }
 
 const runName = scenario.profile === undefined ? `${scenarioKey}-${profile}` : scenarioKey;
-const timeSeriesPath = `${RESULTS_DIR}/${runName}-ts.json.gz`;
+const timeSeriesName = `${runName}-ts.json.gz`;
+const timeSeriesPath = `${RESULTS_DIR}/${timeSeriesName}`;
+const outputDir = aws ? `${AWS_DIR}/results` : RESULTS_DIR;
 
 const args = ["run", "-e", `PROFILE=${profile}`, "-e", `RUN_NAME=${runName}`];
 const env = { ...process.env };
+let promEnv = {};
+
+if (aws) args.push("-e", `BASE_URL=http://${AWS_HOST}`, "-e", `SUMMARY_DIR=${outputDir}`, "-e", "SKIP_AUTH=1");
 
 if (prom) {
   if (!existsSync(PROM_ENV_FILE)) die(`--prom needs ${PROM_ENV_FILE}, which does not exist.`);
-  const promEnv = parseEnvFile(PROM_ENV_FILE);
+  promEnv = parseEnvFile(PROM_ENV_FILE);
+  if (aws) promEnv.K6_PROMETHEUS_RW_SERVER_URL = AWS_PROMETHEUS_URL;
   Object.assign(env, promEnv);
   args.push("-o", "experimental-prometheus-rw");
   console.log(`\nLoaded from ${PROM_ENV_FILE}: ${Object.keys(promEnv).join(", ")}`);
 }
 
-if (timeSeries) args.push("--out", `json=${timeSeriesPath}`);
+if (timeSeries) args.push("--out", `json=${outputDir}/${timeSeriesName}`);
 
-args.push(scenario.file, ...passthrough);
+args.push(aws ? `${AWS_DIR}/${scenario.file.slice("k6/".length)}` : scenario.file, ...passthrough);
 
-console.log(`\n> k6 ${args.join(" ")}\n`);
+console.log(`\n> k6 ${args.join(" ")}${aws ? `   (in ${AWS_NAMESPACE}/${AWS_POD})` : ""}\n`);
+
+if (aws) prepareAwsPod();
 
 const watchPath = `${RESULTS_DIR}/${runName}-server.ndjson`;
 let watcher;
@@ -262,23 +350,54 @@ if (watch) {
   const watchArgs = [WATCHER, "--out", watchPath];
   const steps = ladderSteps(scenario.file, profile, passthrough);
   if (steps !== undefined) watchArgs.push("--steps", steps);
-  watcher = spawn(process.execPath, watchArgs, { stdio: "ignore" });
+  watcher = spawn(process.execPath, watchArgs, { stdio: ["pipe", "ignore", "ignore"] });
   console.log(`Watching server CPU and event loop into ${watchPath}\n`);
 }
 
-const result = spawnSync("k6", args, { stdio: "inherit", env });
+const result = aws
+  ? spawnSync(
+      "kubectl",
+      [
+        "exec",
+        ...(process.stdin.isTTY ? ["-it"] : ["-i"]),
+        "-n",
+        AWS_NAMESPACE,
+        AWS_POD,
+        "--",
+        "env",
+        ...Object.entries(promEnv).map(([key, value]) => `${key}=${value}`),
+        "k6",
+        ...args,
+      ],
+      { stdio: "inherit" }
+    )
+  : spawnSync("k6", args, { stdio: "inherit", env });
 
 if (watcher !== undefined) {
-  watcher.kill();
+  if (watcher.exitCode === null && watcher.signalCode === null) {
+    const exited = once(watcher, "exit");
+    watcher.stdin.end();
+    await exited;
+  }
   spawnSync(process.execPath, [WATCHER, "--report", watchPath], { stdio: "inherit" });
 }
 
 if (result.error) {
   die(
     result.error.code === "ENOENT"
-      ? `k6 is not on your PATH. Install it with "winget install GrafanaLabs.k6", then open a new terminal.`
+      ? aws
+        ? "kubectl is not on your PATH."
+        : `k6 is not on your PATH. Install it with "winget install GrafanaLabs.k6", then open a new terminal.`
       : `Could not start k6: ${result.error.message}`
   );
+}
+
+if (aws) {
+  const files = [`${runName}.json`, `${runName}.html`, ...(timeSeries ? [timeSeriesName] : [])];
+  for (const file of files) {
+    const copied = kubectl(["cp", `${AWS_NAMESPACE}/${AWS_POD}:${outputDir}/${file}`, `${RESULTS_DIR}/${file}`]);
+    if (copied.status !== 0) console.error(`Could not copy ${file} back from the pod: ${copied.stderr.trim()}`);
+  }
 }
 
 if (profile === CAPACITY_PROFILE) {

@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -86,7 +86,7 @@ jobs:
             👀 See changes: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: build-and-push
     steps:
       - name: Checkout code for docker-compose

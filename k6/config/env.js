@@ -1,10 +1,11 @@
 import { SharedArray } from "k6/data";
 
-export const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
+export const BASE_URL = __ENV.BASE_URL || "http://localhost";
 export const API_URL = `${BASE_URL}/api/v1`;
 export const WS_URL = BASE_URL.replace(/^http/, "ws");
 export const TURNSTILE_TOKEN = __ENV.TURNSTILE_TOKEN || "loadtest";
 export const TEST_ID = __ENV.TEST_ID || `local-${Date.now()}`;
+export const SKIP_AUTH = __ENV.SKIP_AUTH === "1";
 
 export const SYSTEM_TAGS = [
   "proto",
@@ -25,6 +26,10 @@ export const sharedBoards = new SharedArray("shared boards", () => JSON.parse(op
 
 export function userForVU() {
   return seededUsers[(__VU - 1) % seededUsers.length];
+}
+
+export function userForIteration() {
+  return seededUsers[((__VU - 1) * 31 + __ITER) % seededUsers.length];
 }
 
 export function writeBoard(user) {

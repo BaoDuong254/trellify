@@ -55,17 +55,17 @@ export function writeFlow(user, board) {
   const boardId = (board ?? writeBoard(user)).boardId;
 
   const columnAResponse = api.createColumn(boardId, `k6-col-a-${label()}`);
-  if (!expectStatus(columnAResponse, 201, "column_create")) return;
+  if (!expectStatus(columnAResponse, 201, "column_create")) return think();
   const columnA = jsonData(columnAResponse);
 
   const columnBResponse = api.createColumn(boardId, `k6-col-b-${label()}`);
-  if (!expectStatus(columnBResponse, 201, "column_create")) return;
+  if (!expectStatus(columnBResponse, 201, "column_create")) return think();
   const columnB = jsonData(columnBResponse);
 
   const cardIds = [];
   for (let index = 0; index < 2; index++) {
     const cardResponse = api.createCard(boardId, columnA._id, `k6-card-${label()}-${index}`);
-    if (!expectStatus(cardResponse, 201, "card_create")) return;
+    if (!expectStatus(cardResponse, 201, "card_create")) return think();
     cardIds.push(jsonData(cardResponse)._id);
   }
 

@@ -5,7 +5,6 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/limit-rps: "20"
     nginx.ingress.kubernetes.io/limit-burst-multiplier: "2"
-    nginx.ingress.kubernetes.io/limit-req-status-code: "429"
 spec:
   ingressClassName: nginx
   rules:

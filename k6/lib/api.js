@@ -3,10 +3,13 @@ import http from "k6/http";
 import { API_URL, TURNSTILE_TOKEN } from "../config/env.js";
 import { stepTag } from "../config/profiles.js";
 
-const JSON_HEADERS = { "Content-Type": "application/json" };
+const clientIp = () => {
+  const iteration = typeof __ITER === "undefined" ? 0 : __ITER;
+  return `10.${(__VU >> 8) & 255}.${__VU & 255}.${iteration & 255}`;
+};
 
 const params = (endpoint, group, extraTags) => ({
-  headers: JSON_HEADERS,
+  headers: { "Content-Type": "application/json", "CF-Connecting-IP": clientIp() },
   tags: { endpoint, group, name: endpoint, ...stepTag(), ...extraTags },
 });
 

@@ -7,11 +7,7 @@ import { WHITELIST_DOMAINS } from "src/utils/constants";
 
 export const corsOptions: CorsOptions = {
   origin: function (origin: string | undefined, callback) {
-    if (environmentConfig.NODE_ENV === "development") {
-      return callback(null, true);
-    }
-
-    if (!origin || WHITELIST_DOMAINS.includes(origin)) {
+    if (!origin || environmentConfig.NODE_ENV === "development" || WHITELIST_DOMAINS.includes(origin)) {
       return callback(null, true);
     }
 

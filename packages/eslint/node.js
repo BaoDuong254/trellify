@@ -31,6 +31,8 @@ export default [
       "unicorn/max-nested-calls": "off",
       "unicorn/no-top-level-side-effects": "off",
       "unicorn/no-top-level-assignment-in-function": "off",
+      "unicorn/prefer-ternary": "off",
+      "unicorn/no-asterisk-prefix-in-documentation-comments": "off",
     },
   },
 ];

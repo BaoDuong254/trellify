@@ -1,10 +1,12 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 
-const DEFAULT_PORTS = [9464, 9465, 9466];
+const NAMESPACE = "trellify";
+const FIRST_LOCAL_PORT = 19464;
 const DEFAULT_INTERVAL = 3;
 const FETCH_TIMEOUT_MS = 2500;
 const FALLBACK_BUCKET_SECONDS = 30;
+const SATURATED_REPLICA_CPU = 85;
 
 const NODE_METRICS = {
   lagP99: "nodejs_eventloop_lag_p99_seconds",
@@ -14,16 +16,16 @@ const NODE_METRICS = {
 
 const usage = () => {
   console.error(`Usage:
-  node k6/tools/watch-server.mjs --out <file> [--interval 3] [--ports 9464,9465,9466] [--steps <spec>]
+  node k6/tools/watch-server.mjs --out <file> [--interval 3] [--steps <spec>]
   node k6/tools/watch-server.mjs --report <file>
 
-Samples docker CPU and each server replica's /metrics while a load test runs,
-then reports which container saturated and when. Stop it with Ctrl+C.
+Samples pod CPU from the kubelet and each server pod's /metrics (through
+kubectl port-forward) on the current kubectl context while a load test runs,
+then reports which pod saturated and when. Stop it with Ctrl+C.
 
   --out <file>     write samples here and print the report on exit
   --report <file>  print the report for an existing sample file and exit
   --interval <s>   seconds between samples, default ${DEFAULT_INTERVAL}
-  --ports <list>   metrics ports, default ${DEFAULT_PORTS.join(",")}
   --steps <spec>   label rows with ladder steps, as "s0:65-125,s1:145-205"
 
 "pnpm k6 <scenario> capacity --watch" runs this for you with the step windows
@@ -31,9 +33,18 @@ already filled in.`);
   process.exit(1);
 };
 
+const ROLES = { server: "server", mongodb: "mongo", redis: "redis", worker: "worker" };
+
 const roleOf = (name) => {
-  const match = /-(server|mongo|redis|nginx|worker)\d*-\d+$/.exec(name);
-  return match === null ? undefined : match[1];
+  const match = /^trellify-(server|mongodb|redis|worker)-/.exec(name);
+  return match === null ? undefined : ROLES[match[1]];
+};
+
+const kubectl = (args) => spawnSync("kubectl", args, { encoding: "utf8" });
+
+const listNames = (args) => {
+  const result = kubectl([...args, "-o", "jsonpath={.items[*].metadata.name}"]);
+  return result.status === 0 ? result.stdout.split(/\s+/).filter(Boolean) : [];
 };
 
 const parseSteps = (spec) =>
@@ -43,25 +54,37 @@ const parseSteps = (spec) =>
     .filter((match) => match !== null)
     .map((match) => ({ id: match[1], from: Number(match[2]), to: Number(match[3]) }));
 
-const dockerSample = () => {
-  const result = spawnSync("docker", ["stats", "--no-stream", "--format", "{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}"], {
-    encoding: "utf8",
-  });
-  if (result.status !== 0) return undefined;
-
+const podSample = (kubeNodes) => {
   const byRole = {};
-  for (const line of result.stdout.split(/\r?\n/)) {
-    const [name, cpu, mem] = line.split("|");
-    const role = name === undefined ? undefined : roleOf(name.trim());
-    if (role === undefined) continue;
-    const cpuPercent = Number.parseFloat(cpu) || 0;
-    const memMb = Number.parseFloat(mem) || 0;
-    if (byRole[role] === undefined) byRole[role] = { cpu: 0, memMb: 0 };
-    byRole[role].cpu += cpuPercent;
-    byRole[role].memMb += mem.includes("GiB") ? memMb * 1024 : memMb;
+  for (const node of kubeNodes) {
+    const result = kubectl(["get", "--raw", `/api/v1/nodes/${node}/proxy/stats/summary`]);
+    if (result.status !== 0) continue;
+    let summary;
+    try {
+      summary = JSON.parse(result.stdout);
+    } catch {
+      continue;
+    }
+    for (const pod of summary.pods ?? []) {
+      if (pod.podRef?.namespace !== NAMESPACE) continue;
+      const role = roleOf(pod.podRef.name);
+      if (role === undefined) continue;
+      if (byRole[role] === undefined) byRole[role] = { cpu: 0, memMb: 0 };
+      byRole[role].cpu += (pod.cpu?.usageNanoCores ?? 0) / 1e7;
+      byRole[role].memMb += (pod.memory?.workingSetBytes ?? 0) / (1024 * 1024);
+    }
   }
   return byRole;
 };
+
+const forwardServerPods = () =>
+  listNames(["get", "pods", "-n", NAMESPACE, "-l", "app=trellify-server"]).map((pod, index) => {
+    const port = FIRST_LOCAL_PORT + index;
+    const child = spawn("kubectl", ["port-forward", "-n", NAMESPACE, `pod/${pod}`, `${port}:9464`], {
+      stdio: "ignore",
+    });
+    return { port, child };
+  });
 
 const readMetric = (body, name) => {
   const match = new RegExp(`^${name} ([0-9.eE+-]+)$`, "m").exec(body);
@@ -87,15 +110,21 @@ const nodeSample = async (port) => {
   }
 };
 
-const sampleOnce = async (ports, startedAt) => {
-  const [docker, nodes] = await Promise.all([Promise.resolve().then(dockerSample), Promise.all(ports.map(nodeSample))]);
-  return { at: Date.now(), t: (Date.now() - startedAt) / 1000, docker, nodes };
+const sampleOnce = async (ports, kubeNodes, startedAt) => {
+  const [pods, nodes] = await Promise.all([
+    Promise.resolve().then(() => podSample(kubeNodes)),
+    Promise.all(ports.map(nodeSample)),
+  ]);
+  return { at: Date.now(), t: (Date.now() - startedAt) / 1000, pods, nodes };
 };
 
 const collectingRun = async (options) => {
   const startedAt = Date.now();
   const steps = options.steps === undefined ? [] : parseSteps(options.steps);
-  writeFileSync(options.out, `${JSON.stringify({ type: "meta", startedAt, ports: options.ports, steps })}\n`);
+  const kubeNodes = listNames(["get", "nodes"]);
+  const forwards = forwardServerPods();
+  const ports = forwards.map((forward) => forward.port);
+  writeFileSync(options.out, `${JSON.stringify({ type: "meta", startedAt, ports, steps })}\n`);
 
   let stopping = false;
   const stop = () => {
@@ -104,12 +133,15 @@ const collectingRun = async (options) => {
   };
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
+  if (!process.stdin.isTTY) process.stdin.on("end", stop).resume();
 
-  console.log(`Watching ${options.ports.join(", ")} plus docker every ${options.interval}s. Ctrl+C to stop.`);
+  console.log(
+    `Watching ${forwards.length} server pods on ${kubeNodes.length} nodes every ${options.interval}s. Ctrl+C to stop.`
+  );
 
   let index = 0;
   while (!stopping) {
-    const sample = await sampleOnce(options.ports, startedAt);
+    const sample = await sampleOnce(ports, kubeNodes, startedAt);
     appendFileSync(options.out, `${JSON.stringify({ type: "sample", ...sample })}\n`);
     index += 1;
     const nextAt = startedAt + index * options.interval * 1000;
@@ -117,6 +149,8 @@ const collectingRun = async (options) => {
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
   }
 
+  for (const forward of forwards) forward.child.kill();
+  process.stdin.destroy();
   report(options.out);
 };
 
@@ -146,11 +180,15 @@ const max = (values) => (values.length === 0 ? undefined : Math.max(...values));
 const defined = (values) => values.filter((value) => value !== undefined && Number.isFinite(value));
 
 const summarise = (rows) => {
-  const roleCpu = (role) => defined(rows.map((row) => row.docker?.[role]?.cpu));
+  const roleCpu = (role) => defined(rows.map((row) => (row.pods ?? row.docker)?.[role]?.cpu));
   const lags = defined(rows.flatMap((row) => row.nodes.map((node) => node.lagP99)));
   const heaps = defined(rows.flatMap((row) => row.nodes.map((node) => node.heapUsed)));
+  const replicas = max(rows.map((row) => row.nodes.filter((node) => node.reachable).length));
+  const serverCpu = mean(roleCpu("server"));
   return {
-    serverCpu: mean(roleCpu("server")),
+    serverCpu,
+    cpuPerReplica: serverCpu === undefined || !replicas ? undefined : serverCpu / replicas,
+    replicas,
     mongoCpu: mean(roleCpu("mongo")),
     redisCpu: mean(roleCpu("redis")),
     lagMs: max(lags) === undefined ? undefined : max(lags) * 1000,
@@ -164,16 +202,24 @@ const verdict = (buckets) => {
   const scored = buckets
     .map((bucket) => ({ label: bucket.label, ...summarise(bucket.rows) }))
     .filter((bucket) => bucket.lagMs !== undefined);
-  if (scored.length === 0) return ["No /metrics samples were reachable, so only the docker columns mean anything."];
+  if (scored.length === 0) return ["No /metrics samples were reachable, so only the CPU columns mean anything."];
 
   const worst = scored.reduce((peak, bucket) => (bucket.lagMs > peak.lagMs ? bucket : peak));
   const lines = [
     `Worst event loop lag was ${worst.lagMs.toFixed(1)}ms at ${worst.label}, with server CPU ${cell(worst.serverCpu, 0, 1)}% and mongo CPU ${cell(worst.mongoCpu, 0, 1)}%.`,
   ];
 
+  const saturated = scored.find((bucket) => bucket.cpuPerReplica >= SATURATED_REPLICA_CPU);
+
   if (worst.mongoCpu !== undefined && worst.serverCpu !== undefined) {
     if (worst.mongoCpu > worst.serverCpu) {
       lines.push("Mongo burned more CPU than the whole server tier: the database is the first thing to look at.");
+    } else if (saturated !== undefined) {
+      lines.push(
+        `From ${saturated.label} on, ${saturated.replicas === 1 ? "the only server replica" : `each of the ${saturated.replicas} server replicas`} averaged ${saturated.cpuPerReplica.toFixed(0)}% CPU - ` +
+          "a full core for a single-threaded Node process, so the server tier is CPU-bound and requests queue for the event loop. " +
+          "More replicas, more CPU per replica, or less work per request raises the ceiling; tuning Mongo does not."
+      );
     } else if (worst.lagMs > 100) {
       lines.push(
         "The event loop was blocked while Mongo stayed cheap: the bottleneck is inside Node, not the database."
@@ -245,10 +291,6 @@ if (reportFile !== undefined) {
   await collectingRun({
     out,
     interval: Number.isFinite(interval) && interval > 0 ? interval : DEFAULT_INTERVAL,
-    ports: valueOf("--ports", DEFAULT_PORTS.join(","))
-      .split(",")
-      .map((port) => Number(port.trim()))
-      .filter((port) => Number.isInteger(port)),
     steps: valueOf("--steps", undefined),
   });
 }

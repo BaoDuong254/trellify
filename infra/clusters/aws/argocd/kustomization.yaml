@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ../../../platform/argocd/manifests
   - apps/platform-cloudflared.yaml
+  - apps/platform-cluster-autoscaler.yaml
   - apps/platform-ingress-nginx.yaml
   - apps/platform-observability-extras.yaml
   - apps/platform-observability.yaml

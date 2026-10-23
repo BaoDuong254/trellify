@@ -75,6 +75,23 @@ module "ebs_csi_pod_identity" {
   attach_aws_ebs_csi_policy = true
 }
 
+module "cluster_autoscaler_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "2.9.0"
+
+  name                             = "${var.cluster_name}-cluster-autoscaler"
+  attach_cluster_autoscaler_policy = true
+  cluster_autoscaler_cluster_names = [module.eks.cluster_name]
+
+  associations = {
+    cluster_autoscaler = {
+      cluster_name    = module.eks.cluster_name
+      namespace       = "kube-system"
+      service_account = "cluster-autoscaler"
+    }
+  }
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "21.29.0"
@@ -85,6 +102,17 @@ module "eks" {
   endpoint_public_access       = true
   endpoint_private_access      = true
   endpoint_public_access_cidrs = var.endpoint_public_access_cidrs
+
+  node_security_group_additional_rules = {
+    ingress_self_all = {
+      description = "Node to node all ports, so pods reach ingress-nginx on 80/443 across nodes"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      type        = "ingress"
+      self        = true
+    }
+  }
 
   enable_cluster_creator_admin_permissions = false
   access_entries = {
@@ -129,7 +157,39 @@ module "eks" {
     metrics-server = {}
   }
 
-  eks_managed_node_groups = {
+  eks_managed_node_groups = merge(var.loadgen_node_count > 0 ? {
+    loadgen = {
+      ami_type       = "AL2023_x86_64_STANDARD"
+      instance_types = var.loadgen_instance_types
+
+      min_size     = var.loadgen_node_count
+      max_size     = var.loadgen_node_count
+      desired_size = var.loadgen_node_count
+
+      labels = { "trellify/role" = "loadgen" }
+      taints = {
+        loadgen = { key = "loadgen", value = "true", effect = "NO_SCHEDULE" }
+      }
+
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 20
+            volume_type           = "gp3"
+            encrypted             = true
+            delete_on_termination = true
+          }
+        }
+      }
+
+      metadata_options = {
+        http_endpoint               = "enabled"
+        http_tokens                 = "required"
+        http_put_response_hop_limit = 1
+      }
+    }
+    } : {}, {
     default = {
       ami_type       = "AL2023_x86_64_STANDARD"
       instance_types = var.node_instance_types
@@ -156,5 +216,5 @@ module "eks" {
         http_put_response_hop_limit = 1
       }
     }
-  }
+  })
 }

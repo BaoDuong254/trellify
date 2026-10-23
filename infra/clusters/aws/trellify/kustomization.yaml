@@ -12,3 +12,23 @@ patches:
       - op: replace
         path: /spec/schedule
         value: "0 * * * *"
+  - target:
+      kind: Deployment
+      name: trellify-server
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 900m
+  - target:
+      kind: StatefulSet
+      name: trellify-(mongodb|redis)
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: unused
+      spec:
+        template:
+          metadata:
+            annotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"

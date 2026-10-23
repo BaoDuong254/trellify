@@ -73,17 +73,17 @@ describe("card placement rules", () => {
     const doing = await createColumnVia(owner, boardId, "Doing");
     const done = await createColumnVia(owner, boardId, "Done");
     const cardId = await createCardVia(owner, boardId, todo);
-    const move = (previousColumnId: string, nextColumnId: string) =>
+    const moveFromTodo = (nextColumnId: string) =>
       put(owner, "/api/v1/boards/supports/moving_card", {
         currentCardId: cardId,
-        prevColumnId: previousColumnId,
+        prevColumnId: todo,
         prevCardOrderIds: [],
         nextColumnId,
         nextCardOrderIds: [cardId],
       });
 
-    await move(todo, doing).expect(200);
-    const stale = await move(todo, done).expect(409);
+    await moveFromTodo(doing).expect(200);
+    const stale = await moveFromTodo(done).expect(409);
 
     expect(stale.body.message).toBe("Error.CardUnavailable");
     const card = await findById(cardModel.CARD_COLLECTION_NAME, cardId);

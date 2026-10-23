@@ -30,7 +30,7 @@ env:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -52,7 +52,7 @@ jobs:
           $KC infra/clusters/homelab/bootstrap/*.yaml infra/apps/trellify/jobs/*.yaml
 
   terraform:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     strategy:
       matrix:

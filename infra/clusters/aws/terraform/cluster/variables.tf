@@ -34,6 +34,17 @@ variable "node_count" {
   default = 3
 }
 
+variable "loadgen_node_count" {
+  description = "Tainted nodes for the k6 pod (pnpm k6 ... --aws). 0 on a real failover; the node group only exists above 0"
+  type        = number
+  default     = 0
+}
+
+variable "loadgen_instance_types" {
+  type    = list(string)
+  default = ["c7i.xlarge"]
+}
+
 variable "cluster_admin_arns" {
   description = "IAM principals with cluster-admin on EKS, independent of who runs terraform. Use the IAM role ARN of the SSO permission set (arn:aws:iam::<account>:role/aws-reserved/sso.amazonaws.com/<region>/AWSReservedSSO_...), not the assumed-role session ARN. The identity running terraform must be in this list."
   type        = list(string)

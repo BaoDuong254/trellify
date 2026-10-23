@@ -20,7 +20,7 @@ env:
 jobs:
   build-and-push:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     permissions:
       contents: read
@@ -194,7 +194,7 @@ jobs:
   bump-manifest:
     needs: build-and-push
     if: ${{ needs.build-and-push.outputs.changed == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -255,7 +255,7 @@ jobs:
 
   notify-blocked:
     if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'failure' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - name: Notify Telegram that CI blocked the deploy

@@ -54,6 +54,20 @@ const readCount = (name: string, fallback: number): number => {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 
+const mapWithConcurrency = async <T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>
+): Promise<R[]> => {
+  const results: R[] = [];
+  const queue = items.entries();
+  const drain = async (): Promise<void> => {
+    for (const [index, item] of queue) results[index] = await worker(item, index);
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, drain));
+  return results;
+};
+
 const outputPath = (): string => {
   const configured = process.env.SEED_OUTPUT;
   if (configured) return path.resolve(configured);
@@ -94,33 +108,33 @@ const seedBoard = async (ownerId: string, name: string, size: BoardSize): Promis
   });
   const boardId = createdBoard.insertedId.toString();
 
-  const columnIds: string[] = [];
-  const cardIds: string[] = [];
-
-  for (let columnIndex = 0; columnIndex < columns; columnIndex++) {
-    const createdColumn = await columnModel.createNew({
-      boardId,
-      title: `${SEED_PREFIX}column-${columnIndex}`,
-    });
-    const columnId = createdColumn.insertedId.toString();
-    columnIds.push(columnId);
-
-    const columnCardIds: string[] = [];
-    for (let cardIndex = 0; cardIndex < cardsPerColumn; cardIndex++) {
-      const createdCard = await cardModel.createNew({
+  const seededColumns = await Promise.all(
+    Array.from({ length: columns }, async (_, columnIndex) => {
+      const createdColumn = await columnModel.createNew({
         boardId,
-        columnId,
-        title: `${SEED_PREFIX}card-${columnIndex}-${cardIndex}`,
+        title: `${SEED_PREFIX}column-${columnIndex}`,
       });
-      columnCardIds.push(createdCard.insertedId.toString());
-    }
-    cardIds.push(...columnCardIds);
-    await columnModel.update(columnId, { cardOrderIds: columnCardIds });
-  }
+      const columnId = createdColumn.insertedId.toString();
 
+      const columnCardIds = await Promise.all(
+        Array.from({ length: cardsPerColumn }, async (_, cardIndex) => {
+          const createdCard = await cardModel.createNew({
+            boardId,
+            columnId,
+            title: `${SEED_PREFIX}card-${columnIndex}-${cardIndex}`,
+          });
+          return createdCard.insertedId.toString();
+        })
+      );
+      await columnModel.update(columnId, { cardOrderIds: columnCardIds });
+      return { columnId, columnCardIds };
+    })
+  );
+
+  const columnIds = seededColumns.map((column) => column.columnId);
   await boardModel.update(boardId, { columnOrderIds: columnIds });
 
-  return { boardId, size, columnIds, cardIds };
+  return { boardId, size, columnIds, cardIds: seededColumns.flatMap((column) => column.columnCardIds) };
 };
 
 const seed = async (): Promise<void> => {
@@ -134,43 +148,48 @@ const seed = async (): Promise<void> => {
   const accessTokenLife = ms(environmentConfig.ACCESS_TOKEN_LIFE as StringValue) / 1000;
   const refreshTokenLife = ms(environmentConfig.REFRESH_TOKEN_LIFE as StringValue) / 1000;
 
-  const users: SeededUser[] = [];
+  const concurrency = readCount("SEED_CONCURRENCY", 10);
+  let seededUsers = 0;
 
-  for (let index = 0; index < userCount; index++) {
-    const username = `${SEED_PREFIX}user-${index}`;
-    const email = `${username}@loadtest.local`;
+  const users = await mapWithConcurrency(
+    Array.from({ length: userCount }),
+    concurrency,
+    async (_, index): Promise<SeededUser> => {
+      const username = `${SEED_PREFIX}user-${index}`;
+      const email = `${username}@loadtest.local`;
 
-    const createdUser = await userModel.createNew({
-      email,
-      password: passwordHash,
-      username,
-      displayName: username,
-      verifyToken: null,
-    });
-    const userId = createdUser.insertedId.toString();
-    await userModel.update(userId, { isActive: true });
+      const createdUser = await userModel.createNew({
+        email,
+        password: passwordHash,
+        username,
+        displayName: username,
+        verifyToken: null,
+      });
+      const userId = createdUser.insertedId.toString();
+      await userModel.update(userId, { isActive: true });
 
-    const boards: SeededBoard[] = [];
-    for (let boardIndex = 0; boardIndex < boardsPerUser; boardIndex++) {
-      boards.push(await seedBoard(userId, `board-${index}-${boardIndex}`, "small"));
+      const boards: SeededBoard[] = [];
+      for (let boardIndex = 0; boardIndex < boardsPerUser; boardIndex++) {
+        boards.push(await seedBoard(userId, `board-${index}-${boardIndex}`, "small"));
+      }
+
+      const userInfo = { _id: createdUser.insertedId, email };
+      const accessToken = await JwtProvider.generateToken(
+        userInfo,
+        environmentConfig.ACCESS_TOKEN_SECRET_SIGNATURE,
+        accessTokenLife
+      );
+      const refreshToken = await JwtProvider.generateToken(
+        userInfo,
+        environmentConfig.REFRESH_TOKEN_SECRET_SIGNATURE,
+        refreshTokenLife
+      );
+
+      seededUsers += 1;
+      if (seededUsers % 10 === 0) logger.info(`Seeded ${seededUsers}/${userCount} users`);
+      return { email, password, userId, accessToken, refreshToken, boards };
     }
-
-    const userInfo = { _id: createdUser.insertedId, email };
-    const accessToken = await JwtProvider.generateToken(
-      userInfo,
-      environmentConfig.ACCESS_TOKEN_SECRET_SIGNATURE,
-      accessTokenLife
-    );
-    const refreshToken = await JwtProvider.generateToken(
-      userInfo,
-      environmentConfig.REFRESH_TOKEN_SECRET_SIGNATURE,
-      refreshTokenLife
-    );
-
-    users.push({ email, password, userId, accessToken, refreshToken, boards });
-
-    if ((index + 1) % 10 === 0) logger.info(`Seeded ${index + 1}/${userCount} users`);
-  }
+  );
 
   const owner = users[0];
   if (!owner) throw new Error("SEED_USERS must be at least 1");
@@ -184,9 +203,9 @@ const seed = async (): Promise<void> => {
   for (const [size, count] of sharedPlan) {
     for (let index = 0; index < count; index++) {
       const board = await seedBoard(owner.userId, `shared-${size}-${index}`, size);
-      for (const user of users.slice(1)) {
-        await boardModel.pushMemberIds(board.boardId, user.userId);
-      }
+      await mapWithConcurrency(users.slice(1), concurrency, (user) =>
+        boardModel.pushMemberIds(board.boardId, user.userId)
+      );
       sharedBoards.push(board);
       logger.info(`Seeded shared ${size} board ${index + 1}/${count}`);
     }

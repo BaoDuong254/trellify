@@ -407,30 +407,28 @@ The project includes a Postman collection with pre-configured requests.
 
 ## ⚡ Performance Testing
 
-Load tests run with [k6](https://k6.io/) against an isolated docker-compose stack built from the production Dockerfile, with its own MongoDB and Redis. No real data is touched. The stacks are defined in [`k6/docker-compose.yml`](k6/docker-compose.yml) (one server) and [`k6/docker-compose.multi.yml`](k6/docker-compose.multi.yml) (three servers behind nginx).
+Load tests run with [k6](https://k6.io/) against the local kind cluster in loadtest mode (`tilt up -- --loadtest`): the production server image on the same manifests as prod, with its own MongoDB and Redis. No real data is touched. `--aws` runs the same scenarios from a pod inside the EKS failover cluster instead.
 
 ```bash
-pnpm loadtest:up      # start the isolated stack
+tilt up -- --loadtest # production image on kind (add --server-replicas=3 for multi-pod)
 pnpm loadtest:seed    # seed users, boards and cards
 pnpm k6 smoke         # gate - all checks must pass
 pnpm k6 mixed load    # the main run
-pnpm loadtest:down    # tear it all down
+tilt down
 ```
 
 `pnpm k6` with no arguments prompts for the scenario and profile; passing them runs straight away.
 
-| Script                  | Purpose                                       |
-| ----------------------- | --------------------------------------------- |
-| `loadtest:up[:multi]`   | Start the stack, 1 replica or 3 behind nginx  |
-| `loadtest:down[:multi]` | Remove containers and volumes                 |
-| `loadtest:seed`         | Seed data and mint JWTs for the virtual users |
-| `k6`                    | Run any scenario against any profile          |
-| `k6:peak-rps`           | Peak RPS from a `--ts` time-series file       |
-| `k6:traffic-mix`        | Derive the real traffic mix from Prometheus   |
+| Script           | Purpose                                       |
+| ---------------- | --------------------------------------------- |
+| `loadtest:seed`  | Seed data and mint JWTs for the virtual users |
+| `k6`             | Run any scenario against any profile          |
+| `k6:peak-rps`    | Peak RPS from a `--ts` time-series file       |
+| `k6:traffic-mix` | Derive the real traffic mix from Prometheus   |
 
 Scenarios: `smoke`, `mixed`, `board-read`, `board-write`, `auth`, `socket-fanout`.
 Profiles: `smoke`, `baseline`, `load`, `stress`, `spike`, `soak`, `capacity`.
-Flags: `--prom` pushes to Prometheus, `--ts` writes a time-series file for `pnpm k6:peak-rps`.
+Flags: `--prom` pushes to Prometheus, `--ts` writes a time-series file for `pnpm k6:peak-rps`, `--watch` samples pod CPU and event loop lag, `--aws` runs on the EKS cluster.
 
 Full instructions and configuration: [`k6/README.md`](k6/README.md).
 

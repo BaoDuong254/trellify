@@ -30,8 +30,7 @@ const setUpColumnWithCards = async (titles: string[]) => {
   const owner = await createActiveUser("owner");
   const boardId = await createBoardVia(owner);
   const columnId = await createColumnVia(owner, boardId);
-  const cardIds: string[] = [];
-  for (const title of titles) cardIds.push(await createCardVia(owner, boardId, columnId, title));
+  const cardIds = await Array.fromAsync(titles, (title) => createCardVia(owner, boardId, columnId, title));
   return { owner, boardId, columnId, cardIds };
 };
 

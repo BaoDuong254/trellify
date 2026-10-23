@@ -1,6 +1,6 @@
 import { fail } from "k6";
 
-import { API_URL, SYSTEM_TAGS, TEST_ID, userForVU } from "../config/env.js";
+import { API_URL, SKIP_AUTH, SYSTEM_TAGS, TEST_ID, userForVU } from "../config/env.js";
 import { thresholdsFor } from "../config/thresholds.js";
 import * as api from "../lib/api.js";
 import { authFlow, readFlow, writeFlow } from "../lib/flows.js";
@@ -24,7 +24,7 @@ export default function () {
   const user = userForVU();
   readFlow(user);
   writeFlow(user);
-  authFlow(user);
+  if (!SKIP_AUTH) authFlow(user);
 }
 
 export function handleSummary(data) {

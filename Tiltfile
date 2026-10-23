@@ -18,7 +18,13 @@ def read_dotenv(path):
     return values
 
 
-server_env = read_dotenv('apps/server/.env')
+config.define_string('server-replicas', usage='trellify-server replicas; 3+ exercises cross-pod broadcasts like prod')
+config.define_bool('loadtest', usage='production server image and the loadtest overlay, for k6 (see k6/README.md)')
+cfg = config.parse()
+server_replicas = int(cfg.get('server-replicas', '1'))
+loadtest = cfg.get('loadtest', False)
+
+server_env = read_dotenv('k6/loadtest.env' if loadtest else 'apps/server/.env')
 
 
 def from_server_env(key):
@@ -32,10 +38,7 @@ local_resource(
     labels=['platform'],
 )
 
-config.define_string('server-replicas', usage='trellify-server replicas; 3+ exercises cross-pod broadcasts like prod')
-server_replicas = int(config.parse().get('server-replicas', '1'))
-
-trellify_objects = decode_yaml_stream(kustomize('infra/apps/trellify/overlays/dev'))
+trellify_objects = decode_yaml_stream(kustomize('infra/apps/trellify/overlays/' + ('loadtest' if loadtest else 'dev')))
 for obj in trellify_objects:
     if obj['kind'] == 'Deployment' and obj['metadata']['name'] == 'trellify-server':
         obj['spec']['replicas'] = server_replicas
@@ -64,10 +67,10 @@ docker_build(
     'ghcr.io/baoduong254/trellify-server',
     '.',
     dockerfile='apps/server/Dockerfile',
-    target='dev',
+    target='' if loadtest else 'dev',
     only=WORKSPACE_FILES + ['apps/server'],
     ignore=BUILD_IGNORE + ['apps/server/test'],
-    live_update=[
+    live_update=[] if loadtest else [
         sync('apps/server/src', '/workspace/apps/server/src'),
         SHARED_SYNC,
     ],

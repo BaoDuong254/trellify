@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24.21.0-alpine AS builder
+FROM node:24.22.1-alpine AS builder
 
 # Set workdir to monorepo root
 WORKDIR /workspace
@@ -52,7 +52,7 @@ EXPOSE 3000
 CMD ["node_modules/.bin/tsx", "watch", "src/index.ts"]
 
 # Production stage
-FROM node:24.21.0-alpine
+FROM node:24.22.1-alpine
 
 # renovate: datasource=npm depName=pnpm
 ARG PNPM_VERSION=12.4.0
