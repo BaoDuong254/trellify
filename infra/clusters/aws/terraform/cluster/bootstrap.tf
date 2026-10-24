@@ -90,7 +90,7 @@ resource "helm_release" "argocd_roots" {
   name       = "argocd-roots"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argocd-apps"
-  version    = "2.0.6"
+  version    = "2.0.7"
   namespace  = helm_release.argocd.namespace
 
   values = [yamlencode({
