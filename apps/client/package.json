@@ -70,9 +70,9 @@
     "vite-plugin-svgr": "catalog:",
     "vitest": "catalog:"
   },
-  "packageManager": "pnpm@12.4.0",
+  "packageManager": "pnpm@12.15.0",
   "engines": {
     "node": "24.22.1",
-    "pnpm": "12.4.0"
+    "pnpm": "12.15.0"
   }
 }
