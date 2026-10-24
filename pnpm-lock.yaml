@@ -516,8 +516,8 @@ catalogs:
       specifier: 3.19.0
       version: 3.19.0
     zod:
-      specifier: 4.6.1
-      version: 4.6.1
+      specifier: 4.6.6
+      version: 4.6.6
 
 importers:
 
@@ -570,7 +570,7 @@ importers:
         version: 6.0.3
       unlighthouse:
         specifier: 'catalog:'
-        version: 0.19.1(677fdd3465c3c6a31c78aef91412e223)
+        version: 0.19.1(cd18b4532872eba1d720442ad9bf1afc)
 
   apps/client:
     dependencies:
@@ -805,7 +805,7 @@ importers:
         version: 14.0.3
       zod:
         specifier: 'catalog:'
-        version: 4.6.1
+        version: 4.6.6
     devDependencies:
       '@testcontainers/mongodb':
         specifier: 'catalog:'
@@ -986,7 +986,7 @@ importers:
         version: 3.19.0
       zod:
         specifier: 'catalog:'
-        version: 4.6.1
+        version: 4.6.6
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -9886,8 +9886,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.6.1:
-    resolution: {integrity: sha512-341aRWQsve0rvronKNTqZpjmzdbUDlFuzHaI/XLg/Ej82qffDJRRfBTCuv7+9q/rMjB6LSLyEBnW4InJeMtt/Q==}
+  zod@4.6.6:
+    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
 
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
@@ -10642,7 +10642,7 @@ snapshots:
       '@typescript-eslint/utils': 8.72.0(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       ts-pattern: 5.9.2
       typescript: 6.0.3
-      zod: 4.6.1
+      zod: 4.6.6
     optionalDependencies:
       eslint: 10.13.0(jiti@2.7.0)(supports-color@7.2.0)
     transitivePeerDependencies:
@@ -11271,7 +11271,7 @@ snapshots:
       pkg-types: 2.3.3
       std-env: 4.3.0
 
-  '@nuxt/ui@4.11.1(d554ce0b22cc7cad3336ce73be2b67bb)':
+  '@nuxt/ui@4.11.1(9f1add4183e50fb1d65843df5fc022e7)':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@iconify/vue': 5.0.1(vue@3.5.44(typescript@6.0.3))
@@ -11340,7 +11340,7 @@ snapshots:
       vaul-vue: 0.4.1(reka-ui@2.10.4(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
       vue-component-type-helpers: 3.3.11
     optionalDependencies:
-      zod: 4.6.1
+      zod: 4.6.7
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -12962,12 +12962,12 @@ snapshots:
       - rollup
       - unloader
 
-  '@unlighthouse/cli@0.19.1(69433abcbb984a8671a1e37ea6e15b7e)':
+  '@unlighthouse/cli@0.19.1(541231092e39b180bb5d90dd08ec9b7c)':
     dependencies:
       '@lhci/utils': 0.15.1(supports-color@5.5.0)
-      '@unlighthouse/client': 0.19.1(6de8b3256ec840e515f79ae562bc766c)
-      '@unlighthouse/core': 0.19.1(69433abcbb984a8671a1e37ea6e15b7e)
-      '@unlighthouse/server': 0.19.1(69433abcbb984a8671a1e37ea6e15b7e)
+      '@unlighthouse/client': 0.19.1(a80c39d02449290dd1bf31c7a7a31a1a)
+      '@unlighthouse/core': 0.19.1(541231092e39b180bb5d90dd08ec9b7c)
+      '@unlighthouse/server': 0.19.1(541231092e39b180bb5d90dd08ec9b7c)
       cac: 7.0.0
       consola: 3.4.2
       defu: 6.1.7
@@ -13070,9 +13070,9 @@ snapshots:
       - yup
       - zod
 
-  '@unlighthouse/client@0.19.1(6de8b3256ec840e515f79ae562bc766c)':
+  '@unlighthouse/client@0.19.1(a80c39d02449290dd1bf31c7a7a31a1a)':
     dependencies:
-      '@nuxt/ui': 4.11.1(d554ce0b22cc7cad3336ce73be2b67bb)
+      '@nuxt/ui': 4.11.1(9f1add4183e50fb1d65843df5fc022e7)
       '@tailwindcss/vite': 4.3.3(vite@8.3.0(@types/node@25.9.9)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.0))
       defu: 6.1.7
       fuse.js: 7.5.0
@@ -13160,11 +13160,11 @@ snapshots:
       - yup
       - zod
 
-  '@unlighthouse/core@0.19.1(69433abcbb984a8671a1e37ea6e15b7e)':
+  '@unlighthouse/core@0.19.1(541231092e39b180bb5d90dd08ec9b7c)':
     dependencies:
       '@clack/prompts': 1.8.1
       '@puppeteer/browsers': 3.2.2(yauzl@2.10.0)
-      '@unlighthouse/client': 0.19.1(6de8b3256ec840e515f79ae562bc766c)
+      '@unlighthouse/client': 0.19.1(a80c39d02449290dd1bf31c7a7a31a1a)
       c12: 3.3.4(magicast@0.5.5)
       chrome-launcher: 1.2.1(supports-color@5.5.0)
       consola: 3.4.2
@@ -13278,9 +13278,9 @@ snapshots:
       - yup
       - zod
 
-  '@unlighthouse/server@0.19.1(69433abcbb984a8671a1e37ea6e15b7e)':
+  '@unlighthouse/server@0.19.1(541231092e39b180bb5d90dd08ec9b7c)':
     dependencies:
-      '@unlighthouse/core': 0.19.1(69433abcbb984a8671a1e37ea6e15b7e)
+      '@unlighthouse/core': 0.19.1(541231092e39b180bb5d90dd08ec9b7c)
       h3: 1.15.11
       listhen: 1.10.1
     transitivePeerDependencies:
@@ -15116,8 +15116,8 @@ snapshots:
       '@babel/parser': 7.29.8
       eslint: 10.13.0(jiti@2.7.0)(supports-color@7.2.0)
       hermes-parser: 0.25.1
-      zod: 4.6.1
-      zod-validation-error: 4.0.2(zod@4.6.1)
+      zod: 4.6.6
+      zod-validation-error: 4.0.2(zod@4.6.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -19518,11 +19518,11 @@ snapshots:
 
   universalify@2.0.1: {}
 
-  unlighthouse@0.19.1(677fdd3465c3c6a31c78aef91412e223):
+  unlighthouse@0.19.1(cd18b4532872eba1d720442ad9bf1afc):
     dependencies:
-      '@unlighthouse/cli': 0.19.1(69433abcbb984a8671a1e37ea6e15b7e)
-      '@unlighthouse/client': 0.19.1(6de8b3256ec840e515f79ae562bc766c)
-      '@unlighthouse/core': 0.19.1(69433abcbb984a8671a1e37ea6e15b7e)
+      '@unlighthouse/cli': 0.19.1(541231092e39b180bb5d90dd08ec9b7c)
+      '@unlighthouse/client': 0.19.1(a80c39d02449290dd1bf31c7a7a31a1a)
+      '@unlighthouse/core': 0.19.1(541231092e39b180bb5d90dd08ec9b7c)
       c12: 3.3.4(magicast@0.5.5)
     optionalDependencies:
       puppeteer: 25.11.0(yauzl@2.10.0)
@@ -20159,13 +20159,13 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod-validation-error@4.0.2(zod@4.6.1):
+  zod-validation-error@4.0.2(zod@4.6.6):
     dependencies:
-      zod: 4.6.1
+      zod: 4.6.6
 
   zod@3.25.76: {}
 
-  zod@4.6.1: {}
+  zod@4.6.6: {}
 
   zod@4.6.7: {}
 
