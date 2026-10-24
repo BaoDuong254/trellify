@@ -69,7 +69,7 @@ module "vpc" {
 
 module "ebs_csi_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.9.0"
+  version = "2.10.0"
 
   name                      = "${var.cluster_name}-ebs-csi"
   attach_aws_ebs_csi_policy = true
@@ -77,7 +77,7 @@ module "ebs_csi_pod_identity" {
 
 module "cluster_autoscaler_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.9.0"
+  version = "2.10.0"
 
   name                             = "${var.cluster_name}-cluster-autoscaler"
   attach_cluster_autoscaler_policy = true

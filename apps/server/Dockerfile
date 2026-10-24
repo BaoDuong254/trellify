@@ -5,7 +5,7 @@ FROM node:24.22.1-alpine AS builder
 WORKDIR /workspace
 
 # renovate: datasource=npm depName=pnpm
-ARG PNPM_VERSION=12.4.0
+ARG PNPM_VERSION=12.15.0
 RUN npm install -g pnpm@${PNPM_VERSION}
 ENV LEFTHOOK=0
 
@@ -55,7 +55,7 @@ CMD ["node_modules/.bin/tsx", "watch", "src/index.ts"]
 FROM node:24.22.1-alpine
 
 # renovate: datasource=npm depName=pnpm
-ARG PNPM_VERSION=12.4.0
+ARG PNPM_VERSION=12.15.0
 RUN apk upgrade --no-cache \
   && npm install -g pnpm@${PNPM_VERSION} && npm cache clean --force \
   && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
