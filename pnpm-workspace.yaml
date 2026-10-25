@@ -31,7 +31,7 @@ catalog:
   "@mui/icons-material": 9.5.0
   "@mui/lab": 7.0.1-beta.25
   "@mui/material": 9.5.0
-  "@marsidev/react-turnstile": 1.6.2
+  "@marsidev/react-turnstile": 1.6.3
   "@playwright/test": 1.64.1
   "@prometheus-io/client": 0.16.1
   "@reduxjs/toolkit": 2.13.0
@@ -46,7 +46,7 @@ catalog:
   "@types/cors": 2.8.19
   "@types/express": 5.0.6
   "@types/jsonwebtoken": 9.0.10
-  "@types/lodash": 4.17.26
+  "@types/lodash": 4.17.27
   "@types/morgan": 1.9.10
   "@types/ms": 2.1.0
   "@types/multer": 2.3.0
@@ -127,11 +127,11 @@ catalog:
   typescript-eslint: 8.72.0
   unlighthouse: 0.19.1
   uuid: 14.0.3
-  vite: 8.3.3
+  vite: 8.3.5
   vite-plugin-svgr: 5.2.0
   vitest: 5.0.5
   winston: 3.19.0
-  zod: 4.6.6
+  zod: 4.6.7
   knip: 6.42.1
   "@sentry/react": 11.8.0
   "@sentry/vite-plugin": 11.8.0
