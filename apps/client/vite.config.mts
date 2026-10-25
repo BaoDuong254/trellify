@@ -119,6 +119,9 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    environmentOptions: {
+      jsdom: { url: "http://api.trellify.test" },
+    },
     include: ["src/**/*.spec.{ts,tsx}"],
     setupFiles: ["src/test/setup.ts"],
     env: {

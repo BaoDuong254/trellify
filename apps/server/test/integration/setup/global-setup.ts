@@ -25,7 +25,7 @@ const assertBloomModuleLoaded = async (container: StartedTestContainer): Promise
 
 export const setup = async (project: TestProject): Promise<void> => {
   [mongo, redis] = await Promise.all([
-    new MongoDBContainer(MONGO_IMAGE).start(),
+    new MongoDBContainer(MONGO_IMAGE).withEnvironment({ GLIBC_TUNABLES: "glibc.pthread.rseq=1" }).start(),
     new GenericContainer(REDIS_IMAGE)
       .withExposedPorts(REDIS_PORT)
       .withWaitStrategy(Wait.forLogMessage("Ready to accept connections"))

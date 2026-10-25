@@ -34,7 +34,6 @@ Sentry.init({
     userInfo: true,
     httpBodies: [],
   },
-  enableMetrics: true,
   integrations: [
     Sentry.reactRouterBrowserTracingIntegration({
       useEffect,

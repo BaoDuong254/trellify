@@ -3,6 +3,8 @@ name: trellify-e2e
 services:
   mongo:
     image: mongo:9.0
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
     ports:
       - "27019:27017"
     command: ["--quiet", "--logpath", "/dev/null"]
