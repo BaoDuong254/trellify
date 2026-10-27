@@ -87,12 +87,12 @@ infra/
 
 Every Application name is the same on both clusters (`platform-cloudflared`, `trellify-prod`, ...). Only the folder it points at differs. To find out what a cluster runs, read `clusters/<name>/argocd/kustomization.yaml` and nothing else. A new Application must be listed there, or ArgoCD never sees it.
 
-| Component             | Version    | Notes                                                                                             |
-| --------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| ingress-nginx         | `4.15.1`   | Helm, values = `platform/ingress-nginx/values.yaml` + `clusters/<name>/ingress-nginx/values.yaml` |
-| sealed-secrets        | `2.19.2`   | Helm                                                                                              |
-| kube-prometheus-stack | `88.5.2`   | Helm. `enableRemoteWriteReceiver` is on so local k6 runs can push results in                      |
-| cloudflared           | `2026.8.2` | Image tag in `platform/cloudflared/deployment.yaml`, shared by both clusters                      |
+| Component             | Version     | Notes                                                                                             |
+| --------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
+| ingress-nginx         | `4.15.1`    | Helm, values = `platform/ingress-nginx/values.yaml` + `clusters/<name>/ingress-nginx/values.yaml` |
+| sealed-secrets        | `2.19.2`    | Helm                                                                                              |
+| kube-prometheus-stack | `88.5.2`    | Helm. `enableRemoteWriteReceiver` is on so local k6 runs can push results in                      |
+| cloudflared           | `2026.10.3` | Image tag in `platform/cloudflared/deployment.yaml`, shared by both clusters                      |
 
 ## How ArgoCD Manages This
 
