@@ -66,7 +66,8 @@ CMD ["node_modules/.bin/vite", "--host", "0.0.0.0", "--port", "8080", "--strictP
 FROM nginxinc/nginx-unprivileged:alpine
 
 USER root
-RUN apk upgrade --no-cache
+ARG APK_UPGRADE_DATE
+RUN apk upgrade --no-cache && apk del --no-cache curl
 USER 101
 
 # Copy custom nginx configuration (default.conf includes security-headers.conf)

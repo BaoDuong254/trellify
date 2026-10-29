@@ -38,7 +38,9 @@ jobs:
 
       - name: Compute immutable tag
         id: vars
-        run: echo "tag=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "tag=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "apk_upgrade_date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
       - name: Detect app changes since the deployed image
         id: changes
@@ -83,6 +85,8 @@ jobs:
           context: .
           file: ./apps/server/Dockerfile
           push: true
+          build-args: |
+            APK_UPGRADE_DATE=${{ steps.vars.outputs.apk_upgrade_date }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ steps.vars.outputs.tag }}
             ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:latest
@@ -103,6 +107,7 @@ jobs:
             VITE_API_ENDPOINT=
             VITE_TURNSTILE_SITE_KEY=${{ vars.VITE_TURNSTILE_SITE_KEY }}
             SENTRY_RELEASE=${{ steps.vars.outputs.tag }}
+            APK_UPGRADE_DATE=${{ steps.vars.outputs.apk_upgrade_date }}
           secrets: |
             sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           tags: |

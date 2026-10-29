@@ -56,6 +56,7 @@ FROM node:24.22.1-alpine
 
 # renovate: datasource=npm depName=pnpm
 ARG PNPM_VERSION=12.15.0
+ARG APK_UPGRADE_DATE
 RUN apk upgrade --no-cache \
   && npm install -g pnpm@${PNPM_VERSION} && npm cache clean --force \
   && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
@@ -75,15 +76,14 @@ COPY --from=builder /workspace/packages/typescript/package.json ./packages/types
 COPY --from=builder /workspace/apps/server/package.json ./apps/server/
 
 # Copy built shared packages
-COPY --from=builder /workspace/packages/shared ./packages/shared
+COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
 
 # Copy built server application
 COPY --from=builder /workspace/apps/server/dist ./apps/server/dist
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts && rm -rf "$(pnpm store path)" /root/.cache /root/.npm
+# Install production dependencies of the server (and the workspace packages it uses) only
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter=server... && rm -rf "$(pnpm store path)" /root/.cache /root/.npm
 
-RUN chown -R node:node /workspace
 USER node
 
 # Set working directory to server app
