@@ -185,6 +185,7 @@ git push origin main
         │  job: build-and-push
         ├─ skip if only infra/** or *.md changed since the pinned tag
         ├─ tag = sha-$(git rev-parse --short HEAD)      ← immutable, never reused
+        │        (schedule/dispatch: sha-<short>-<YYYYMMDDHHMM>)
         ├─ build apps/server/Dockerfile  → ghcr.io/baoduong254/trellify-server:<tag>
         ├─ build apps/client/Dockerfile  → ghcr.io/baoduong254/trellify-client:<tag>
         ├─ SBOM + provenance attestations attached by BuildKit
@@ -204,6 +205,7 @@ Three details worth knowing:
 
 - **`[skip ci]` is what stops the loop.** The bump commit lands on `main`, the same branch the build workflow watches. That marker keeps GitHub from starting a second run, which would build a new tag, which would commit again, forever.
 - **`latest` exists but is never what gets deployed.** The overlay always pins the `sha-<short>` tag, so whatever is running traces back to exactly one commit - and a rollback is a Git operation, not a registry operation.
+- **A nightly run patches the base images without a code change.** At 19:00 UTC the workflow Trivy-scans the images the overlay pins; only if one has a fixable HIGH or CRITICAL CVE in an OS (Alpine) package does it rebuild that same commit as `sha-<short>-<YYYYMMDDHHMM>` and bump. `APK_UPGRADE_DATE` changes daily, so the `apk upgrade` layer is rebuilt rather than restored from the GHA cache. The bump is dropped if a regular deploy moved the overlay during the rebuild. A manual `workflow_dispatch` also gets the timestamped tag, so rebuilding a deployed commit still rolls the pods.
 - **Manifests are validated before ArgoCD sees them.** `.github/workflows/infra.yml` runs on every change under `infra/**`: every directory holding a `kustomization.yaml` is built and piped through `kubeconform -strict`, with CRD schemas (SealedSecret, ServiceMonitor, PrometheusRule, Application) from the datreeio CRDs catalog, along with `root-app.yaml` and the one-off Jobs. A new manifest folder therefore needs a `kustomization.yaml`, or it is never checked. Helm `values.yaml` files are skipped because they are not Kubernetes objects. The Terraform stacks get `fmt -check` and `validate`.
 - **Images are signed and scanned, not verified in-cluster.** Admission-time verification (Kyverno, policy-controller) would cost the node RAM for little gain on a single-owner cluster. Check a deployed digest by hand: `cosign verify ghcr.io/baoduong254/trellify-server@<digest> --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp 'github.com/BaoDuong254/trellify'`. HIGH and CRITICAL findings, fixable or not, land in the repository's Security tab.
 - **The client is built with an empty `VITE_API_ENDPOINT`.** The client and API share one host, so the browser calls `/api/v1/...` on its own origin and the Ingress routes it. Nothing in the bundle hardcodes a backend URL.

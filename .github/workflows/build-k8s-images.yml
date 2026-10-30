@@ -8,6 +8,8 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    - cron: "0 19 * * *"
 
 permissions:
   contents: read
@@ -19,7 +21,7 @@ env:
 
 jobs:
   build-and-push:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     permissions:
@@ -29,6 +31,8 @@ jobs:
       security-events: write
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
+      sha: ${{ steps.vars.outputs.sha }}
+      deployed_tag: ${{ steps.deployed.outputs.tag }}
       changed: ${{ steps.changes.outputs.changed }}
     steps:
       - uses: actions/checkout@v7
@@ -36,10 +40,29 @@ jobs:
           ref: ${{ env.SOURCE_SHA }}
           fetch-depth: 0
 
+      - name: Read the deployed image tag
+        id: deployed
+        shell: bash
+        run: |
+          tag=$(git show origin/main:infra/apps/trellify/overlays/prod/kustomization.yaml | sed -n 's/^ *newTag: //p' | head -n1)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "commit=$(echo "$tag" | sed -n 's/^sha-\([0-9a-f]*\).*/\1/p')" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the deployed commit for a scheduled rebuild
+        if: github.event_name == 'schedule'
+        run: git checkout --quiet "${{ steps.deployed.outputs.commit }}"
+
       - name: Compute immutable tag
         id: vars
+        shell: bash
         run: |
-          echo "tag=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          short=$(git rev-parse --short HEAD)
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "tag=sha-$short" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=sha-$short-$(date -u +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "apk_upgrade_date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
       - name: Detect app changes since the deployed image
@@ -50,7 +73,29 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          deployed=$(git show origin/main:infra/apps/trellify/overlays/prod/kustomization.yaml | sed -n 's/^ *newTag: sha-//p' | head -n1)
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            for app in server client; do
+              set +e
+              docker run --rm aquasec/trivy:0.69.3 image --quiet --scanners vuln --pkg-types os \
+                --severity HIGH,CRITICAL --ignore-unfixed --exit-code 3 \
+                "${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-$app:${{ steps.deployed.outputs.tag }}"
+              rc=$?
+              set -e
+              if [ "$rc" -eq 3 ]; then
+                echo "trellify-$app has fixable HIGH/CRITICAL CVEs, rebuilding."
+                echo "changed=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              if [ "$rc" -ne 0 ]; then
+                echo "Trivy failed on trellify-$app (exit $rc)."
+                exit "$rc"
+              fi
+            done
+            echo "Deployed images have no fixable HIGH/CRITICAL CVEs, skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          deployed="${{ steps.deployed.outputs.commit }}"
           if [ -z "$deployed" ] || ! git cat-file -e "$deployed^{commit}" 2>/dev/null; then
             echo "Deployed commit unknown, building."
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -143,7 +188,7 @@ jobs:
         with:
           sarif_file: trivy-server.sarif
           ref: ${{ github.ref }}
-          sha: ${{ env.SOURCE_SHA }}
+          sha: ${{ steps.vars.outputs.sha }}
           category: trivy-server
 
       - name: Scan client image for fixable critical CVEs
@@ -173,7 +218,7 @@ jobs:
         with:
           sarif_file: trivy-client.sarif
           ref: ${{ github.ref }}
-          sha: ${{ env.SOURCE_SHA }}
+          sha: ${{ steps.vars.outputs.sha }}
           category: trivy-client
 
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -216,13 +261,22 @@ jobs:
           kustomize version
 
       - name: Pin new image tags
+        id: pin
         working-directory: infra/apps/trellify/overlays/prod
         run: |
+          current=$(sed -n 's/^ *newTag: //p' kustomization.yaml | head -n1)
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$current" != "${{ needs.build-and-push.outputs.deployed_tag }}" ]; then
+            echo "Overlay moved to $current while rebuilding ${{ needs.build-and-push.outputs.deployed_tag }}, not rolling it back."
+            echo "pinned=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           kustomize edit set image \
             ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ needs.build-and-push.outputs.tag }} \
             ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client:${{ needs.build-and-push.outputs.tag }}
+          echo "pinned=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push
+        if: steps.pin.outputs.pinned == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -234,7 +288,7 @@ jobs:
           git push
 
       - name: Notify Telegram on success
-        if: success()
+        if: success() && steps.pin.outputs.pinned == 'true'
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
@@ -245,7 +299,7 @@ jobs:
           🏷️ Tag: ${{ needs.build-and-push.outputs.tag }}
           📦 ghcr.io/${{ env.OWNER }}/trellify-{server,client}
           👀 ArgoCD will sync automatically
-          🔗 https://github.com/${{ github.repository }}/commit/${{ env.SOURCE_SHA }}"
+          🔗 https://github.com/${{ github.repository }}/commit/${{ needs.build-and-push.outputs.sha }}"
 
       - name: Notify Telegram on failure
         if: failure()

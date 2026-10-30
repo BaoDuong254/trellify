@@ -269,7 +269,7 @@ Production runs on a self-hosted **k3s** cluster and is deployed by **GitOps** �
 
 **1. Build** — once CI passes on a push to `main`, [`.github/workflows/build-k8s-images.yml`](.github/workflows/build-k8s-images.yml) builds `apps/server/Dockerfile` and `apps/client/Dockerfile` and pushes them to GHCR as `ghcr.io/baoduong254/trellify-{server,client}`.
 
-**2. Tag** — each image gets the immutable tag `sha-<short-commit>` alongside `latest`. Only the `sha-` tag is ever deployed, so whatever is running traces back to exactly one commit.
+**2. Tag** — each image gets the immutable tag `sha-<short-commit>` alongside `latest`. Only the `sha-` tag is ever deployed, so whatever is running traces back to exactly one commit. A nightly run rebuilds the deployed commit as `sha-<short-commit>-<YYYYMMDDHHMM>` when Trivy finds a fixable HIGH or CRITICAL CVE in one of its OS (Alpine) packages, so base-image patches ship without a code change.
 
 **3. Bump** — the `bump-manifest` job runs `kustomize edit set image` against `infra/apps/trellify/overlays/prod` and commits the result as `chore(deploy): trellify -> sha-xxxxxxx [skip ci]`. The `[skip ci]` marker is what stops the workflow from re-triggering itself.
 
