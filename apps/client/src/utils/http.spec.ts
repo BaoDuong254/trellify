@@ -101,6 +101,16 @@ describe("http client", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it("shows the API's own message when the server itself answers 503", async () => {
+    server.use(
+      mock.get(BOARD_URL, () => HttpResponse.json({ message: "Turnstile service unavailable" }, { status: 503 }))
+    );
+
+    await expect(http.get(BOARD_URL)).rejects.toMatchObject({ response: { status: 503 } });
+
+    expect(toast.error).toHaveBeenCalledWith("Turnstile service unavailable");
+  });
+
   it("stays logged in when the refresh fails because the server went away", async () => {
     server.use(
       mock.get(REFRESH_URL, () => HttpResponse.error()),

@@ -1,3 +1,4 @@
+import cors from "cors";
 import express, { type Express } from "express";
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
@@ -5,6 +6,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SENTRY_DSN } from "@workspace/shared/constants/sentry";
 
+import { corsOptions } from "src/config/cors";
+import environmentConfig from "src/config/environment";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
 import { diagnosticsRoute } from "src/routes/v1/diagnostics.route";
 
@@ -62,6 +65,19 @@ describe("POST /api/v1/diagnostics", () => {
 
     const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(init.headers).toMatchObject({ "X-Forwarded-For": expect.stringContaining("127.0.0.1") });
+  });
+
+  it("lets a cross-origin SDK read the rate-limit headers", async () => {
+    stubSentry(async () => new Response(null, { status: StatusCodes.OK }));
+
+    const response = await request(express().use(cors(corsOptions)).use("/api/v1/diagnostics", diagnosticsRoute))
+      .post("/api/v1/diagnostics")
+      .set("Origin", environmentConfig.CLIENT_URL)
+      .set("Content-Type", "text/plain;charset=UTF-8")
+      .send(envelopeFor(SENTRY_DSN))
+      .expect(StatusCodes.OK);
+
+    expect(response.headers["access-control-expose-headers"]).toBe("X-Sentry-Rate-Limits,Retry-After");
   });
 
   it("relays Sentry's status and rate-limit headers so the SDK backs off", async () => {

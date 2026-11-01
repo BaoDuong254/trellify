@@ -19,8 +19,12 @@ const SERVER_UNREACHABLE_STATUSES = new Set([502, 503, 504, 530]);
 const SERVER_UNREACHABLE_TOAST_ID = "server-unreachable";
 const SERVER_UNREACHABLE_MESSAGE = "The server is temporarily offline. Please try again later.";
 
+const hasApiMessage = (data: unknown): boolean => typeof data === "object" && data !== null && "message" in data;
+
 const isServerUnreachable = (error: AxiosError): boolean =>
-  error.response ? SERVER_UNREACHABLE_STATUSES.has(error.response.status) : !axios.isCancel(error);
+  error.response
+    ? SERVER_UNREACHABLE_STATUSES.has(error.response.status) && !hasApiMessage(error.response.data)
+    : !axios.isCancel(error);
 
 // Create an axios instance
 const http = axios.create();
