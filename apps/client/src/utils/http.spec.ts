@@ -81,6 +81,37 @@ describe("http client", () => {
     expect(toast.error).toHaveBeenCalledWith("Unauthorized!");
   });
 
+  it("shows one offline toast and stays logged in when the server cannot be reached", async () => {
+    server.use(mock.get(BOARD_URL, () => HttpResponse.error()));
+
+    await Promise.allSettled([http.get(BOARD_URL), http.get(BOARD_URL)]);
+
+    const [[, firstOptions], [, secondOptions]] = vi.mocked(toast.error).mock.calls;
+    expect(firstOptions?.id).toBe("server-unreachable");
+    expect(secondOptions?.id).toBe(firstOptions?.id);
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("treats Cloudflare's 530 for a stopped tunnel as offline", async () => {
+    server.use(mock.get(BOARD_URL, () => new HttpResponse("origin down", { status: 530 })));
+
+    await expect(http.get(BOARD_URL)).rejects.toMatchObject({ response: { status: 530 } });
+
+    expect(toast.error).toHaveBeenCalledWith(expect.any(String), { id: "server-unreachable" });
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("stays logged in when the refresh fails because the server went away", async () => {
+    server.use(
+      mock.get(REFRESH_URL, () => HttpResponse.error()),
+      mock.get(BOARD_URL, () => HttpResponse.json({ message: "expired" }, { status: 410 }))
+    );
+
+    await expect(http.get(BOARD_URL)).rejects.toBeDefined();
+
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
   it("counts a failed request under its status code", async () => {
     server.use(mock.get(BOARD_URL, () => HttpResponse.json({ message: "Boom" }, { status: 500 })));
 

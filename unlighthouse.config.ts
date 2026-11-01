@@ -5,7 +5,8 @@ import { useUnlighthouse } from "unlighthouse";
 import { defineUnlighthouseConfig } from "unlighthouse/config";
 
 const site = process.env.UNLIGHTHOUSE_SITE ?? "https://trellify.duonggiabao.com";
-const domain = new URL(site).hostname;
+const apiOrigin = process.env.UNLIGHTHOUSE_API ?? "https://trellify-api.duonggiabao.com";
+const apiDomain = new URL(apiOrigin).hostname;
 
 const refreshToken = process.env.UNLIGHTHOUSE_REFRESH_TOKEN;
 const persistRoot = process.env.UNLIGHTHOUSE_PERSIST_ROOT;
@@ -18,7 +19,9 @@ const authenticatedUrls = ["/boards", ...(boardId ? [`/boards/${boardId}`] : [])
 const urls = session ? authenticatedUrls : publicUrls;
 
 const fetchAccessToken = async (token: string): Promise<string> => {
-  const response = await fetch(`${site}/api/v1/users/refresh_token`, { headers: { cookie: `refreshToken=${token}` } });
+  const response = await fetch(`${apiOrigin}/api/v1/users/refresh_token`, {
+    headers: { cookie: `refreshToken=${token}` },
+  });
   const accessToken = response.headers
     .getSetCookie()
     .map((cookie) => /^accessToken=([^;]+)/.exec(cookie)?.[1])
@@ -96,7 +99,7 @@ export default defineUnlighthouseConfig({
           ...Object.entries({ accessToken, refreshToken: session.refreshToken }).map(([name, value]) => ({
             name,
             value,
-            domain,
+            domain: apiDomain,
             path: "/",
             secure: true,
             httpOnly: true,

@@ -18,18 +18,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: trellify-client
-spec:
-  selector:
-    app: trellify-client
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
----
-apiVersion: v1
-kind: Service
-metadata:
   name: trellify-worker-metrics
   labels:
     app: trellify-worker

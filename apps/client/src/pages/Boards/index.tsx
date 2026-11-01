@@ -4,6 +4,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Container from "@mui/material/Container";
@@ -60,6 +61,7 @@ const SidebarItem = styled(Box)(({ theme }) => ({
 
 function Boards() {
   const [loaded, setLoaded] = useState<LoadedBoards | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const currentUser = useSelector(selectCurrentUser);
   const { isStarred, toggleStar } = useStarredBoards();
@@ -72,8 +74,12 @@ function Boards() {
       .then((res: FetchBoardsResponse) => {
         if (ignored()) return;
         setLoaded({ search, boards: res.boards || [], totalBoards: res.totalBoards || 0 });
+        setLoadFailed(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
+        if (!ignored()) setLoadFailed(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -128,7 +134,24 @@ function Boards() {
               Your boards:
             </Typography>
 
-            {isLoading && (
+            {isLoading && loadFailed && (
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+                <Typography variant='body1' sx={{ fontWeight: "bold" }}>
+                  Could not load your boards.
+                </Typography>
+                <Button
+                  variant='contained'
+                  onClick={() => {
+                    setLoadFailed(false);
+                    refreshBoards();
+                  }}
+                >
+                  Retry
+                </Button>
+              </Box>
+            )}
+
+            {isLoading && !loadFailed && (
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                 {Array.from({ length: skeletonCount }, (_, index) => (
                   <Box key={index}>

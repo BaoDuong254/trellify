@@ -7,7 +7,6 @@ resources:
   - namespace.yaml
   - deployment-server.yaml
   - deployment-worker.yaml
-  - deployment-client.yaml
   - services.yaml
   - ingress.yaml
   - pdb.yaml

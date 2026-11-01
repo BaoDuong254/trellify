@@ -3,7 +3,7 @@
 set -e
 
 INDEX_HTML="apps/client/index.html"
-HEADERS_CONF="apps/client/nginx/security-headers.conf"
+HEADERS_CONF="apps/client/public/_headers"
 
 node - "$INDEX_HTML" "$HEADERS_CONF" <<'NODE'
 const { readFileSync } = require("node:fs");

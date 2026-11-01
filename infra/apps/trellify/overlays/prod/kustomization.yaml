@@ -24,9 +24,6 @@ patches:
     name: trellify-worker
 
 images:
-- name: ghcr.io/baoduong254/trellify-client
-  newName: ghcr.io/baoduong254/trellify-client
-  newTag: sha-c7aa31e
 - name: ghcr.io/baoduong254/trellify-server
   newName: ghcr.io/baoduong254/trellify-server
   newTag: sha-c7aa31e

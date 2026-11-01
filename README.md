@@ -22,7 +22,6 @@ A full-stack project management platform with real-time collaboration, drag-and-
   - [🚀 Deployment](#-deployment)
     - [Cluster topology](#cluster-topology)
     - [Required GitHub secrets](#required-github-secrets)
-    - [Legacy: Docker Compose deployment](#legacy-docker-compose-deployment)
   - [🧪 Automated Testing](#-automated-testing)
     - [Test layers](#test-layers)
     - [Prerequisites](#prerequisites)
@@ -265,11 +264,11 @@ pnpm start:prod
 
 ## 🚀 Deployment
 
-Production runs on a self-hosted **k3s** cluster and is deployed by **GitOps** — GitHub Actions builds images, commits the new tag back to this repo, and ArgoCD reconciles the cluster to match. Nothing is deployed by SSH-ing into a machine.
+The client and the backend deploy separately. The client is static and runs on **Cloudflare Workers Static Assets** at `https://trellify.duonggiabao.com`, so the UI stays up even when no cluster is running. The backend runs on Kubernetes at `https://trellify-api.duonggiabao.com` and is deployed by **GitOps** — GitHub Actions builds the image, commits the new tag back to this repo, and ArgoCD reconciles the cluster to match.
 
-**1. Build** — once CI passes on a push to `main`, [`.github/workflows/build-k8s-images.yml`](.github/workflows/build-k8s-images.yml) builds `apps/server/Dockerfile` and `apps/client/Dockerfile` and pushes them to GHCR as `ghcr.io/baoduong254/trellify-{server,client}`.
+**1. Build** — once CI passes on a push to `main`, [`.github/workflows/build-k8s-images.yml`](.github/workflows/build-k8s-images.yml) builds `apps/server/Dockerfile`, pushes it to GHCR as `ghcr.io/baoduong254/trellify-server`, and the `deploy-client` job runs `wrangler deploy` for the client.
 
-**2. Tag** — each image gets the immutable tag `sha-<short-commit>` alongside `latest`. Only the `sha-` tag is ever deployed, so whatever is running traces back to exactly one commit. A nightly run rebuilds the deployed commit as `sha-<short-commit>-<YYYYMMDDHHMM>` when Trivy finds a fixable HIGH or CRITICAL CVE in one of its OS (Alpine) packages, so base-image patches ship without a code change.
+**2. Tag** — the image gets the immutable tag `sha-<short-commit>` alongside `latest`. Only the `sha-` tag is ever deployed, so whatever is running traces back to exactly one commit. A nightly run rebuilds the deployed commit as `sha-<short-commit>-<YYYYMMDDHHMM>` when Trivy finds a fixable HIGH or CRITICAL CVE in one of its OS (Alpine) packages, so base-image patches ship without a code change.
 
 **3. Bump** — the `bump-manifest` job runs `kustomize edit set image` against `infra/apps/trellify/overlays/prod` and commits the result as `chore(deploy): trellify -> sha-xxxxxxx [skip ci]`. The `[skip ci]` marker is what stops the workflow from re-triggering itself.
 
@@ -283,11 +282,10 @@ See [`infra/README.md`](infra/README.md) for the infrastructure reference — ar
 | ------------------ | --------------- | ------------------------------------------------------------------------ |
 | `trellify-server`  | 3, HPA up to 6  | Autoscales at 70% CPU; PodDisruptionBudget keeps `minAvailable: 2`       |
 | `trellify-worker`  | 1               | Same image as the server, running `dist/worker.js` - the BullMQ consumer |
-| `trellify-client`  | 2               | nginx serving the built Vite bundle                                      |
 | `trellify-mongodb` | 1 (StatefulSet) | In-cluster, 20Gi retained volume, nightly backup CronJob → Cloudflare R2 |
 | `trellify-redis`   | 1 (StatefulSet) | In-cluster, 8Gi retained volume                                          |
 
-All three public paths share one host: `/` goes to the client, `/api` to the server (rate limited), and `/socket.io` to the server with long timeouts and cookie affinity. There is no public port on the VM — traffic arrives through an outbound-only Cloudflare tunnel.
+The API host has two public paths: `/api` goes to the server (rate limited), and `/socket.io` to the server with long timeouts and cookie affinity. There is no public port on the VM — traffic arrives through an outbound-only Cloudflare tunnel.
 
 ### Required GitHub secrets
 
@@ -296,25 +294,14 @@ All three public paths share one host: `/` goes to the client, `/api` to the ser
 | `GITHUB_TOKEN` (built in)       | Pushes images to GHCR                           |
 | `GITOPS_TOKEN`                  | Pushes the image-tag bump commit back to `main` |
 | `SERVER_ENV`, `CLIENT_ENV`      | Full `.env` contents, used by the CI build only |
-| `vars.VITE_TURNSTILE_SITE_KEY`  | Baked into the client image at build time       |
+| `vars.VITE_TURNSTILE_SITE_KEY`  | Baked into the client bundle at build time      |
+| `CLOUDFLARE_API_TOKEN`          | Deploys the client with `wrangler deploy`       |
+| `CLOUDFLARE_ACCOUNT_ID`         | Cloudflare account the client deploys to        |
 | `TELEGRAM_TO`, `TELEGRAM_TOKEN` | Build success / failure notifications           |
 | `SONAR_TOKEN`                   | SonarCloud scan in the CI workflow              |
 
 > **Important**
 > Runtime configuration for the cluster does **not** come from these secrets — it comes from `infra/apps/trellify/base/config-server.env` and the SealedSecrets in `infra/apps/trellify/overlays/prod/`. When you add a new environment variable, update those as well, or the pod fails Zod validation at startup and never becomes ready.
-
-### Legacy: Docker Compose deployment
-
-Before the k3s migration, production ran as a Docker Compose stack on a single VPS, deployed over SSH by [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) with images on Docker Hub and Portainer for container management. Those files are still in the repo: [`docker-compose.yml`](docker-compose.yml) and [`docker-compose.portainer.yml`](docker-compose.portainer.yml), and remain useful for self-hosting on a single machine.
-
-**This path is no longer used for production.** `deploy.yml` is `workflow_dispatch`-only, so nothing pushed to `main` can trigger it — but dispatching it manually does build the Docker Hub images and redeploy the Compose stack over SSH, which keeps it usable as a fallback if the cluster is unavailable.
-
-It needs its own secrets, none of which the k3s pipeline uses:
-
-| Secret                                            | Purpose                                       |
-| ------------------------------------------------- | --------------------------------------------- |
-| `DOCKERHUB_USERNAME`, `DOCKERHUB_PASSWORD`        | Docker Hub authentication and image namespace |
-| `HOST_VPS`, `USERNAME_VPS`, `KEY_VPS`, `PORT_VPS` | SSH access to the deployment host             |
 
 ## 🧪 Automated Testing
 

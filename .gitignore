@@ -117,6 +117,7 @@ stats.html
 
 # Terraform
 .terraform/
+.wrangler/
 *.tfstate
 *.tfstate.*
 *.tfplan

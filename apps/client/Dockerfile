@@ -1,5 +1,5 @@
-# Build stage
-FROM node:24.22.1-alpine AS builder
+# Dev stage for Tilt: Vite dev server, live_update syncs src/ into the running pod
+FROM node:24.22.1-alpine AS dev
 
 # Set workdir to monorepo root
 WORKDIR /workspace
@@ -46,39 +46,8 @@ ARG VITE_TURNSTILE_SITE_KEY
 RUN printf 'VITE_API_ENDPOINT=%s\nVITE_TURNSTILE_SITE_KEY=%s\n' \
     "$VITE_API_ENDPOINT" "$VITE_TURNSTILE_SITE_KEY" > ./apps/client/.env
 
-# Build the client application
 WORKDIR /workspace/apps/client
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-ARG SENTRY_RELEASE
-RUN --mount=type=secret,id=sentry_auth_token \
-    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
-    pnpm run apps:build
-
-# Dev stage for Tilt: Vite dev server, live_update syncs src/ into the running pod
-FROM builder AS dev
-ENV NODE_OPTIONS=""
 RUN chown -R 101:101 /workspace/apps/client /workspace/packages/shared
 USER 101
 EXPOSE 8080
 CMD ["node_modules/.bin/vite", "--host", "0.0.0.0", "--port", "8080", "--strictPort"]
-
-# Production stage
-FROM nginxinc/nginx-unprivileged:alpine
-
-USER root
-ARG APK_UPGRADE_DATE
-RUN apk upgrade --no-cache && apk del --no-cache curl
-USER 101
-
-# Copy custom nginx configuration (default.conf includes security-headers.conf)
-COPY apps/client/nginx/nginx.conf /etc/nginx/conf.d/default.conf
-COPY apps/client/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
-
-# Copy built application from builder stage
-COPY --from=builder /workspace/apps/client/dist /usr/share/nginx/html
-
-# Expose ports
-EXPOSE 8080
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]

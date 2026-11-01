@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: trellify.duonggiabao.com
+    - host: trellify-api.duonggiabao.com
       http:
         paths:
           - path: /api
@@ -31,7 +31,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: trellify.duonggiabao.com
+    - host: trellify-api.duonggiabao.com
       http:
         paths:
           - path: /socket.io
@@ -39,23 +39,5 @@ spec:
             backend:
               service:
                 name: trellify-server
-                port:
-                  name: http
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: trellify-web
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: trellify.duonggiabao.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: trellify-client
                 port:
                   name: http

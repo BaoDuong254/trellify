@@ -74,24 +74,22 @@ jobs:
             exit 0
           fi
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            for app in server client; do
-              set +e
-              docker run --rm aquasec/trivy:0.69.3 image --quiet --scanners vuln --pkg-types os \
-                --severity HIGH,CRITICAL --ignore-unfixed --exit-code 3 \
-                "${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-$app:${{ steps.deployed.outputs.tag }}"
-              rc=$?
-              set -e
-              if [ "$rc" -eq 3 ]; then
-                echo "trellify-$app has fixable HIGH/CRITICAL CVEs, rebuilding."
-                echo "changed=true" >> "$GITHUB_OUTPUT"
-                exit 0
-              fi
-              if [ "$rc" -ne 0 ]; then
-                echo "Trivy failed on trellify-$app (exit $rc)."
-                exit "$rc"
-              fi
-            done
-            echo "Deployed images have no fixable HIGH/CRITICAL CVEs, skipping."
+            set +e
+            docker run --rm aquasec/trivy:0.69.3 image --quiet --scanners vuln --pkg-types os \
+              --severity HIGH,CRITICAL --ignore-unfixed --exit-code 3 \
+              "${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ steps.deployed.outputs.tag }}"
+            rc=$?
+            set -e
+            if [ "$rc" -eq 3 ]; then
+              echo "trellify-server has fixable HIGH/CRITICAL CVEs, rebuilding."
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [ "$rc" -ne 0 ]; then
+              echo "Trivy failed on trellify-server (exit $rc)."
+              exit "$rc"
+            fi
+            echo "Deployed image has no fixable HIGH/CRITICAL CVEs, skipping."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -138,29 +136,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push client image
-        id: build-client
-        if: steps.changes.outputs.changed == 'true'
-        uses: docker/build-push-action@v7
-        with:
-          sbom: true
-          provenance: mode=max
-          context: .
-          file: ./apps/client/Dockerfile
-          push: true
-          build-args: |
-            VITE_API_ENDPOINT=
-            VITE_TURNSTILE_SITE_KEY=${{ vars.VITE_TURNSTILE_SITE_KEY }}
-            SENTRY_RELEASE=${{ steps.vars.outputs.tag }}
-            APK_UPGRADE_DATE=${{ steps.vars.outputs.apk_upgrade_date }}
-          secrets: |
-            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client:${{ steps.vars.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       - name: Scan server image for fixable critical CVEs
         if: steps.changes.outputs.changed == 'true'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -191,44 +166,13 @@ jobs:
           sha: ${{ steps.vars.outputs.sha }}
           category: trivy-server
 
-      - name: Scan client image for fixable critical CVEs
-        if: steps.changes.outputs.changed == 'true'
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client@${{ steps.build-client.outputs.digest }}
-          severity: CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-
-      - name: Report client image CVEs
-        if: always() && steps.build-client.outputs.digest != ''
-        continue-on-error: true
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client@${{ steps.build-client.outputs.digest }}
-          severity: HIGH,CRITICAL
-          format: sarif
-          output: trivy-client.sarif
-          exit-code: "0"
-
-      - name: Upload client scan to code scanning
-        if: always() && steps.build-client.outputs.digest != ''
-        continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: trivy-client.sarif
-          ref: ${{ github.ref }}
-          sha: ${{ steps.vars.outputs.sha }}
-          category: trivy-client
-
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         if: steps.changes.outputs.changed == 'true'
 
-      - name: Sign images
+      - name: Sign image
         if: steps.changes.outputs.changed == 'true'
         run: |
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server@${{ steps.build-server.outputs.digest }}
-          cosign sign --yes ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client@${{ steps.build-client.outputs.digest }}
 
       - name: Notify Telegram that the build or scan blocked the deploy
         if: failure()
@@ -271,8 +215,7 @@ jobs:
             exit 0
           fi
           kustomize edit set image \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ needs.build-and-push.outputs.tag }} \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-client:${{ needs.build-and-push.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ needs.build-and-push.outputs.tag }}
           echo "pinned=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push
@@ -297,7 +240,7 @@ jobs:
             --data-urlencode "chat_id=${TELEGRAM_TO}" \
             --data-urlencode "text=🚀 Image k3s build successful.
           🏷️ Tag: ${{ needs.build-and-push.outputs.tag }}
-          📦 ghcr.io/${{ env.OWNER }}/trellify-{server,client}
+          📦 ghcr.io/${{ env.OWNER }}/trellify-server
           👀 ArgoCD will sync automatically
           🔗 https://github.com/${{ github.repository }}/commit/${{ needs.build-and-push.outputs.sha }}"
 
@@ -310,6 +253,55 @@ jobs:
           curl -fsS -o /dev/null "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_TO}" \
             --data-urlencode "text=❌ Build image k3s failed.
+          🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  deploy-client:
+    needs: build-and-push
+    if: ${{ needs.build-and-push.outputs.changed == 'true' && github.event_name != 'schedule' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.22.1"
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.15.0
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm pkg:build
+
+      - name: Build client
+        run: pnpm fe apps:build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          VITE_API_ENDPOINT: https://trellify-api.duonggiabao.com
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: ${{ needs.build-and-push.outputs.tag }}
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/client
+          wranglerVersion: "4.156.0"
+          command: deploy
+
+      - name: Notify Telegram on failure
+        if: failure()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          curl -fsS -o /dev/null "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage"             --data-urlencode "chat_id=${TELEGRAM_TO}"             --data-urlencode "text=❌ Client deploy to Cloudflare failed.
           🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   notify-blocked:

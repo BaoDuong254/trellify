@@ -2,7 +2,7 @@
 
 Everything Trellify needs to run in production lives in this directory as declarative YAML. Nothing here is applied by hand because [ArgoCD](https://argo-cd.readthedocs.io/) watches the `main` branch and reconciles the cluster to match it. Changing production means committing a change here.
 
-Production is a single-node [k3s](https://docs.k3s.io/) install on an Ubuntu VM in the homelab, serving `https://trellify.duonggiabao.com`. An EKS cluster on AWS can be created from the same manifests when the homelab is down (see [AWS Failover](#aws-failover)).
+Production is a single-node [k3s](https://docs.k3s.io/) install on an Ubuntu VM in the homelab, serving the API at `https://trellify-api.duonggiabao.com`. The client is static and lives outside the cluster on Cloudflare Workers Static Assets at `https://trellify.duonggiabao.com`, so the UI stays up while no cluster runs. An EKS cluster on AWS can be created from the same manifests when the homelab is down (see [AWS Failover](#aws-failover)).
 
 ## 📋 Table of Contents
 
@@ -39,7 +39,7 @@ Production is a single-node [k3s](https://docs.k3s.io/) install on an Ubuntu VM 
 │  ns argocd           ArgoCD (app-of-apps)     │   shared by every project   │
 │  ns observability    Prometheus + Grafana    ─┘                             │
 │                                                                             │
-│  ns trellify         server ×3-6, worker ×1, client ×2   ─┐                 │
+│  ns trellify         server ×3-6, worker ×1              ─┐                 │
 │                      MongoDB + Redis (StatefulSet)       ─┘  APPLICATION    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -50,7 +50,7 @@ Production is a single-node [k3s](https://docs.k3s.io/) install on an Ubuntu VM 
 
 The load-bearing idea: **the platform layer knows nothing about Trellify**. Adding a second project means one namespace and one ArgoCD `Application` - no change to cloudflared, ingress-nginx, or DNS.
 
-Traffic path for a browser request: Cloudflare edge → `cloudflared` tunnel pod → `ingress-nginx-controller` Service → the Ingress rule that matches the path → `trellify-client` (`/`) or `trellify-server` (`/api`, `/socket.io`).
+Traffic path for a browser request: Cloudflare edge → `cloudflared` tunnel pod → `ingress-nginx-controller` Service → the Ingress rule that matches the path → `trellify-server` (`/api`, `/socket.io`). Static pages never reach the cluster: Cloudflare serves `trellify.duonggiabao.com` from the Worker's assets.
 
 ## Directory Map
 
@@ -125,21 +125,19 @@ A homelab bootstrapped before the `platform/apps/clusters` split still runs a `r
 | ------------------ | --------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `trellify-server`  | 3, HPA up to 6  | `ghcr.io/baoduong254/trellify-server` | PodDisruptionBudget keeps `minAvailable: 2`; HPA targets 70% CPU. Prometheus metrics on port 9464, scraped through `base/servicemonitor.yaml` |
 | `trellify-worker`  | 1               | same image as the server              | Runs `dist/worker.js` - the BullMQ consumer. Metrics on port 9464 via the headless `trellify-worker-metrics` Service                          |
-| `trellify-client`  | 2               | `ghcr.io/baoduong254/trellify-client` | nginx serving the built Vite bundle                                                                                                           |
 | `trellify-mongodb` | 1 (StatefulSet) | `mongo:8.0`                           | 20Gi PVC on `local-path-retain`, standalone (`directConnection=true`)                                                                         |
 | `trellify-redis`   | 1 (StatefulSet) | `redis:8-alpine`                      | 8Gi PVC on `local-path-retain`                                                                                                                |
 
 **The HPA and ArgoCD would otherwise fight.** The HPA writes `spec.replicas` on `trellify-server`; ArgoCD's `selfHeal` reads that as drift from Git and writes it back - scaling would oscillate forever. [`trellify-prod.yaml`](clusters/homelab/argocd/apps/trellify-prod.yaml) resolves it with `ignoreDifferences` on `/spec/replicas` for that one Deployment.
 
-**Three Ingresses share one host**, because each path needs different nginx behaviour ([`base/ingress.yaml`](apps/trellify/base/ingress.yaml)):
+**Two Ingresses share the API host**, because each path needs different nginx behaviour ([`base/ingress.yaml`](apps/trellify/base/ingress.yaml)):
 
 | Ingress        | Path         | Why it is separate                                                                                                                                                                                             |
 | -------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `trellify-web` | `/`          | Plain static serving                                                                                                                                                                                           |
 | `trellify-api` | `/api`       | Rate limited - 20 rps **per client IP** with a burst multiplier of 2, rejecting with `429`. Per-IP because ingress-nginx resolves the real client from `CF-Connecting-IP`; it is not a cap on total throughput |
 | `trellify-ws`  | `/socket.io` | 1-hour read/send timeouts and cookie affinity, so a WebSocket is not cut every 60s                                                                                                                             |
 
-[`base/networkpolicy.yaml`](apps/trellify/base/networkpolicy.yaml) starts from `default-deny-ingress` across the whole namespace and opens exactly four paths: ingress-nginx → server/client, server/worker → Redis, server/worker (plus any Job pod, for the backup CronJob) → MongoDB, and observability → the metrics port on server/worker. That last one is easy to forget and fails silently - without it the Prometheus target simply never appears.
+[`base/networkpolicy.yaml`](apps/trellify/base/networkpolicy.yaml) starts from `default-deny-ingress` across the whole namespace and opens exactly four paths: ingress-nginx → server (and the client in the dev overlay), server/worker → Redis, server/worker (plus any Job pod, for the backup CronJob) → MongoDB, and observability → the metrics port on server/worker. That last one is easy to forget and fails silently - without it the Prometheus target simply never appears.
 
 ## Configuration and Secrets
 
@@ -187,10 +185,9 @@ git push origin main
         ├─ tag = sha-$(git rev-parse --short HEAD)      ← immutable, never reused
         │        (schedule/dispatch: sha-<short>-<YYYYMMDDHHMM>)
         ├─ build apps/server/Dockerfile  → ghcr.io/baoduong254/trellify-server:<tag>
-        ├─ build apps/client/Dockerfile  → ghcr.io/baoduong254/trellify-client:<tag>
         ├─ SBOM + provenance attestations attached by BuildKit
         ├─ Trivy: a fixable CRITICAL CVE fails the job → no bump, nothing deployed
-        └─ cosign keyless signature on both digests
+        └─ cosign keyless signature on the digest
         │
         ▼
         │  job: bump-manifest
@@ -199,16 +196,19 @@ git push origin main
         │
         ▼
 ArgoCD detects the new commit → syncs → rolling update
+
+        job: deploy-client (after build-and-push, never on schedule)
+        └─ build apps/client → wrangler deploy → Cloudflare Workers
 ```
 
 Three details worth knowing:
 
 - **`[skip ci]` is what stops the loop.** The bump commit lands on `main`, the same branch the build workflow watches. That marker keeps GitHub from starting a second run, which would build a new tag, which would commit again, forever.
 - **`latest` exists but is never what gets deployed.** The overlay always pins the `sha-<short>` tag, so whatever is running traces back to exactly one commit - and a rollback is a Git operation, not a registry operation.
-- **A nightly run patches the base images without a code change.** At 19:00 UTC the workflow Trivy-scans the images the overlay pins; only if one has a fixable HIGH or CRITICAL CVE in an OS (Alpine) package does it rebuild that same commit as `sha-<short>-<YYYYMMDDHHMM>` and bump. `APK_UPGRADE_DATE` changes daily, so the `apk upgrade` layer is rebuilt rather than restored from the GHA cache. The bump is dropped if a regular deploy moved the overlay during the rebuild. A manual `workflow_dispatch` also gets the timestamped tag, so rebuilding a deployed commit still rolls the pods.
+- **A nightly run patches the base images without a code change.** At 19:00 UTC the workflow Trivy-scans the server image the overlay pins; only if it has a fixable HIGH or CRITICAL CVE in an OS (Alpine) package does it rebuild that same commit as `sha-<short>-<YYYYMMDDHHMM>` and bump. `APK_UPGRADE_DATE` changes daily, so the `apk upgrade` layer is rebuilt rather than restored from the GHA cache. The bump is dropped if a regular deploy moved the overlay during the rebuild. A manual `workflow_dispatch` also gets the timestamped tag, so rebuilding a deployed commit still rolls the pods.
 - **Manifests are validated before ArgoCD sees them.** `.github/workflows/infra.yml` runs on every change under `infra/**`: every directory holding a `kustomization.yaml` is built and piped through `kubeconform -strict`, with CRD schemas (SealedSecret, ServiceMonitor, PrometheusRule, Application) from the datreeio CRDs catalog, along with `root-app.yaml` and the one-off Jobs. A new manifest folder therefore needs a `kustomization.yaml`, or it is never checked. Helm `values.yaml` files are skipped because they are not Kubernetes objects. The Terraform stacks get `fmt -check` and `validate`.
 - **Images are signed and scanned, not verified in-cluster.** Admission-time verification (Kyverno, policy-controller) would cost the node RAM for little gain on a single-owner cluster. Check a deployed digest by hand: `cosign verify ghcr.io/baoduong254/trellify-server@<digest> --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp 'github.com/BaoDuong254/trellify'`. HIGH and CRITICAL findings, fixable or not, land in the repository's Security tab.
-- **The client is built with an empty `VITE_API_ENDPOINT`.** The client and API share one host, so the browser calls `/api/v1/...` on its own origin and the Ingress routes it. Nothing in the bundle hardcodes a backend URL.
+- **The client deploys independently of any cluster.** `deploy-client` builds with `VITE_API_ENDPOINT=https://trellify-api.duonggiabao.com`, so the UI ships even while the cluster is down and the server catches up when ArgoCD next syncs. A `git revert` of the bump commit only rolls back the server; the client rolls back with `wrangler rollback`.
 
 ## Alerting
 
@@ -260,20 +260,21 @@ The sealed-secrets private key is **not** covered by this CronJob. It is backed 
 
 ## Endpoints
 
-| URL                                | What                                                                                                                          |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `https://trellify.duonggiabao.com` | The application                                                                                                               |
-| `https://argocd.duonggiabao.com`   | ArgoCD - sync state, diffs, manual sync                                                                                       |
-| `https://grafana.duonggiabao.com`  | Grafana on kube-prometheus-stack (7d / 15GB Prometheus retention; Alertmanager routes `service: trellify` alerts to Telegram) |
+| URL                                    | What                                                                                                                          |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `https://trellify.duonggiabao.com`     | The client, on Cloudflare Workers Static Assets; independent of every cluster                                                 |
+| `https://trellify-api.duonggiabao.com` | The API and Socket.io                                                                                                         |
+| `https://argocd.duonggiabao.com`       | ArgoCD - sync state, diffs, manual sync                                                                                       |
+| `https://grafana.duonggiabao.com`      | Grafana on kube-prometheus-stack (7d / 15GB Prometheus retention; Alertmanager routes `service: trellify` alerts to Telegram) |
 
-All three follow `active_origin`: they are served by whichever cluster the Cloudflare stack points at.
+Everything except the client follows `active_origin`: it is served by whichever cluster the Cloudflare stack points at.
 
 ## AWS Failover
 
 A cold standby on EKS in `ap-southeast-1`. It does not exist while the homelab is healthy. `terraform apply` builds it when the homelab is down, and `terraform destroy` removes it once the homelab is back.
 
 ```text
-        trellify. / argocd. / grafana.duonggiabao.com  (proxied CNAMEs)
+      trellify-api. / argocd. / grafana.duonggiabao.com  (proxied CNAMEs)
                                    │
               var.active_origin ───┤   infra/clusters/aws/terraform/cloudflare
                      ┌─────────────┴─────────────┐

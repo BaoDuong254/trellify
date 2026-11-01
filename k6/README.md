@@ -313,7 +313,7 @@ tilt up -- --loadtest --server-replicas=3  # 3 replicas, exercises the Redis ada
 
 ## AWS
 
-`--aws` runs k6 in a pod `loadtest/k6` on the EKS cluster's tainted `loadgen` node, so it never competes with the pods it measures. The pod resolves `trellify.duonggiabao.com` to the in-cluster ingress-nginx through `hostAliases`: requests go through the production Ingress, rate limits, server replicas and HPA, without Cloudflare. The runner only accepts a kubectl context whose cluster is `trellify-dr`, copies `config`, `lib`, `scenarios` and `data` into the pod, and copies the summary back to `k6/results/`. The auth flow is skipped (real Turnstile secret). `--prom` writes to that cluster's Prometheus.
+`--aws` runs k6 in a pod `loadtest/k6` on the EKS cluster's tainted `loadgen` node, so it never competes with the pods it measures. The pod resolves `trellify-api.duonggiabao.com` to the in-cluster ingress-nginx through `hostAliases`: requests go through the production Ingress, rate limits, server replicas and HPA, without Cloudflare. The runner only accepts a kubectl context whose cluster is `trellify-dr`, copies `config`, `lib`, `scenarios` and `data` into the pod, and copies the summary back to `k6/results/`. The auth flow is skipped (real Turnstile secret). `--prom` writes to that cluster's Prometheus.
 
 ## Server metrics
 

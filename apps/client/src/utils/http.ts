@@ -15,6 +15,13 @@ export const injectStore = (mainStore: typeof store): void => {
   axiosReduxStore = mainStore;
 };
 
+const SERVER_UNREACHABLE_STATUSES = new Set([502, 503, 504, 530]);
+const SERVER_UNREACHABLE_TOAST_ID = "server-unreachable";
+const SERVER_UNREACHABLE_MESSAGE = "The server is temporarily offline. Please try again later.";
+
+const isServerUnreachable = (error: AxiosError): boolean =>
+  error.response ? SERVER_UNREACHABLE_STATUSES.has(error.response.status) : !axios.isCancel(error);
+
 // Create an axios instance
 const http = axios.create();
 // Set timeout and withCredentials for all requests
@@ -54,7 +61,7 @@ http.interceptors.response.use(
         refreshTokenPromise = refreshTokenAPI()
           .then(() => {})
           .catch((error: AxiosError) => {
-            axiosReduxStore?.dispatch(logoutUserAPI(false));
+            if (!isServerUnreachable(error)) axiosReduxStore?.dispatch(logoutUserAPI(false));
             return Promise.reject(error);
           })
           .finally(() => {
@@ -68,6 +75,11 @@ http.interceptors.response.use(
     }
 
     recordApiError(error.response?.status);
+
+    if (isServerUnreachable(error)) {
+      toast.error(SERVER_UNREACHABLE_MESSAGE, { id: SERVER_UNREACHABLE_TOAST_ID });
+      return Promise.reject(error);
+    }
 
     let errorMessage = error?.message || "An error occurred";
 

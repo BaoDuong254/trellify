@@ -5,6 +5,7 @@ namespace: trellify
 
 resources:
   - ../../base
+  - client.yaml
 
 replicas:
   - name: trellify-server
