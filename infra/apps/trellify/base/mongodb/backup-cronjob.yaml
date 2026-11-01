@@ -36,6 +36,12 @@ spec:
                 - -c
                 - |
                   set -e
+                  USERS=$(mongosh --quiet "$MONGODB_URI" --eval 'db.getSiblingDB("trellify").users.countDocuments()')
+                  if [ "$USERS" = "0" ]; then
+                    echo "ABORT: trellify.users is empty, refusing to overwrite the newest archive on R2."
+                    echo "Restore the data first; this is expected on a freshly created cluster."
+                    exit 1
+                  fi
                   STAMP=$(date +%F-%H%M)
                   mongodump --uri="$MONGODB_URI" --archive="/backup/trellify-$STAMP.gz" --gzip
                   ls -lh "/backup/trellify-$STAMP.gz"

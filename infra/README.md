@@ -233,7 +233,7 @@ A wrong-type filter key is the one Redis fault that used to fail **closed**: `BF
 
 MongoDB is dumped by a CronJob at `0 20 * * *` ([`backup-cronjob.yaml`](apps/trellify/base/mongodb/backup-cronjob.yaml)), keeping the last 3 successful and 3 failed jobs. One job, two steps:
 
-1. An **initContainer** runs `mongodump --gzip` into a dedicated 20Gi PVC on `local-path-retain` and prunes local archives older than 7 days. Running it as an initContainer rather than a second container is what guarantees the upload sees a finished archive - containers in the same pod start in parallel.
+1. An **initContainer** refuses to continue while `trellify.users` is empty, so a freshly created cluster can never publish an empty archive as the newest one on R2 before its data is restored. It then runs `mongodump --gzip` into a dedicated 20Gi PVC on `local-path-retain` and prunes local archives older than 7 days. Running it as an initContainer rather than a second container is what guarantees the upload sees a finished archive - containers in the same pod start in parallel.
 2. The **`upload` container** pushes that archive to Cloudflare R2 through `rclone`, then deletes anything older than 14 days off-site.
 
 **Off-site copies live in R2 encrypted.** `rclone` stacks a `crypt` remote on top of the S3 remote, so the archive is encrypted inside the cluster and Cloudflare only ever stores ciphertext - a leaked R2 token yields nothing readable. Filenames are left in the clear (`filename_encryption = off`) so age-based pruning and the Cloudflare dashboard stay usable; objects appear as `mongodb/trellify-<stamp>.gz.bin`.
