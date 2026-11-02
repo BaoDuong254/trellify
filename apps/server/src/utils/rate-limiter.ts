@@ -25,7 +25,7 @@ export const checkRateLimit = async (
   try {
     current = Number(await getRedisClient().eval(CONSUME_SCRIPT, 1, key, windowSec));
   } catch (error) {
-    logger.warn(`Rate limit for ${key} not enforced, Redis is unavailable: ${(error as Error).message}`);
+    logger.warn(`Rate limit bucket ${bucket} not enforced, Redis is unavailable: ${(error as Error).message}`);
     rateLimitDecisions.inc({ bucket, result: "unavailable" });
     return;
   }

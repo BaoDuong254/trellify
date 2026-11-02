@@ -88,6 +88,11 @@ const configSchema = z.object({
     .int("INVITE_RATE_LIMIT_PER_MINUTE must be an integer")
     .positive("INVITE_RATE_LIMIT_PER_MINUTE must be a positive integer")
     .default(20),
+  LOGIN_RATE_LIMIT_PER_MINUTE: z.coerce
+    .number("LOGIN_RATE_LIMIT_PER_MINUTE must be a number")
+    .int("LOGIN_RATE_LIMIT_PER_MINUTE must be an integer")
+    .positive("LOGIN_RATE_LIMIT_PER_MINUTE must be a positive integer")
+    .default(10),
   CACHE_COMMAND_TIMEOUT_MS: z.coerce
     .number("CACHE_COMMAND_TIMEOUT_MS must be a number")
     .int("CACHE_COMMAND_TIMEOUT_MS must be an integer")

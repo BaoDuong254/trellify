@@ -5,16 +5,10 @@ on:
     branches:
       - main
       - dev
-    paths:
-      - "infra/**"
-      - ".github/workflows/infra.yml"
   pull_request:
     branches:
       - main
       - dev
-    paths:
-      - "infra/**"
-      - ".github/workflows/infra.yml"
 
 permissions:
   contents: read
@@ -33,12 +27,12 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install kustomize and kubeconform
         run: |
-          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin kustomize
-          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/bin kubeconform
+          curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin kustomize
+          curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/bin kubeconform
 
       - name: Validate manifests
         run: |
@@ -51,6 +45,9 @@ jobs:
           done
           $KC infra/clusters/homelab/bootstrap/*.yaml infra/apps/trellify/jobs/*.yaml
 
+      - name: Scan IaC misconfigurations
+        run: docker run --rm -v "$PWD/infra:/infra:ro" aquasec/trivy:0.69.3 config --severity HIGH,CRITICAL --exit-code 0 /infra
+
   terraform:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -58,9 +55,9 @@ jobs:
       matrix:
         stack: [bootstrap, cloudflare, cluster]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 

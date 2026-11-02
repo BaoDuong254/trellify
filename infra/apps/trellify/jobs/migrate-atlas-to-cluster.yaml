@@ -11,6 +11,7 @@ spec:
         job: mongo-migrate
     spec:
       restartPolicy: Never
+      automountServiceAccountToken: false
       containers:
         - name: migrate
           image: mongo:8.0
