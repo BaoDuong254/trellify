@@ -6,7 +6,7 @@ WORKDIR /workspace
 
 # renovate: datasource=npm depName=pnpm
 ARG PNPM_VERSION=12.15.0
-RUN npm install -g pnpm@${PNPM_VERSION}
+RUN npm install -g --ignore-scripts pnpm@${PNPM_VERSION}
 ENV LEFTHOOK=0
 
 # Copy workspace configuration files

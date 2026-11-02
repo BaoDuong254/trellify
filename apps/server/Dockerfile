@@ -6,7 +6,7 @@ WORKDIR /workspace
 
 # renovate: datasource=npm depName=pnpm
 ARG PNPM_VERSION=12.15.0
-RUN npm install -g pnpm@${PNPM_VERSION}
+RUN npm install -g --ignore-scripts pnpm@${PNPM_VERSION}
 ENV LEFTHOOK=0
 
 # Copy workspace configuration files
@@ -58,7 +58,7 @@ FROM node:24.22.1-alpine
 ARG PNPM_VERSION=12.15.0
 ARG APK_UPGRADE_DATE
 RUN apk upgrade --no-cache \
-  && npm install -g pnpm@${PNPM_VERSION} && npm cache clean --force \
+  && npm install -g --ignore-scripts pnpm@${PNPM_VERSION} && npm cache clean --force \
   && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 ENV NODE_ENV=production
 
