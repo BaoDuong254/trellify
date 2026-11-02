@@ -42,6 +42,20 @@ describe("POST /api/v1/users/login", () => {
       .send({ email: user.email, password: TEST_PASSWORD, turnstileToken: "test-token" })
       .expect(406);
   });
+
+  it("answers 429 once an email passes the per-minute limit, even with the right password", async () => {
+    const user = await createActiveUser("someone");
+    const attempt = (password: string) =>
+      request(getApp()).post("/api/v1/users/login").send({ email: user.email, password, turnstileToken: "test-token" });
+
+    for (let index = 0; index < environmentConfig.LOGIN_RATE_LIMIT_PER_MINUTE; index += 1) {
+      const rejected = await attempt("WrongPassword1");
+      expect(rejected.status).toBe(401);
+    }
+
+    const limited = await attempt(TEST_PASSWORD);
+    expect(limited.status).toBe(429);
+  });
 });
 
 describe("access token status codes the client relies on", () => {

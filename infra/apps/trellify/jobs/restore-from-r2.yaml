@@ -12,6 +12,7 @@ spec:
         job: mongo-restore-r2
     spec:
       restartPolicy: Never
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 999

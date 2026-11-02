@@ -10,6 +10,7 @@ configMapGenerator:
     literals:
       - NODE_ENV=production
       - WRITE_RATE_LIMIT_PER_MINUTE=10000000
+      - LOGIN_RATE_LIMIT_PER_MINUTE=10000000
 
 patches:
   - target:

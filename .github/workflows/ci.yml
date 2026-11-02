@@ -23,17 +23,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "24.22.1"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 12.15.0
 
@@ -44,7 +44,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - name: Setup pnpm cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -55,10 +55,17 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Create .env for server build
-        run: echo "${{ secrets.SERVER_ENV }}" > apps/server/.env
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
+        run: printf '%s\n' "$SERVER_ENV" > apps/server/.env
 
       - name: Create .env for client build
-        run: echo "${{ secrets.CLIENT_ENV }}" > apps/client/.env
+        env:
+          CLIENT_ENV: ${{ secrets.CLIENT_ENV }}
+        run: printf '%s\n' "$CLIENT_ENV" > apps/client/.env
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high --ignore-unfixable --ignore-registry-errors
 
       - name: Run lint
         run: pnpm run lint
@@ -92,7 +99,7 @@ jobs:
         run: pnpm run test
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v8.3.0
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -102,15 +109,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "24.22.1"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 12.15.0
 
@@ -121,7 +128,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - name: Setup pnpm cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -145,11 +152,26 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: playwright-report
           path: e2e/playwright-report
           retention-days: 7
+
+      - name: Start API for ZAP
+        continue-on-error: true
+        run: |
+          pnpm --filter=server exec tsx --env-file=../../e2e/e2e.env src/index.ts &
+          timeout 120 bash -c 'until curl -fsS http://localhost:3100/api/v1/status > /dev/null; do sleep 2; done'
+
+      - name: ZAP baseline scan
+        continue-on-error: true
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: http://localhost:3100/api/v1/status
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-report
 
       - name: Stop MongoDB and Redis
         if: always()

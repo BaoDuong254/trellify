@@ -93,6 +93,13 @@ const verifyAccount = async (requestBody: UserVerificationType) => {
 };
 
 const login = async (requestBody: UserLoginType) => {
+  await checkRateLimit(
+    `rl:login:email:${requestBody.email}`,
+    environmentConfig.LOGIN_RATE_LIMIT_PER_MINUTE,
+    60,
+    "login"
+  );
+
   const existUser = await userModel.findOneByEmail(requestBody.email);
   if (!existUser) {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
