@@ -33,6 +33,30 @@ describe("POST /api/v1/users/login", () => {
       .expect(401);
   });
 
+  it("answers an unknown email exactly like a wrong password", async () => {
+    const user = await createActiveUser("someone");
+
+    const wrongPassword = await request(getApp())
+      .post("/api/v1/users/login")
+      .send({ email: user.email, password: "WrongPassword1", turnstileToken: "test-token" });
+    const unknownEmail = await request(getApp())
+      .post("/api/v1/users/login")
+      .send({ email: "nobody@trellify.test", password: "WrongPassword1", turnstileToken: "test-token" });
+
+    expect(unknownEmail.status).toBe(401);
+    expect(unknownEmail.body.message).toBe(wrongPassword.body.message);
+  });
+
+  it("does not reveal an unverified account to someone without the password", async () => {
+    const user = await createActiveUser("someone");
+    await userModel.update(user.userId, { isActive: false });
+
+    await request(getApp())
+      .post("/api/v1/users/login")
+      .send({ email: user.email, password: "WrongPassword1", turnstileToken: "test-token" })
+      .expect(401);
+  });
+
   it("refuses an account that has not been verified", async () => {
     const user = await createActiveUser("someone");
     await userModel.update(user.userId, { isActive: false });

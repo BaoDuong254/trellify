@@ -5,7 +5,7 @@ import { SOCKET_ID_HEADER } from "@workspace/shared/utils/socket-events";
 
 import { refreshTokenAPI } from "src/apis";
 import type { store } from "src/redux/store";
-import { logoutUserAPI } from "src/redux/user/userSlice";
+import { logoutUserAPI, selectCurrentUser } from "src/redux/user/userSlice";
 import { getSocketId } from "src/socketClient";
 import { humanizeErrorMessage, interceptorLoadingElements } from "src/utils/formatters";
 import { recordApiError } from "src/utils/metrics";
@@ -54,8 +54,8 @@ http.interceptors.response.use(
   async (error: AxiosError) => {
     interceptorLoadingElements(false);
 
-    if (error.response?.status === 401) {
-      axiosReduxStore?.dispatch(logoutUserAPI(false));
+    if (error.response?.status === 401 && axiosReduxStore && selectCurrentUser(axiosReduxStore.getState())) {
+      axiosReduxStore.dispatch(logoutUserAPI(false));
     }
 
     const originalRequests = error.config;

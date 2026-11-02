@@ -17,11 +17,13 @@ const BOARD_URL = apiUrl("/api/v1/boards/board-1");
 const REFRESH_URL = apiUrl("/api/v1/users/refresh_token");
 
 const dispatch = vi.fn();
+const getState = vi.fn();
 
 describe("http client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    injectStore({ dispatch } as unknown as typeof store);
+    getState.mockReturnValue({ user: { currentUser: { _id: "user-1" } } });
+    injectStore({ dispatch, getState } as unknown as typeof store);
   });
 
   it("sends the socket id so the server can exclude this tab from its own broadcast", async () => {
@@ -79,6 +81,16 @@ describe("http client", () => {
 
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(toast.error).toHaveBeenCalledWith("Unauthorized!");
+  });
+
+  it("does not log out on 401 when nobody is logged in, such as a failed login", async () => {
+    getState.mockReturnValue({ user: { currentUser: null } });
+    server.use(mock.get(BOARD_URL, () => HttpResponse.json({ message: "Wrong password" }, { status: 401 })));
+
+    await expect(http.get(BOARD_URL)).rejects.toMatchObject({ response: { status: 401 } });
+
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith("Wrong password");
   });
 
   it("shows one offline toast and stays logged in when the server cannot be reached", async () => {

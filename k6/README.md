@@ -161,7 +161,7 @@ pnpm k6 mixed capacity --watch
 
 `server%` sums every replica, so 300% means three saturated cores; `loop p99` and `heap MB` are the worst replica in that window. Read it next to the ladder table — in the run above the server tier flattens at about 330% from s6 onward while Mongo falls away, which is what "Node is the ceiling" looks like.
 
-The verdict checks, in order: Mongo using more CPU than the whole server tier (database first); any rung where `server%` divided by the number of reachable replicas reaches 85% (each Node process is single-threaded, so that is a saturated tier even when event loop lag stays under 100ms — a busy loop, not a blocked one); event loop lag above 100ms (something is blocking it, such as `bcryptjs.compareSync`); otherwise the time went to waiting. The replica count comes from how many `/metrics` endpoints answered, so a pod the HPA adds mid-run is not counted.
+The verdict checks, in order: Mongo using more CPU than the whole server tier (database first); any rung where `server%` divided by the number of reachable replicas reaches 85% (each Node process is single-threaded, so that is a saturated tier even when event loop lag stays under 100ms — a busy loop, not a blocked one); event loop lag above 100ms (something is blocking it); otherwise the time went to waiting. The replica count comes from how many `/metrics` endpoints answered, so a pod the HPA adds mid-run is not counted.
 
 Rung windows come from `k6 inspect` on the same script and the same `-e` flags, so they stay correct when `LADDER_SCALE` or `RATE` changes the shape.
 
@@ -324,15 +324,15 @@ kubectl -n trellify port-forward deploy/trellify-server 9464:9464
 curl http://localhost:9464/metrics
 ```
 
-| Metric                             | Tells you                                                                                                                            |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `nodejs_eventloop_lag_p99_seconds` | The main diagnostic. Node is single-threaded and `bcryptjs.compareSync` blocks it, so rising lag means blocking, not merely busy CPU |
-| `http_request_duration_seconds`    | Latency by route pattern (`/boards/:id`, never a real id)                                                                            |
-| `board_broadcast_duration_seconds` | Broadcast cost, invisible to clients because it runs after the response is sent                                                      |
-| `board_broadcast_local_recipients` | Viewers on the instance that handled the write — **not** cluster-wide fan-out                                                        |
-| `socketio_connected_sockets`       | Confirms viewers actually joined during `socket-fanout`                                                                              |
-| `worker_job_duration_seconds`      | Whether BullMQ jobs are backing up                                                                                                   |
-| `mongodb_indexes_ready`            | 1 when every expected index exists; 0 means queries are falling back to collection scans                                             |
+| Metric                             | Tells you                                                                                       |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `nodejs_eventloop_lag_p99_seconds` | The main diagnostic. Node is single-threaded, so rising lag means blocking, not merely busy CPU |
+| `http_request_duration_seconds`    | Latency by route pattern (`/boards/:id`, never a real id)                                       |
+| `board_broadcast_duration_seconds` | Broadcast cost, invisible to clients because it runs after the response is sent                 |
+| `board_broadcast_local_recipients` | Viewers on the instance that handled the write — **not** cluster-wide fan-out                   |
+| `socketio_connected_sockets`       | Confirms viewers actually joined during `socket-fanout`                                         |
+| `worker_job_duration_seconds`      | Whether BullMQ jobs are backing up                                                              |
+| `mongodb_indexes_ready`            | 1 when every expected index exists; 0 means queries are falling back to collection scans        |
 
 ## Thresholds
 

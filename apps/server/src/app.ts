@@ -1,6 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Express, Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
 import morgan from "morgan";
 
 import logger from "@workspace/shared/utils/logger";
@@ -9,6 +10,15 @@ import { corsOptions } from "src/config/cors";
 import { errorHandlingMiddleware } from "src/middlewares/error-handling.middleware";
 import { metricsMiddleware } from "src/middlewares/metrics.middleware";
 import { APIs_V1 } from "src/routes/v1";
+import ApiError from "src/utils/api-error";
+
+const RESPONSE_HEADERS = {
+  "Cache-Control": "no-store",
+  "Content-Security-Policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  "Cross-Origin-Resource-Policy": "same-site",
+  "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
+  "X-Content-Type-Options": "nosniff",
+};
 
 export const createApp = (): Express => {
   const app = express();
@@ -16,9 +26,9 @@ export const createApp = (): Express => {
   // Trust proxy headers (e.g., X-Forwarded-For) for correct client IP detection
   app.set("trust proxy", true);
 
-  // Disable caching
+  // Disable caching and set security headers
   app.use((_request: ExpressRequest, response: ExpressResponse, next: NextFunction) => {
-    response.set("Cache-Control", "no-store");
+    response.set(RESPONSE_HEADERS);
     next();
   });
 
@@ -56,6 +66,10 @@ export const createApp = (): Express => {
 
   // App routes setup
   app.use("/api/v1", APIs_V1);
+
+  app.use((_request: ExpressRequest, _response: ExpressResponse, next: NextFunction) => {
+    next(new ApiError(StatusCodes.NOT_FOUND, "Error.RouteNotFound"));
+  });
 
   // Error handling middleware
   app.use(errorHandlingMiddleware);

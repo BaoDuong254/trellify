@@ -26,6 +26,9 @@ import ApiError from "src/utils/api-error";
 import { pickUser } from "src/utils/formatters";
 import { checkRateLimit } from "src/utils/rate-limiter";
 
+const PASSWORD_HASH_ROUNDS = 10;
+const UNKNOWN_USER_PASSWORD_HASH = bcryptjs.hashSync(uuidv4(), PASSWORD_HASH_ROUNDS);
+
 const createNew = async (requestBody: UserRegistrationType) => {
   const existUser = await userModel.findOneByEmail(requestBody.email);
   if (existUser) {
@@ -34,7 +37,7 @@ const createNew = async (requestBody: UserRegistrationType) => {
   const nameFromEmail = requestBody.email.split("@", 1)[0];
   const newUserData = {
     email: requestBody.email,
-    password: bcryptjs.hashSync(requestBody.password, 10),
+    password: await bcryptjs.hash(requestBody.password, PASSWORD_HASH_ROUNDS),
     username: nameFromEmail!,
     displayName: nameFromEmail!.slice(0, 50),
     verifyToken: uuidv4(),
@@ -101,19 +104,17 @@ const login = async (requestBody: UserLoginType) => {
   );
 
   const existUser = await userModel.findOneByEmail(requestBody.email);
-  if (!existUser) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
-  }
-  if (!existUser!.isActive) {
-    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Account is not active");
-  }
-  const isPasswordValid = bcryptjs.compareSync(requestBody.password, existUser!.password as string);
-  if (!isPasswordValid) {
+  const passwordHash = (existUser?.password as string | undefined) ?? UNKNOWN_USER_PASSWORD_HASH;
+  const isPasswordValid = await bcryptjs.compare(requestBody.password, passwordHash);
+  if (!existUser || !isPasswordValid) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "Your email or password is incorrect");
   }
+  if (!existUser.isActive) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Account is not active");
+  }
   const userInfo = {
-    _id: existUser!._id,
-    email: existUser!.email as string,
+    _id: existUser._id,
+    email: existUser.email as string,
   };
   const accessToken = await JwtProvider.generateToken(
     userInfo,
@@ -160,11 +161,11 @@ const update = async (userId: string, requestBody: UserUpdateType, userAvatarFil
   let updatedUser: unknown;
 
   if (requestBody.current_password && requestBody.new_password) {
-    if (!bcryptjs.compareSync(requestBody.current_password, existUser.password as string)) {
+    if (!(await bcryptjs.compare(requestBody.current_password, existUser.password as string))) {
       throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "Your Current Password is incorrect!");
     }
     updatedUser = (await userModel.update(existUser._id.toString(), {
-      password: bcryptjs.hashSync(requestBody.new_password, 10),
+      password: await bcryptjs.hash(requestBody.new_password, PASSWORD_HASH_ROUNDS),
     })) as unknown as UserUpdateType;
   } else if (userAvatarFile) {
     const uploadResult = (await CloudinaryProvider.streamUpload(userAvatarFile.buffer, "trellify_users")) as {
@@ -225,7 +226,7 @@ const resetPassword = async (requestBody: UserResetPasswordType): Promise<void> 
   }
 
   await userModel.update(existUser._id.toString(), {
-    password: bcryptjs.hashSync(password, 10),
+    password: await bcryptjs.hash(password, PASSWORD_HASH_ROUNDS),
     verifyToken: null,
     verifyTokenExpiry: null,
     updatedAt: new Date(),
