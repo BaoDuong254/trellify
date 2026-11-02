@@ -16,6 +16,10 @@
   },
   "packageRules": [
     {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "minimumReleaseAge": null
+    },
+    {
       "matchUpdateTypes": ["patch"],
       "groupName": "all patch updates"
     },
