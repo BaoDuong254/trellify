@@ -18,5 +18,11 @@
     "^(src|generated|test)/(.*)$",
     "^[./]"
   ],
-  "plugins": ["prettier-plugin-packagejson", "@trivago/prettier-plugin-sort-imports"]
+  "plugins": ["prettier-plugin-packagejson", "@trivago/prettier-plugin-sort-imports"],
+  "overrides": [
+    {
+      "files": ["**/*.jsonc", "tsconfig*.json"],
+      "options": { "trailingComma": "none" }
+    }
+  ]
 }
