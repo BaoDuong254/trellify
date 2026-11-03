@@ -66,8 +66,8 @@ spec:
             - secretRef:
                 name: trellify-r2-backup
           resources:
-            requests: { cpu: 50m, memory: 128Mi }
-            limits: { memory: 256Mi }
+            requests: { cpu: 50m, memory: 128Mi, ephemeral-storage: 1Gi }
+            limits: { memory: 256Mi, ephemeral-storage: 6Gi }
           volumeMounts:
             - { name: restore, mountPath: /restore }
             - { name: tmp, mountPath: /tmp }
@@ -103,8 +103,8 @@ spec:
             - name: MONGODB_URI
               value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@trellify-mongodb:27017/?authSource=admin&directConnection=true"
           resources:
-            requests: { cpu: 200m, memory: 512Mi }
-            limits: { memory: 1Gi }
+            requests: { cpu: 200m, memory: 512Mi, ephemeral-storage: 1Gi }
+            limits: { memory: 1Gi, ephemeral-storage: 6Gi }
           volumeMounts:
             - { name: restore, mountPath: /restore, readOnly: true }
             - { name: tmp, mountPath: /tmp }

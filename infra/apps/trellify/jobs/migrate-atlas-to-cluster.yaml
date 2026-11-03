@@ -51,8 +51,8 @@ spec:
             - name: DST_URI
               value: "mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@trellify-mongodb:27017/?authSource=admin&directConnection=true"
           resources:
-            requests: { cpu: 200m, memory: 512Mi }
-            limits: { memory: 1Gi }
+            requests: { cpu: 200m, memory: 512Mi, ephemeral-storage: 1Gi }
+            limits: { memory: 1Gi, ephemeral-storage: 6Gi }
           volumeMounts:
             - { name: tmp, mountPath: /tmp }
           securityContext:
@@ -62,4 +62,5 @@ spec:
               drop: ["ALL"]
       volumes:
         - name: tmp
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 5Gi
