@@ -14,4 +14,10 @@
     "binding": "ASSETS",
     "run_worker_first": ["/diagnostics"],
   },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
+  },
 }
