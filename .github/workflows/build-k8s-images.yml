@@ -31,6 +31,7 @@ jobs:
       security-events: write
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
+      digest: ${{ steps.build-server.outputs.digest }}
       sha: ${{ steps.vars.outputs.sha }}
       deployed_tag: ${{ steps.deployed.outputs.tag }}
       changed: ${{ steps.changes.outputs.changed }}
@@ -203,10 +204,16 @@ jobs:
           curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.8.1/kustomize_v5.8.1_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin kustomize
           kustomize version
 
-      - name: Pin new image tags
+      - name: Pin new image tag and digest
         id: pin
         working-directory: infra/apps/trellify/overlays/prod
+        env:
+          DIGEST: ${{ needs.build-and-push.outputs.digest }}
         run: |
+          if ! echo "$DIGEST" | grep -qE '^sha256:[0-9a-f]{64}$'; then
+            echo "Build did not report a digest ('$DIGEST'), refusing to pin by tag alone."
+            exit 1
+          fi
           current=$(sed -n 's/^ *newTag: //p' kustomization.yaml | head -n1)
           if [ "${{ github.event_name }}" = "schedule" ] && [ "$current" != "${{ needs.build-and-push.outputs.deployed_tag }}" ]; then
             echo "Overlay moved to $current while rebuilding ${{ needs.build-and-push.outputs.deployed_tag }}, not rolling it back."
@@ -214,7 +221,7 @@ jobs:
             exit 0
           fi
           kustomize edit set image \
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ needs.build-and-push.outputs.tag }}
+            "${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server=${{ env.REGISTRY }}/${{ env.OWNER }}/trellify-server:${{ needs.build-and-push.outputs.tag }}@${DIGEST}"
           echo "pinned=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push
