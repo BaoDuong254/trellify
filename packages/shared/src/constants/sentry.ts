@@ -1,2 +1,4 @@
 export const SENTRY_DSN =
   "https://6ef06f0f97587ce204c72df607087961@o4511766119186432.ingest.us.sentry.io/4512077065814016";
+
+export const SENTRY_TUNNEL_PATH = "/diagnostics";

@@ -12,7 +12,8 @@
       "project": ["src/**/*.ts!", "scripts/**/*.ts!", "test/**/*.ts"]
     },
     "apps/client": {
-      "project": ["src/**/*.{ts,tsx}!", "!src/test/**!"]
+      "entry": ["worker/index.ts!"],
+      "project": ["src/**/*.{ts,tsx}!", "worker/**/*.ts!", "!src/test/**!"]
     },
     "e2e": {
       "entry": ["tests/**/*.{e2e,setup}.ts"],

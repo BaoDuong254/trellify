@@ -9,11 +9,10 @@ import { BrowserRouter, createRoutesFromChildren, matchRoutes, useLocation, useN
 import { persistStore } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
 
-import { SENTRY_DSN } from "@workspace/shared/constants/sentry";
+import { SENTRY_DSN, SENTRY_TUNNEL_PATH } from "@workspace/shared/constants/sentry";
 
 import AppToaster from "src/components/AppToaster/AppToaster.tsx";
 import ErrorBoundary from "src/components/ErrorBoundary/ErrorBoundary.tsx";
-import envConfig from "src/config/env.ts";
 import { store } from "src/redux/store.ts";
 import theme from "src/theme.ts";
 import { injectStore } from "src/utils/http.ts";
@@ -26,7 +25,7 @@ const SENTRY_ENABLED = import.meta.env.PROD;
 
 Sentry.init({
   dsn: SENTRY_DSN,
-  tunnel: `${envConfig.VITE_API_ENDPOINT}/api/v1/diagnostics`,
+  tunnel: SENTRY_TUNNEL_PATH,
   skipBrowserExtensionCheck: true,
   enabled: SENTRY_ENABLED,
   environment: import.meta.env.MODE,

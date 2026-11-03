@@ -122,7 +122,7 @@ export default defineConfig({
     environmentOptions: {
       jsdom: { url: "http://api.trellify.test" },
     },
-    include: ["src/**/*.spec.{ts,tsx}"],
+    include: ["src/**/*.spec.{ts,tsx}", "worker/**/*.spec.ts"],
     setupFiles: ["src/test/setup.ts"],
     env: {
       VITE_API_ENDPOINT: "http://api.trellify.test",
@@ -131,8 +131,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text-summary", "lcov"],
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.spec.{ts,tsx}", "src/test/**", "src/main.tsx", "src/**/*.d.ts"],
+      include: ["src/**/*.{ts,tsx}", "worker/**/*.ts"],
+      exclude: ["src/**/*.spec.{ts,tsx}", "worker/**/*.spec.ts", "src/test/**", "src/main.tsx", "src/**/*.d.ts"],
     },
   },
 });

@@ -1,0 +1,12 @@
+{
+  "extends": "@workspace/typescript/react.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo",
+    "lib": ["ES2024", "WebWorker"],
+    "types": ["vite/client"],
+    "paths": {
+      "@workspace/shared/*": ["../../packages/shared/src/*"]
+    }
+  },
+  "include": ["worker"]
+}
