@@ -24,7 +24,7 @@ patches:
     name: trellify-worker
 
 images:
-- digest: sha256:9179cc19f405bef0312ab2ddf258e6c02e6143b864f6d386109eccaa7879849e
+- digest: sha256:c888b1d0fbbbffdd462ba189971e1a6cda89b41404e706948ce423820c4c19d4
   name: ghcr.io/baoduong254/trellify-server
   newName: ghcr.io/baoduong254/trellify-server
-  newTag: sha-316e032
+  newTag: sha-a816010
