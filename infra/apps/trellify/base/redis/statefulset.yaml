@@ -57,6 +57,7 @@ spec:
               mountPath: /etc/redis
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
       volumes:

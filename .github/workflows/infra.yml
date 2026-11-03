@@ -46,7 +46,7 @@ jobs:
           $KC infra/clusters/homelab/bootstrap/*.yaml infra/apps/trellify/jobs/*.yaml
 
       - name: Scan IaC misconfigurations
-        run: docker run --rm -v "$PWD/infra:/infra:ro" aquasec/trivy:0.69.3 config --severity HIGH,CRITICAL --exit-code 0 /infra
+        run: docker run --rm -v "$PWD/infra:/infra:ro" aquasec/trivy:0.69.3 config --severity HIGH,CRITICAL --ignorefile /infra/.trivyignore.yaml --exit-code 1 /infra
 
   terraform:
     runs-on: ubuntu-26.04

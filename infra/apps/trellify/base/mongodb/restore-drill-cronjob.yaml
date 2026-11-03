@@ -67,6 +67,11 @@ spec:
               volumeMounts:
                 - { name: restore, mountPath: /restore }
                 - { name: tmp, mountPath: /tmp }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
           containers:
             - name: verify
               image: mongo:8.0
@@ -99,6 +104,12 @@ spec:
               volumeMounts:
                 - { name: restore, mountPath: /restore, readOnly: true }
                 - { name: data, mountPath: /data }
+                - { name: tmp, mountPath: /tmp }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
           volumes:
             - name: restore
               emptyDir:

@@ -62,8 +62,10 @@ spec:
           volumeMounts:
             - { name: data, mountPath: /data/db }
             - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
         - name: exporter
@@ -95,9 +97,12 @@ spec:
               memory: 96Mi
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: init
           configMap:
             name: trellify-mongodb-init

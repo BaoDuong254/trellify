@@ -1,0 +1,17 @@
+misconfigurations:
+  - id: AWS-0040
+    statement: Cold-standby EKS cluster, usually stopped. IAM authenticates every API call; the endpoint stays public so failover does not depend on a fixed source IP.
+  - id: AWS-0041
+    statement: Same as AWS-0040; endpoint_public_access_cidrs can be narrowed per apply.
+  - id: AWS-0104
+    statement: Nodes need outbound internet to pull images from ghcr.io and Docker Hub and to reach R2, Brevo, Cloudinary and Cloudflare.
+  - id: AWS-0132
+    statement: Terraform state bucket is encrypted with the AWS-managed KMS key; a customer-managed key adds cost and key management for a single-operator standby.
+  - id: KSV-0109
+    paths:
+      - apps/trellify/base/mongodb/init-configmap.yaml
+    statement: The pwd field is a shell reference to $MONGO_APP_PASSWORD, filled from a Secret at runtime; no secret is stored in the ConfigMap.
+  - id: KSV-0014
+    paths:
+      - apps/trellify/overlays/dev/client.yaml
+    statement: Dev-only Vite server on kind; it writes its dependency cache into node_modules/.vite.
