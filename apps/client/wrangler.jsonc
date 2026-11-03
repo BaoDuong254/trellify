@@ -19,5 +19,8 @@
       "enabled": true,
       "invocation_logs": true,
     },
+    "issues": {
+      "enabled": true,
+    },
   },
 }
