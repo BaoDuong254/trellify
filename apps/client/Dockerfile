@@ -1,5 +1,5 @@
 # Dev stage for Tilt: Vite dev server, live_update syncs src/ into the running pod
-FROM node:24.22.1-alpine AS dev
+FROM node:26.13.0-alpine AS dev
 
 # Set workdir to monorepo root
 WORKDIR /workspace

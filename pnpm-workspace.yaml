@@ -50,7 +50,7 @@ catalog:
   "@types/morgan": 1.9.10
   "@types/ms": 2.1.0
   "@types/multer": 2.3.0
-  "@types/node": 25.9.9
+  "@types/node": 26.6.6
   "@types/randomcolor": 0.5.9
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
@@ -141,4 +141,4 @@ cleanupUnusedCatalogs: true
 engineStrict: true
 saveExact: true
 savePrefix: ""
-nodeVersion: 24.22.1
+nodeVersion: 26.13.0
