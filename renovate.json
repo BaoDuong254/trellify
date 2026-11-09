@@ -20,6 +20,11 @@
       "minimumReleaseAge": null
     },
     {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["digest"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
       "matchUpdateTypes": ["patch"],
       "groupName": "all patch updates"
     },
