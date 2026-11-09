@@ -1,0 +1,58 @@
+version: "3"
+
+vars:
+  WEB: https://trellify.duonggiabao.com
+  API: https://trellify-api.duonggiabao.com
+  WRANGLER: npx --yes --ignore-scripts wrangler@4.156.0
+  CF_ACCOUNT:
+    sh: echo "${CLOUDFLARE_ACCOUNT_ID:-$(sed -n 's/^account_id *= *"\(.*\)"/\1/p' infra/clusters/aws/terraform/cloudflare/terraform.tfvars)}"
+
+tasks:
+  build:
+    desc: Production client build (VITE_TURNSTILE_SITE_KEY defaults to the GitHub variable)
+    vars:
+      VITE_TURNSTILE_SITE_KEY:
+        sh: gh variable get VITE_TURNSTILE_SITE_KEY
+    env:
+      VITE_API_ENDPOINT: "{{.API}}"
+      VITE_TURNSTILE_SITE_KEY: "{{.VITE_TURNSTILE_SITE_KEY}}"
+    cmds:
+      - pnpm pkg:build
+      - pnpm fe apps:build
+
+  deploy:
+    desc: Manually deploy the client to Cloudflare Workers (auth via CLOUDFLARE_API_TOKEN or wrangler login)
+    summary: |
+      Account id comes from CLOUDFLARE_ACCOUNT_ID or the cloudflare tfvars. Without CLOUDFLARE_API_TOKEN,
+      wrangler uses its OAuth login. A manual build uploads no source maps to Sentry; CI redeploys on the next merge.
+    dir: apps/client
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "{{.CF_ACCOUNT}}"
+    preconditions:
+      - sh: test -n "{{.CF_ACCOUNT}}"
+        msg: set account_id in the cloudflare tfvars or export CLOUDFLARE_ACCOUNT_ID
+      - sh: test -f dist/index.html
+        msg: Not built yet, run task client:build first
+    cmds:
+      - "{{.WRANGLER}} deploy"
+
+  rollback:
+    desc: Roll the client Worker back to the previous deploy
+    dir: apps/client
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "{{.CF_ACCOUNT}}"
+    cmds:
+      - "{{.WRANGLER}} rollback"
+
+  verify:
+    desc: UI must return 200 with a CSP even with no cluster; API 530 is expected while the cluster is off
+    cmds:
+      - curl -sI {{.WEB}}/login | grep -iE "^HTTP|content-security-policy"
+      - curl -sI {{.WEB}}/boards/abc | head -1
+      - curl -s -w "\napi %{http_code}\n" {{.API}}/api/v1/status | tail -1
+
+  verify:api:
+    desc: With a cluster up, the API returns status and rejects foreign Origins
+    cmds:
+      - curl -s {{.API}}/api/v1/status && echo
+      - 'curl -si -H "Origin: https://evil.example" {{.API}}/api/v1/boards | head -1'

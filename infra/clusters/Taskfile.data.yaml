@@ -1,0 +1,60 @@
+version: "3"
+
+vars:
+  RESTORE_JOB: infra/apps/trellify/jobs/restore-from-r2.yaml
+
+tasks:
+  wait-job:
+    internal: true
+    requires:
+      vars: [JOB, CONTAINERS]
+    cmds:
+      - |
+        i=0
+        until s=$({{.KUBECTL}} -n trellify get job {{.JOB}} -o jsonpath='{.status.conditions[?(@.status=="True")].type}') && echo "$s" | grep -qE 'Complete|Failed'; do
+          i=$((i + 1))
+          if [ "$i" -ge 1080 ]; then echo "timed out after 90 minutes waiting for job {{.JOB}}"; exit 1; fi
+          sleep 5
+        done
+        for c in {{.CONTAINERS}}; do echo "--- $c"; {{.KUBECTL}} -n trellify logs job/{{.JOB}} -c "$c" --tail=20; done
+        echo "$s" | grep -q Complete
+
+  backup:
+    desc: Back up MongoDB to R2 now (NAME=job name) and print the uploaded archive
+    vars:
+      NAME: '{{.NAME | default (printf "manual-backup-%d" (now | unixEpoch))}}'
+    cmds:
+      - "{{.KUBECTL}} -n trellify delete job {{.NAME}} --ignore-not-found"
+      - "{{.KUBECTL}} -n trellify create job --from=cronjob/trellify-mongodb-backup {{.NAME}}"
+      - task: wait-job
+        vars: { JOB: "{{.NAME}}", CONTAINERS: "dump upload" }
+
+  bloom-reset:
+    desc: Delete bloom filters in Redis (KEYS defaults to all three)
+    vars:
+      KEYS: '{{.KEYS | default "bf:v1:boards bf:v1:columns bf:v1:cards"}}'
+    cmds:
+      - |
+        {{.KUBECTL}} -n trellify exec sts/trellify-redis -- sh -c 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning DEL {{.KEYS}}'
+
+  restart:
+    desc: Rollout restart server and worker, wait for the server
+    cmds:
+      - "{{.KUBECTL}} -n trellify rollout restart deployment/trellify-server deployment/trellify-worker"
+      - "{{.KUBECTL}} -n trellify rollout status deployment/trellify-server"
+
+  restore:
+    desc: Restore MongoDB from R2 (ARCHIVE=file name, empty = latest), then reset bloom filters and restart
+    summary: |
+      Overwrites data with mongorestore --drop. Once the job succeeds it deletes the bloom filters,
+      restarts server/worker and deletes the job. Skipping the bloom reset makes every board 404.
+    prompt: Restore overwrites this cluster's MongoDB (mongorestore --drop). Continue?
+    cmds:
+      - "{{.KUBECTL}} -n trellify delete job mongo-restore-r2 --ignore-not-found"
+      - |
+        {{if .ARCHIVE}}{{.KUBECTL}} set env --local -f {{.RESTORE_JOB}} -c fetch ARCHIVE={{.ARCHIVE}} -o yaml | {{.KUBECTL}} apply -f -{{else}}{{.KUBECTL}} apply -f {{.RESTORE_JOB}}{{end}}
+      - task: wait-job
+        vars: { JOB: mongo-restore-r2, CONTAINERS: "fetch restore" }
+      - task: bloom-reset
+      - task: restart
+      - "{{.KUBECTL}} -n trellify delete job mongo-restore-r2"

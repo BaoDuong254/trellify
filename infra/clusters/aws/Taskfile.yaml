@@ -1,0 +1,292 @@
+version: "3"
+
+env:
+  AWS_PROFILE: trellify
+
+vars:
+  AWS_PROFILE_GUARD:
+    sh: '[ -z "$AWS_PROFILE" ] || [ "$AWS_PROFILE" = trellify ] || { echo "AWS_PROFILE is set to \"$AWS_PROFILE\" in this shell and overrides the Taskfile; unset it (PowerShell: Remove-Item Env:AWS_PROFILE, bash: unset AWS_PROFILE)" >&2; exit 1; }'
+  TF: infra/clusters/aws/terraform
+  REGION: ap-southeast-1
+  CLUSTER: trellify-dr
+  CONTEXT: trellify-aws
+  KC_AWS: kubectl --context trellify-aws
+  CF_TFVARS: infra/clusters/aws/terraform/cloudflare/terraform.tfvars
+  AUTOSYNC_OFF: |
+    for app in root trellify-prod; do kubectl --context trellify-aws -n argocd patch application $app --type merge -p '{"spec":{"syncPolicy":{"automated":null}}}' || exit 1; done
+
+includes:
+  data:
+    taskfile: ../Taskfile.data.yaml
+    vars:
+      KUBECTL: kubectl --context trellify-aws
+
+tasks:
+  login:
+    desc: Log in to the trellify SSO profile if the session expired, print the identity in use
+    cmds:
+      - aws sts get-caller-identity >/dev/null 2>&1 || aws sso login
+      - aws sts get-caller-identity --query Arn --output text
+
+  setup:bootstrap:
+    desc: "Create the S3 bucket for Terraform state"
+    interactive: true
+    cmds:
+      - terraform -chdir={{.TF}}/bootstrap init
+      - terraform -chdir={{.TF}}/bootstrap apply
+      - terraform -chdir={{.TF}}/bootstrap output -raw state_bucket
+
+  setup:sealed-key:
+    desc: "Upload the sealed-secrets master key to S3 (FILE=path to the YAML file)"
+    requires:
+      vars: [FILE]
+    vars:
+      BUCKET:
+        sh: terraform -chdir={{.TF}}/bootstrap output -raw state_bucket
+    cmds:
+      - aws s3 cp "{{.FILE}}" "s3://{{.BUCKET}}/bootstrap/sealed-secrets-keys.yaml" --content-type text/plain
+
+  setup:tunnel-records:
+    desc: "List DNS records pointing at a Cloudflare tunnel (token/zone from env or the cloudflare tfvars)"
+    cmds:
+      - |
+        set -eo pipefail
+        TOKEN=${CLOUDFLARE_API_TOKEN:-$(sed -n 's/^cloudflare_api_token *= *"\(.*\)"/\1/p' {{.CF_TFVARS}})}
+        ZONE=${ZONE_ID:-$(sed -n 's/^zone_id *= *"\(.*\)"/\1/p' {{.CF_TFVARS}})}
+        if [ -z "$TOKEN" ] || [ -z "$ZONE" ]; then echo "set cloudflare_api_token and zone_id in {{.CF_TFVARS}} or export CLOUDFLARE_API_TOKEN and ZONE_ID"; exit 1; fi
+        curl -s -H "Authorization: Bearer $TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records?per_page=100" \
+          | jq -e 'if .success then .result[] | select(.content | endswith(".cfargotunnel.com")) | {name, id, type, content, proxied} else .errors end'
+
+  setup:tfvars:
+    desc: "Create terraform.tfvars from the examples (never overwrites existing files)"
+    status:
+      - test -f {{.TF}}/cloudflare/terraform.tfvars
+      - test -f {{.TF}}/cluster/terraform.tfvars
+    cmds:
+      - test -f {{.TF}}/cloudflare/terraform.tfvars || cp {{.TF}}/cloudflare/terraform.tfvars.example {{.TF}}/cloudflare/terraform.tfvars
+      - test -f {{.TF}}/cluster/terraform.tfvars || cp {{.TF}}/cluster/terraform.tfvars.example {{.TF}}/cluster/terraform.tfvars
+
+  setup:sso-role-arn:
+    desc: "Print the SSO role ARN for cluster_admin_arns"
+    cmds:
+      - aws iam list-roles --path-prefix /aws-reserved/sso.amazonaws.com/ --query 'Roles[].Arn' --output text
+
+  setup:init:
+    desc: "terraform init the cloudflare and cluster stacks with the S3 backend"
+    vars:
+      BUCKET:
+        sh: terraform -chdir={{.TF}}/bootstrap output -raw state_bucket
+    cmds:
+      - terraform -chdir={{.TF}}/cloudflare init -backend-config="bucket={{.BUCKET}}"
+      - terraform -chdir={{.TF}}/cluster init -backend-config="bucket={{.BUCKET}}"
+
+  dns:plan:
+    desc: "terraform plan the cloudflare stack"
+    cmds:
+      - terraform -chdir={{.TF}}/cloudflare plan
+
+  dns:apply:
+    desc: "terraform apply the cloudflare stack (read the plan before typing yes)"
+    interactive: true
+    cmds:
+      - terraform -chdir={{.TF}}/cloudflare apply
+
+  up:
+    desc: "Create the EKS cluster (LOADGEN=loadgen node count, default 0; extra TF args after --)"
+    interactive: true
+    vars:
+      LOADGEN: "{{.LOADGEN | default 0}}"
+    cmds:
+      - terraform -chdir={{.TF}}/cluster apply -var loadgen_node_count={{.LOADGEN}} {{.CLI_ARGS}}
+      - task: kubeconfig
+      - "{{.KC_AWS}} get nodes"
+
+  kubeconfig:
+    desc: Write the EKS kubeconfig (context trellify-aws) and switch to it
+    cmds:
+      - aws eks update-kubeconfig --region {{.REGION}} --name {{.CLUSTER}} --alias {{.CONTEXT}}
+      - kubectl config use-context {{.CONTEXT}}
+
+  status:nodes:
+    desc: List EKS nodes (add -- -w to watch the autoscaler)
+    cmds:
+      - "{{.KC_AWS}} get nodes -L eks.amazonaws.com/nodegroup {{.CLI_ARGS}}"
+
+  status:apps:
+    desc: "Watch ArgoCD Applications until Synced/Healthy (Ctrl+C to exit)"
+    cmds:
+      - "{{.KC_AWS}} -n argocd get applications -w"
+
+  status:pods:
+    desc: "trellify pods, PVCs and HPA (add -- -w to watch)"
+    cmds:
+      - "{{.KC_AWS}} -n trellify get pods,pvc,hpa {{.CLI_ARGS}}"
+
+  failover:restore:
+    desc: "Restore from R2 (ARCHIVE optional), reset bloom, restart, then run a verification backup"
+    cmds:
+      - task: data:restore
+        vars: { ARCHIVE: "{{.ARCHIVE}}" }
+      - task: data:backup
+        vars: { NAME: backup-after-restore }
+
+  failover:verify:
+    desc: "Call the API through an ingress-nginx port-forward; must return 200 before switching DNS"
+    cmds:
+      - |
+        {{.BASH}} <<'EOF'
+        {{.KC_AWS}} -n ingress-nginx port-forward svc/ingress-nginx-controller 8081:80 >/dev/null &
+        PF=$!
+        trap 'kill $PF' EXIT
+        sleep 3
+        code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: trellify-api.duonggiabao.com" http://localhost:8081/api/v1/status)
+        echo "api/v1/status -> $code"
+        [ "$code" = 200 ]
+        EOF
+
+  dns:switch:
+    desc: "Set active_origin (ORIGIN=aws|homelab) in tfvars and apply the cloudflare stack"
+    summary: |
+      Edits active_origin in terraform.tfvars and runs terraform apply (type yes after reading the plan:
+      only the tunnel records may change content). If the apply does not happen, tfvars is reverted.
+    interactive: true
+    requires:
+      vars:
+        - name: ORIGIN
+          enum: [aws, homelab]
+    vars:
+      PREV:
+        sh: sed -n 's/^active_origin *= *"\(.*\)"/\1/p' {{.CF_TFVARS}}
+    cmds:
+      - sed -i 's/^active_origin *= *".*"/active_origin = "{{.ORIGIN}}"/' {{.CF_TFVARS}}
+      - defer: '{{if .EXIT_CODE}}sed -i ''s/^active_origin *= *".*"/active_origin = "{{.PREV}}"/'' {{.CF_TFVARS}}{{end}}'
+      - terraform -chdir={{.TF}}/cloudflare apply
+
+  status:creds:
+    desc: "Print the ArgoCD admin password and Grafana credentials of the AWS cluster"
+    cmds:
+      - echo "argocd admin / $({{.KC_AWS}} -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)"
+      - echo "grafana $({{.KC_AWS}} -n observability get secret grafana-admin -o jsonpath='{.data.admin-user}' | base64 -d) / $({{.KC_AWS}} -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
+
+  status:ingress-logs:
+    desc: "Last 20 ingress-nginx log lines; must show real client IPs"
+    cmds:
+      - "{{.KC_AWS}} -n ingress-nginx logs deploy/ingress-nginx-controller --tail=20"
+
+  failback:freeze:
+    desc: "Disable auto-sync, scale server/worker to 0 and take a final dump to R2"
+    summary: Note the file name on the "Uploaded ..." line to restore exactly that file on homelab.
+    prompt: The site stops accepting writes from here. Continue?
+    cmds:
+      - "{{.AUTOSYNC_OFF}}"
+      - "{{.KC_AWS}} -n trellify delete hpa trellify-server --ignore-not-found"
+      - "{{.KC_AWS}} -n trellify scale deployment trellify-server trellify-worker --replicas=0"
+      - task: data:backup
+        vars: { NAME: final-dump }
+
+  down:
+    desc: "Destroy the EKS cluster (LOADGEN must match the up), then check for leftovers"
+    interactive: true
+    vars:
+      LOADGEN: "{{.LOADGEN | default 0}}"
+    cmds:
+      - terraform -chdir={{.TF}}/cluster destroy -var loadgen_node_count={{.LOADGEN}} {{.CLI_ARGS}}
+      - task: leftovers
+
+  leftovers:
+    desc: "Check for leftover EBS volumes and EKS clusters (must be empty)"
+    cmds:
+      - aws ec2 describe-volumes --region {{.REGION}} --filters Name=tag:Cluster,Values={{.CLUSTER}} --query 'Volumes[].VolumeId'
+      - aws eks list-clusters --region {{.REGION}}
+
+  failback:all:
+    desc: "Freeze + dump, point DNS back to homelab, destroy the cluster"
+    prompt: Shut down the AWS cluster (dump → DNS to homelab → destroy)?
+    cmds:
+      - task: failback:freeze
+      - task: dns:switch
+        vars: { ORIGIN: homelab }
+      - task: down
+
+  loadtest:up:
+    desc: "Create the cluster with one loadgen node for k6 (extra TF args after --)"
+    cmds:
+      - task: up
+        vars: { LOADGEN: 1, CLI_ARGS: "{{.CLI_ARGS}}" }
+      - "{{.KC_AWS}} get nodes -l trellify/role=loadgen"
+
+  loadtest:freeze:
+    desc: "Disable auto-sync and suspend the backup CronJob before seeding k6"
+    prompt: This cluster will be for load testing only and must never serve a real failover. Continue?
+    cmds:
+      - "{{.AUTOSYNC_OFF}}"
+      - '{{.KC_AWS}} -n trellify patch cronjob trellify-mongodb-backup -p ''{"spec":{"suspend":true}}'''
+      - "{{.KC_AWS}} -n trellify get cronjob"
+
+  loadtest:seed:
+    desc: "Seed k6 users/boards into the AWS cluster (SEED_USERS, default 200); writes k6/data/users.json"
+    vars:
+      SEED_USERS: "{{.SEED_USERS | default 200}}"
+    cmds:
+      - |
+        {{.BASH}} <<'EOF'
+        set -e
+        {{.KC_AWS}} -n trellify port-forward sts/trellify-mongodb 27021:27017 >/dev/null &
+        P1=$!
+        {{.KC_AWS}} -n trellify port-forward sts/trellify-redis 6383:6379 >/dev/null &
+        P2=$!
+        trap 'kill $P1 $P2' EXIT
+        sleep 3
+        secret() { {{.KC_AWS}} -n trellify get secret "$1" -o jsonpath="{.data.$2}" | base64 -d; }
+        MONGODB_URI="mongodb://$(secret trellify-mongodb-auth username):$(secret trellify-mongodb-auth password)@localhost:27021/?authSource=admin&directConnection=true" \
+        REDIS_URL="redis://:$(secret trellify-redis-auth password)@localhost:6383" \
+        ACCESS_TOKEN_SECRET_SIGNATURE="$(secret trellify-server-secrets ACCESS_TOKEN_SECRET_SIGNATURE)" \
+        REFRESH_TOKEN_SECRET_SIGNATURE="$(secret trellify-server-secrets REFRESH_TOKEN_SECRET_SIGNATURE)" \
+        DATABASE_NAME=trellify QUEUE_PREFIX=trellify ACCESS_TOKEN_LIFE=6h SEED_USERS={{.SEED_USERS}} \
+          pnpm exec dotenv -e k6/loadtest.env -- pnpm be exec tsx scripts/seed-loadtest.ts
+        EOF
+
+  loadtest:run:
+    desc: "Run k6 inside the AWS cluster: task aws:loadtest:run -- <scenario> <profile> [--prom --ts --watch]"
+    interactive: true
+    cmds:
+      - pnpm k6 {{.CLI_ARGS}} --aws
+
+  loadtest:grafana:
+    desc: "Port-forward the AWS cluster's Grafana to http://localhost:3001"
+    cmds:
+      - "{{.KC_AWS}} -n observability port-forward svc/kps-grafana 3001:80"
+
+  loadtest:autoscaler-logs:
+    desc: "Follow Cluster Autoscaler scale-up/scale-down logs"
+    cmds:
+      - '{{.KC_AWS}} -n kube-system logs deploy/cluster-autoscaler-aws-cluster-autoscaler -f | grep -iE "scale-up|scale-down|unschedulable"'
+
+  loadtest:quota:
+    desc: "On-Demand vCPU quota (L-1216C47A) in ap-southeast-1"
+    cmds:
+      - aws service-quotas get-service-quota --region {{.REGION}} --service-code ec2 --quota-code L-1216C47A --query 'Quota.Value'
+
+  loadtest:quota:increase:
+    desc: "Request an On-Demand vCPU quota increase (VALUE, default 32)"
+    vars:
+      VALUE: "{{.VALUE | default 32}}"
+    cmds:
+      - aws service-quotas request-service-quota-increase --region {{.REGION}} --service-code ec2 --quota-code L-1216C47A --desired-value {{.VALUE}}
+
+  loadtest:down:
+    desc: "Destroy the load test cluster (with the loadgen node; extra TF args after --)"
+    cmds:
+      - task: down
+        vars: { LOADGEN: 1, CLI_ARGS: "{{.CLI_ARGS}}" }
+
+  parity:
+    desc: AWS must match homelab 1:1; only platform-cluster-autoscaler may be extra
+    cmds:
+      - |
+        {{.BASH}} <<'EOF'
+        out=$(diff <(kustomize build infra/clusters/homelab/argocd | grep -E '^kind:|^  name:') \
+                   <(kustomize build infra/clusters/aws/argocd | grep -E '^kind:|^  name:') | grep '^[<>]')
+        expected=$'>   name: platform-cluster-autoscaler\n> kind: Application'
+        if [ "$out" = "$expected" ]; then echo "parity OK"; else echo "$out"; exit 1; fi
+        EOF

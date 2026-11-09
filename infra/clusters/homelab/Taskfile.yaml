@@ -1,0 +1,169 @@
+version: "3"
+
+vars:
+  KC_HOME: kubectl --kubeconfig {{env "USERPROFILE" | toSlash}}/.kube/k3s-home.yaml
+  SEAL: kubeseal --kubeconfig {{env "USERPROFILE" | toSlash}}/.kube/k3s-home.yaml --format yaml --controller-namespace sealed-secrets --controller-name sealed-secrets-controller
+
+includes:
+  data:
+    taskfile: ../Taskfile.data.yaml
+    vars:
+      KUBECTL: kubectl --kubeconfig {{env "USERPROFILE" | toSlash}}/.kube/k3s-home.yaml
+
+tasks:
+  status:nodes:
+    desc: "Check the connection to the k3s cluster (needs Tailscale)"
+    cmds:
+      - "{{.KC_HOME}} get nodes"
+
+  setup:argocd:
+    desc: "Install ArgoCD on a freshly installed k3s cluster"
+    cmds:
+      - "{{.KC_HOME}} create namespace argocd"
+      - "{{.KC_HOME}} -n argocd apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml"
+
+  setup:sealed-key:
+    desc: "Restore the sealed-secrets master key (FILE=file kept outside the repo) before anything syncs"
+    requires:
+      vars: [FILE]
+    cmds:
+      - "{{.KC_HOME}} apply -f {{.FILE}}"
+      - "{{.KC_HOME}} -n sealed-secrets delete pod -l name=sealed-secrets-controller"
+
+  setup:root-app:
+    desc: "Apply the root app and watch Applications (Ctrl+C to exit)"
+    summary: |
+      New cluster: sync the platform-* apps by hand in order storage → sealed-secrets → ingress-nginx
+      → cloudflared → observability-extras → observability; trellify-prod follows on its own.
+    cmds:
+      - "{{.KC_HOME}} apply -f infra/clusters/homelab/bootstrap/root-app.yaml"
+      - "{{.KC_HOME}} -n argocd get applications -w"
+
+  status:workloads:
+    desc: "Applications, trellify workloads and the running server image"
+    cmds:
+      - "{{.KC_HOME}} -n argocd get applications"
+      - "{{.KC_HOME}} -n trellify get deploy,pods,svc,ingress"
+      - "{{.KC_HOME}} -n trellify get deploy trellify-server -o jsonpath='{.spec.template.spec.containers[0].image}' && echo"
+
+  deploy:history:
+    desc: "Image bump commits; roll back with git revert of the matching chore(deploy) commit"
+    cmds:
+      - git log --oneline -15 -- infra/apps/trellify/overlays/prod/kustomization.yaml
+
+  deploy:sync:
+    desc: "Trigger an immediate sync of an Application (APP, default trellify-prod)"
+    vars:
+      APP: '{{.APP | default "trellify-prod"}}'
+    cmds:
+      - '{{.KC_HOME}} -n argocd patch application {{.APP}} --type merge -p ''{"operation":{"initiatedBy":{"username":"manual"},"sync":{}}}'''
+
+  seal:
+    silent: true
+    internal: true
+    requires:
+      vars: [NAME, NS, ARGS, OUT]
+    cmds:
+      - |
+        set -eo pipefail
+        trap 'rm -f "{{.OUT}}.tmp"' EXIT
+        {{.KC_HOME}} create secret generic {{.NAME}} --namespace {{.NS}} {{.ARGS}} --dry-run=client -o yaml | {{.SEAL}} > "{{.OUT}}.tmp"
+        mv "{{.OUT}}.tmp" "{{.OUT}}"
+
+  seal:server:
+    silent: true
+    desc: "Reseal trellify-server-secrets: task homelab:seal:server -- --from-literal=K=V ... (every key)"
+    preconditions:
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
+        msg: Pass every key after --; the new sealed file fully replaces the old one
+    cmds:
+      - task: seal
+        vars:
+          NAME: trellify-server-secrets
+          NS: trellify
+          ARGS: "{{.CLI_ARGS}}"
+          OUT: infra/apps/trellify/overlays/prod/sealedsecret-server.yaml
+
+  seal:r2:
+    silent: true
+    desc: "Seal trellify-r2-backup: task homelab:seal:r2 -- --from-literal=RCLONE_CONFIG_R2_ACCESS_KEY_ID=... (+ SECRET_ACCESS_KEY, ENDPOINT)"
+    summary: Generates a new passphrase + salt. SAVE THE PRINTED PASS/SALT TO KEEPASSXC; losing them makes backups undecryptable.
+    prompt: The new passphrase only applies to backups taken after sealing. Continue?
+    preconditions:
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
+        msg: Pass ACCESS_KEY_ID, SECRET_ACCESS_KEY and ENDPOINT after --
+    cmds:
+      - |
+        set -eo pipefail
+        OUT=infra/apps/trellify/overlays/prod/sealedsecret-r2.yaml
+        trap 'rm -f "$OUT.tmp"' EXIT
+        PASS=$(openssl rand -base64 32)
+        SALT=$(openssl rand -base64 32)
+        OBSCURED_PASS=$(docker run --rm rclone/rclone:1.75 obscure "$PASS")
+        OBSCURED_SALT=$(docker run --rm rclone/rclone:1.75 obscure "$SALT")
+        {{.KC_HOME}} create secret generic trellify-r2-backup --namespace trellify {{.CLI_ARGS}} \
+          --from-literal=RCLONE_CONFIG_OFFSITE_PASSWORD="$OBSCURED_PASS" \
+          --from-literal=RCLONE_CONFIG_OFFSITE_PASSWORD2="$OBSCURED_SALT" \
+          --dry-run=client -o yaml | {{.SEAL}} > "$OUT.tmp"
+        mv "$OUT.tmp" "$OUT"
+        echo "PASS=$PASS"
+        echo "SALT=$SALT"
+
+  seal:telegram:
+    silent: true
+    desc: "Seal alertmanager-telegram (BOT_TOKEN=, CHAT_ID=)"
+    summary: Commit, then sync platform-observability-extras BEFORE platform-observability.
+    requires:
+      vars: [BOT_TOKEN, CHAT_ID]
+    cmds:
+      - task: seal
+        vars:
+          NAME: alertmanager-telegram
+          NS: observability
+          ARGS: "--from-literal=bot-token='{{.BOT_TOKEN}}' --from-literal=chat-id='{{.CHAT_ID}}'"
+          OUT: infra/platform/observability/manifests/sealedsecret-alertmanager-telegram.yaml
+
+  seal:healthchecks:
+    silent: true
+    desc: "Merge the healthchecks.io ping URL into alertmanager-telegram (URL=)"
+    summary: Sync platform-observability-extras first, then platform-observability.
+    requires:
+      vars: [URL]
+    cmds:
+      - |
+        set -eo pipefail
+        {{.KC_HOME}} create secret generic alertmanager-telegram --namespace observability --from-literal=healthchecks-url='{{.URL}}' --dry-run=client -o yaml | {{.SEAL}} --merge-into infra/platform/observability/manifests/sealedsecret-alertmanager-telegram.yaml
+
+  seal:master-key:
+    desc: "Export the sealed-secrets master key outside the repo and upload it to S3 for the AWS cluster"
+    summary: Store the file in KeePassXC, then delete it yourself. Repeat every 30 days when the controller rotates keys.
+    vars:
+      OUT: '{{env "USERPROFILE" | toSlash}}/sealed-secrets-master.yaml'
+    cmds:
+      - "{{.KC_HOME}} -n sealed-secrets get secret -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > {{.OUT}}"
+      - grep -q tls.key {{.OUT}} || (echo "no sealed-secrets key in {{.OUT}}, not uploading" && exit 1)
+      - task: :aws:setup:sealed-key
+        vars: { FILE: "{{.OUT}}" }
+      - "echo 'Wrote {{.OUT}}: store it in KeePassXC, then delete it.'"
+
+  data:drill:
+    desc: "Run a restore drill by hand (does not touch production)"
+    vars:
+      NAME: '{{.NAME | default (printf "drill-manual-%d" (now | unixEpoch))}}'
+    cmds:
+      - "{{.KC_HOME}} -n trellify create job --from=cronjob/trellify-mongodb-restore-drill {{.NAME}}"
+      - task: data:wait-job
+        vars: { JOB: "{{.NAME}}", CONTAINERS: "fetch verify" }
+
+  alert:test:
+    desc: "Fire a synthetic alert through Alertmanager; Telegram must receive it within 30 seconds"
+    cmds:
+      - |
+        {{.KC_HOME}} -n observability exec sts/alertmanager-kps-alertmanager -c alertmanager -- amtool alert add TrellifyTestAlert service=trellify severity=warning --annotation='summary="Synthetic alert, ignore"' --annotation='description="Checking the Telegram route"' --alertmanager.url=http://localhost:9093
+
+  alert:bloom:
+    desc: "Delete the boards filter to test TrellifyBloomFilterUnusable (open a board, wait ~2 min, then task homelab:data:restart)"
+    prompt: Board probes fail open until the server restarts. Continue?
+    cmds:
+      - task: data:bloom-reset
+        vars: { KEYS: bf:v1:boards }

@@ -1,0 +1,25 @@
+version: "3"
+
+vars:
+  BASH: '"C:/Program Files/Git/bin/bash.exe"'
+  UNIX_TOOLS:
+    sh: 'command -v sed >/dev/null && command -v grep >/dev/null && command -v head >/dev/null || { echo "task needs the Unix tools from Git for Windows: run it from Git Bash, or add C:\Program Files\Git\usr\bin to PATH" >&2; exit 1; }'
+
+includes:
+  aws: ./infra/clusters/aws/Taskfile.yaml
+  homelab: ./infra/clusters/homelab/Taskfile.yaml
+  client: ./infra/clusters/aws/Taskfile.client.yaml
+
+tasks:
+  default:
+    desc: List every task and the common flows
+    silent: true
+    cmds:
+      - "{{.TASK_EXE}} --list"
+      - |
+        echo
+        echo "Flows:"
+        echo "  First-time setup  aws:login → aws:setup:bootstrap → aws:setup:sealed-key FILE=… → aws:setup:tfvars → aws:setup:init → aws:dns:plan → aws:dns:apply"
+        echo "  Failover to AWS   aws:login → aws:up → aws:status:apps → aws:failover:restore → aws:failover:verify → aws:dns:switch ORIGIN=aws"
+        echo "  Back to homelab   aws:failback:all  (= aws:failback:freeze → aws:dns:switch ORIGIN=homelab → aws:down)"
+        echo "  Load test on AWS  aws:loadtest:up → aws:loadtest:freeze → aws:loadtest:seed → aws:loadtest:run -- <scenario> <profile> → aws:loadtest:down"

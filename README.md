@@ -22,6 +22,7 @@ A full-stack project management platform with real-time collaboration, drag-and-
   - [🚀 Deployment](#-deployment)
     - [Cluster topology](#cluster-topology)
     - [Required GitHub secrets](#required-github-secrets)
+    - [Cluster operations (Task)](#cluster-operations-task)
   - [🧪 Automated Testing](#-automated-testing)
     - [Test layers](#test-layers)
     - [Prerequisites](#prerequisites)
@@ -302,6 +303,21 @@ The API host has two public paths: `/api` goes to the server (rate limited), and
 
 > **Important**
 > Runtime configuration for the cluster does **not** come from these secrets — it comes from `infra/apps/trellify/base/config-server.env` and the SealedSecrets in `infra/apps/trellify/overlays/prod/`. When you add a new environment variable, update those as well, or the pod fails Zod validation at startup and never becomes ready.
+
+### Cluster operations (Task)
+
+Manual operations on the clusters — the AWS failover, backups and restores, sealing secrets, the client's manual deploy — are wrapped as [Task](https://taskfile.dev/) tasks, so nobody has to copy long `kubectl`/`terraform` commands by hand. Install it with `winget install Task.Task` (or see [the install docs](https://taskfile.dev/docs/installation)), then run `task` from the repo root: it lists every task and prints the common flows. The tasks call `sed`, `grep` and Git's `bash`, so run them from Git Bash, or from PowerShell with `C:\Program Files\Git\usr\bin` added to `PATH`; without those tools every task stops with a message saying so.
+
+| Group                                                                                          | Covers                                                      |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `aws:setup:*`, `aws:dns:*`                                                                     | Terraform state bucket, tfvars, init, Cloudflare DNS switch |
+| `aws:up`, `aws:failover:*`, `aws:failback:*`, `aws:down`                                       | Bringing the EKS standby up, cutting over, and back         |
+| `aws:status:*`, `aws:loadtest:*`, `aws:parity`                                                 | Inspection, k6 on EKS, homelab/AWS parity check             |
+| `homelab:setup:*`, `homelab:status:*`, `homelab:deploy:*`, `homelab:seal:*`, `homelab:alert:*` | k3s bootstrap, inspection, sync, SealedSecrets, alert tests |
+| `aws:data:*`, `homelab:data:*`                                                                 | Backup to R2, restore, bloom filter reset, restart          |
+| `client:*`                                                                                     | Manual build, Workers deploy and rollback, smoke checks     |
+
+Every `aws:*` task runs with `AWS_PROFILE=trellify` and `kubectl --context trellify-aws`, and every `homelab:*` task with the homelab kubeconfig, so a task can never hit the wrong cluster. Destructive tasks ask for confirmation, and `task --dry <name>` prints the commands without running them. The Taskfiles live next to what they operate on: [`Taskfile.yaml`](Taskfile.yaml) at the root includes [`infra/clusters/aws/Taskfile.yaml`](infra/clusters/aws/Taskfile.yaml), [`infra/clusters/aws/Taskfile.client.yaml`](infra/clusters/aws/Taskfile.client.yaml) and [`infra/clusters/homelab/Taskfile.yaml`](infra/clusters/homelab/Taskfile.yaml), which share [`infra/clusters/Taskfile.data.yaml`](infra/clusters/Taskfile.data.yaml).
 
 ## 🧪 Automated Testing
 
