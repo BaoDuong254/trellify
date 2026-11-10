@@ -1,0 +1,12 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SealedSecret ciphertext only decrypts with the cluster's master key"
+condition = "AND"
+paths = ['''(^|/)sealedsecret-[^/]+\.yaml$''']
+regexes = ['''^Ag[A-Za-z0-9+/]{200,}={0,2}$''']
+
+[[allowlists]]
+description = "SonarCloud project key is a public identifier"
+regexes = ['''^BaoDuong254_trellify$''']

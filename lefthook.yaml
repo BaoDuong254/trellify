@@ -1,5 +1,8 @@
 pre-commit:
   commands:
+    gitleaks:
+      run: gitleaks git --pre-commit --staged --redact --verbose --no-banner
+
     check-lockfile:
       run: bash scripts/check-lockfile.sh
 

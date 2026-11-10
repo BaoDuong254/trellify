@@ -323,7 +323,7 @@ In production these come from `infra/apps/trellify/base/config-server.env` (non-
 
 ## Git Conventions
 
-Conventional Commits (`feat(scope): description`), enforced by commitlint on `commit-msg`. Hooks are managed by **lefthook** (`lefthook.yaml`) — pre-commit runs lockfile check, CSP hash check, knip, prettier, and `lint:fix`. Branch naming: `feature/*`, `bugfix/*`, `hotfix/*` off `main`. Releases are automated by release-please.
+Conventional Commits (`feat(scope): description`), enforced by commitlint on `commit-msg`. Hooks are managed by **lefthook** (`lefthook.yaml`) — pre-commit runs gitleaks on the staged diff, lockfile check, CSP hash check, knip, prettier, and `lint:fix`. The gitleaks hook needs the binary on `PATH` (`winget install Gitleaks.Gitleaks`); `.gitleaks.toml` allowlists only SealedSecret ciphertext and the public SonarCloud project key - a real hit means rotate the secret, never allowlist it. After push, GitHub secret scanning (push protection + alerts) is the server-side layer; there is no gitleaks step in CI. Branch naming: `feature/*`, `bugfix/*`, `hotfix/*` off `main`. Releases are automated by release-please.
 
 ## Further Reading
 
