@@ -301,6 +301,8 @@ The only compose stack is `e2e/docker-compose.yml` for Playwright; load tests ru
 
 ## Critical Rules
 
+**Review** — after changing code, spawn the `ocr-reviewer` subagent (`.claude/agents/ocr-reviewer.md`), which runs OCR delegate review with a clean context and reports only; verify its High/Medium findings and fix the real ones. The `Stop` hook in `.claude/settings.json` (`.claude/hooks/ocr-review-gate.sh`) blocks finishing a turn while the non-Markdown diff differs from the one last reviewed. The diff is hashed when the reviewer starts (`.git/ocr-reviewed.pending.<agent_id>`) and promoted to `.git/ocr-reviewed` only if the reviewer's final message starts with its `## OCR review -` header, so edits made during the review and failed runs both stay unreviewed.
+
 **Imports** — absolute imports via the `src/*` alias; `@workspace/*` for internal packages; no deep relative paths (`../../../`).
 
 **Type safety** — no `any` (use `unknown`); explicit return types everywhere; no `as` assertions unless unavoidable.
