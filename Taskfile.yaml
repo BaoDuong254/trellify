@@ -22,4 +22,4 @@ tasks:
         echo "  First-time setup  aws:login → aws:setup:bootstrap → aws:setup:sealed-key FILE=… → aws:setup:tfvars → aws:setup:init → aws:dns:plan → aws:dns:apply"
         echo "  Failover to AWS   aws:login → aws:up → aws:status:apps → aws:failover:restore → aws:failover:verify → aws:dns:switch ORIGIN=aws"
         echo "  Back to homelab   aws:failback:all  (= aws:failback:freeze → aws:dns:switch ORIGIN=homelab → aws:down)"
-        echo "  Load test on AWS  aws:loadtest:up → aws:loadtest:freeze → aws:loadtest:seed → aws:loadtest:run -- <scenario> <profile> → aws:loadtest:down"
+        echo "  Load test on AWS  aws:login → aws:loadtest:quota → aws:loadtest:up → aws:status:apps → aws:loadtest:freeze → aws:loadtest:seed → aws:loadtest:run -- <scenario> <profile> → aws:loadtest:down"
