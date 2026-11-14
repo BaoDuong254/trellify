@@ -25,16 +25,16 @@ catalog:
   "@dnd-kit/utilities": 3.2.2
   "@emotion/react": 11.14.0
   "@emotion/styled": 11.14.1
-  "@eslint-react/eslint-plugin": 5.28.4
+  "@eslint-react/eslint-plugin": 5.30.1
   "@eslint/js": 10.0.1
   "@getbrevo/brevo": 6.2.0
   "@mui/icons-material": 9.5.0
   "@mui/lab": 7.0.1-beta.25
   "@mui/material": 9.5.0
   "@marsidev/react-turnstile": 1.6.3
-  "@playwright/test": 1.64.1
+  "@playwright/test": 1.65.0
   "@prometheus-io/client": 0.16.1
-  "@reduxjs/toolkit": 2.13.0
+  "@reduxjs/toolkit": 2.14.0
   "@socket.io/redis-adapter": 8.3.0
   "@testcontainers/mongodb": 12.2.1
   "@testing-library/dom": 10.4.2
@@ -56,15 +56,15 @@ catalog:
   "@types/react-dom": 19.3.0
   "@types/streamifier": 0.1.2
   "@types/supertest": 7.2.1
-  "@uiw/react-md-editor": 4.1.3
+  "@uiw/react-md-editor": 4.2.3
   "@vitejs/plugin-react-swc": 4.3.3
-  "@vitest/coverage-v8": 5.0.5
+  "@vitest/coverage-v8": 5.1.0
   "@vitest/eslint-plugin": 1.6.27
   "@trivago/prettier-plugin-sort-imports": 6.0.2
   async-exit-hook: 2.0.1
-  axios: 1.20.0
+  axios: 1.21.1
   bcryptjs: 3.0.3
-  bullmq: 6.4.0
+  bullmq: 6.7.4
   chalk: 6.0.1
   cloudinary: 2.11.0
   commitizen: 4.3.2
@@ -75,8 +75,8 @@ catalog:
   cross-env: 10.1.0
   cz-git: 1.14.0
   dotenv: 18.0.8
-  dotenv-cli: 11.0.0
-  eslint: 10.13.0
+  dotenv-cli: 11.1.0
+  eslint: 10.14.0
   eslint-config-prettier: 10.1.8
   eslint-import-resolver-typescript: 4.4.5
   eslint-plugin-eslint-plugin: 7.6.2
@@ -90,25 +90,25 @@ catalog:
   eslint-plugin-tsdoc: 0.5.4
   eslint-plugin-unicorn: 78.0.0
   express: 5.3.0
-  globals: 17.13.0
+  globals: 17.14.0
   http-status-codes: 2.3.0
   ioredis: 6.0.0
   jsdom: 30.1.3
   lefthook: 2.2.2
   lodash: 4.18.1
   material-ui-confirm: 4.0.0
-  mongodb: 7.7.0
+  mongodb: 7.8.0
   morgan: 1.12.1
   ms: 2.1.3
   msw: 3.0.3
   multer: 2.5.0
   nodemon: 3.1.14
-  prettier: 3.9.10
-  prettier-plugin-packagejson: 3.0.2
+  prettier: 3.10.0
+  prettier-plugin-packagejson: 3.1.0
   randomcolor: 0.6.2
   react: 19.3.1
   react-dom: 19.3.1
-  react-hook-form: 7.90.0
+  react-hook-form: 7.92.0
   react-redux: 9.3.0
   react-router-dom: 7.18.4
   redux-persist: 6.0.0
@@ -129,12 +129,12 @@ catalog:
   uuid: 14.0.3
   vite: 8.3.5
   vite-plugin-svgr: 5.2.0
-  vitest: 5.0.5
+  vitest: 5.1.0
   winston: 3.19.0
   zod: 4.6.7
-  knip: 6.42.1
-  "@sentry/react": 11.8.0
-  "@sentry/vite-plugin": 11.8.0
+  knip: 6.45.1
+  "@sentry/react": 11.12.0
+  "@sentry/vite-plugin": 11.12.0
   rollup-plugin-visualizer: 7.1.1
 
 cleanupUnusedCatalogs: true
