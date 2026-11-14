@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.8.0](https://github.com/BaoDuong254/trellify/compare/v1.7.0...v1.8.0) (2026-11-14)
+
+
+### Features
+
+* add gitleaks configuration and update pre-commit hooks for secret scanning ([29ea398](https://github.com/BaoDuong254/trellify/commit/29ea3987ae8301dbaff690abdc85edea04d9e958))
+* add OCR reviewer agent and hooks for automated code review process ([6ce98ca](https://github.com/BaoDuong254/trellify/commit/6ce98ca18d38ca8374acbb391360a9efc843135a))
+* add Taskfile and cluster operations documentation for AWS and homelab ([32448b6](https://github.com/BaoDuong254/trellify/commit/32448b6c942867fc015bba8c566c709694133e30))
+* add user count check to backup cronjob to prevent overwriting on empty database ([8330751](https://github.com/BaoDuong254/trellify/commit/833075121ed12ea4ab37c4c7e2eb8324efdacd65))
+* **client:** enable logs in workers ([8691797](https://github.com/BaoDuong254/trellify/commit/8691797fcf68b1be55c51b71390c68bdb65b84d8))
+* **client:** move the Sentry tunnel to the Cloudflare Worker ([a816010](https://github.com/BaoDuong254/trellify/commit/a8160100132868d26204352d87dc43366c143c49))
+* **deploy:** pin the server image by digest ([ca6cea9](https://github.com/BaoDuong254/trellify/commit/ca6cea966a4aa5a7ed78038eccf82445d11dc2ba))
+* enhance error handling and CORS support in diagnostics route ([69adbd5](https://github.com/BaoDuong254/trellify/commit/69adbd5514ece16b3e4298f4cdeffc7367487c1b))
+* **infra:** run workloads with read-only root filesystems and gate CI on trivy config ([dee262e](https://github.com/BaoDuong254/trellify/commit/dee262e40f2a14184a0ee232b0cbc8d015558f45))
+* **security:** enhance security measures and improve error handling in user authentication ([0bcfa12](https://github.com/BaoDuong254/trellify/commit/0bcfa12a71a9ca0202c8d3b1dad8c62f43b1a35e))
+* **security:** harden CI workflows and rate limit login ([b31d8df](https://github.com/BaoDuong254/trellify/commit/b31d8df89d96e6582a551b023498bfd0245ff1ee))
+* **security:** harden CI workflows and rate limit login ([8d638e9](https://github.com/BaoDuong254/trellify/commit/8d638e90ba429d059e2a577f5c198d92b4c2dafd))
+
+
+### Bug Fixes
+
+* add --ignore-scripts flag to pnpm installation in Dockerfiles ([7b8d6a7](https://github.com/BaoDuong254/trellify/commit/7b8d6a7966381fa0de72a656f6da15a37ddd62e1))
+* **client:** format JSON structure and enable issue tracking ([24f7632](https://github.com/BaoDuong254/trellify/commit/24f7632e7017dad369340258320f90c07dc12a71))
+* **config:** adjust formatting in .prettierrc and wrangler.jsonc ([91193a9](https://github.com/BaoDuong254/trellify/commit/91193a91669077d8ab592a2491ea31adeea5ae1d))
+* **infra:** set ephemeral storage limits on the restore and migrate jobs ([316e032](https://github.com/BaoDuong254/trellify/commit/316e0326098d96b4980aa7f1f368819dfce32c31))
+* **renovate:** add minimumReleaseAgeBehaviour for GitHub Actions digest updates ([b1a4387](https://github.com/BaoDuong254/trellify/commit/b1a43872e4c81f1588d513bdb30aa174854743b9))
+* update load test command sequence in Taskfile for AWS ([cc92f04](https://github.com/BaoDuong254/trellify/commit/cc92f041f4340c865959c50bad69b3a03e7d780c))
+
 ## [1.7.0](https://github.com/BaoDuong254/trellify/compare/v1.6.0...v1.7.0) (2026-10-25)
 
 
