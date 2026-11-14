@@ -5,7 +5,7 @@ FROM node:26.13.0-alpine AS dev
 WORKDIR /workspace
 
 # renovate: datasource=npm depName=pnpm
-ARG PNPM_VERSION=12.15.0
+ARG PNPM_VERSION=12.18.0
 RUN npm install -g --ignore-scripts pnpm@${PNPM_VERSION}
 ENV LEFTHOOK=0
 
