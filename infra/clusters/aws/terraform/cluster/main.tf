@@ -38,7 +38,7 @@ resource "terraform_data" "orphan_cleanup" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "6.7.3"
+  version = "6.8.0"
 
   name = var.cluster_name
   cidr = var.vpc_cidr
@@ -69,7 +69,7 @@ module "vpc" {
 
 module "ebs_csi_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.10.0"
+  version = "2.11.0"
 
   name                      = "${var.cluster_name}-ebs-csi"
   attach_aws_ebs_csi_policy = true
@@ -77,7 +77,7 @@ module "ebs_csi_pod_identity" {
 
 module "cluster_autoscaler_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.10.0"
+  version = "2.11.0"
 
   name                             = "${var.cluster_name}-cluster-autoscaler"
   attach_cluster_autoscaler_policy = true
@@ -94,7 +94,7 @@ module "cluster_autoscaler_pod_identity" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "21.29.0"
+  version = "21.30.2"
 
   name               = terraform_data.orphan_cleanup.input.cluster
   kubernetes_version = var.kubernetes_version
