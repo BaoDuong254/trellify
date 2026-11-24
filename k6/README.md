@@ -4,7 +4,7 @@ Load tests for the Trellify REST API. Locally they run against the kind dev clus
 
 ## Prerequisites
 
-- Docker Desktop running, plus `kind`, `tilt` and `kubectl` (see the dev cluster section of the root `CLAUDE.md`)
+- Docker Desktop running, plus `kind`, `tilt` and `kubectl` (see `infra/CLAUDE.md`)
 - k6 on your PATH:
 
 ```powershell

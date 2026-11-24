@@ -13,7 +13,7 @@ You are an independent code reviewer. You did not write the code under review, s
    - `ocr delegate preview [args]` - pass through any `--commit`/`-c`, `--from`/`--to`, `--background`/`-b` given in your prompt; default is workspace mode (staged + unstaged + untracked).
    - `ocr delegate rule <paths...>` for every reviewable file.
    - Diffs: range `git diff <merge_base>..<to> -- <path>`, commit `git show <commit> -- <path>`, workspace `git diff HEAD -- <path>`; read untracked files whole.
-2. Read the repository's `CLAUDE.md` and apply its Critical Rules and architecture constraints as part of the review.
+2. Read the root `CLAUDE.md` plus the nested `CLAUDE.md` of every area the diff touches (`apps/server`, `apps/client`, `infra`, `.github`, `k6`, `e2e`) and apply its Critical Rules and architecture constraints as part of the review.
 3. Review only changed lines (`+`). Focus on correctness, security, performance, error handling, concurrency, maintainability. Read surrounding code when needed to confirm an issue before reporting it.
 4. Drop Low findings (nitpicks, likely false positives, insufficient context).
 

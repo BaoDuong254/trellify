@@ -1,116 +1,42 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Area-specific rules live next to the code and load when you work there:
+
+| File                          | Covers                                                                     |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| `apps/server/CLAUDE.md`       | layers, sockets, cache, bloom filter, Redis, BullMQ, metrics, server tests |
+| `apps/client/CLAUDE.md`       | client architecture, auth refresh, Sentry tunnel, CSP hashes, client tests |
+| `infra/CLAUDE.md`             | ArgoCD/k3s, kind + Tilt dev cluster, Task ops, infra validation            |
+| `.github/CLAUDE.md`           | CI pipeline, image build/pin/deploy workflow                               |
+| `k6/CLAUDE.md`                | load testing                                                               |
+| `e2e/CLAUDE.md`               | Playwright                                                                 |
+| `.claude/rules/lighthouse.md` | Unlighthouse audits (`unlighthouse.config.ts`)                             |
 
 ## Commands
 
 ```bash
-# Install all workspace packages (from root)
-pnpm install
-
-# Development — runs client (5173), API server (3000) AND the BullMQ worker in parallel
-pnpm start:dev
-
-# Run a single workspace (`fe`/`be`/`shared`/`e2e` are aliases for `pnpm --filter=<pkg>`)
-pnpm fe start:dev            # client only
-pnpm be start:dev            # API server only (no worker)
+pnpm install                 # from root
+pnpm start:dev               # client (5173), API (3000) and BullMQ worker in parallel
+pnpm fe start:dev            # `fe`/`be`/`shared`/`e2e` alias `pnpm --filter=<pkg>`
+pnpm be start:dev            # API only (no worker)
 pnpm be start:worker:dev     # worker only
-pnpm be start:debug          # API server with --inspect=9229
+pnpm be start:debug          # API with --inspect=9229
 
-# Lint / format / types
-pnpm lint
-pnpm lint:fix
-pnpm format:fix
-pnpm typecheck
+pnpm lint | lint:fix | format:fix | typecheck
+pnpm knip && pnpm knip:production   # pre-commit AND CI; a failure blocks the commit
+bash scripts/check-csp-hashes.sh    # pre-commit AND CI
 
-# Unused files/exports/deps — runs on pre-commit AND in CI; a failure blocks the commit
-pnpm knip
-pnpm knip:production
+pnpm pkg:build && pnpm apps:build && pnpm start:prod   # order matters — packages export from dist/
+pnpm cz                      # guided conventional commit
 
-# CSP hashes for the client's inline scripts — pre-commit AND CI
-bash scripts/check-csp-hashes.sh
-
-# Production build (order matters — packages export from dist/)
-pnpm pkg:build
-pnpm apps:build
-pnpm start:prod
-
-# Guided conventional commit
-pnpm cz
-```
-
-### Dev cluster (kind + Tilt)
-
-```bash
-kind create cluster --config infra/clusters/dev/kind.yaml   # once; context kind-trellify
-tilt up                                                     # http://localhost
-tilt up -- --server-replicas=3                              # multi-pod, like prod; `tilt args` changes it live
-```
-
-The root `Tiltfile` installs ingress-nginx (same chart and platform values as ArgoCD, plus `infra/clusters/dev/ingress-nginx/values.yaml`), applies `infra/apps/trellify/overlays/dev`, and builds both images from the `dev` stage of each Dockerfile. In the server Dockerfile it sits **between** `builder` and the production stage so the default (last) target stays production; the client Dockerfile has only that stage, because production serves the client from Cloudflare. The client's Deployment, Service and `trellify-web` Ingress live in `overlays/dev/client.yaml`, not in `base`. `live_update` syncs `src/` and `packages/shared/src` into `tsx watch` / Vite. The overlay deletes what needs CRDs or R2 (ServiceMonitor, PrometheusRule, backup CronJobs) plus the HPA/PDB, and generates fixed dev Mongo/Redis secrets; `trellify-server-secrets` comes from the Tiltfile, which reads Brevo/Cloudinary/JWT from `apps/server/.env`. The server dev stage creates an empty `.env` because `src/config/environment.ts` throws when `NODE_ENV` is not production and the file is missing. The Tiltfile fails on any context other than `kind-trellify`.
-
-### Cluster operations (Task)
-
-`task` (go-task, run at the repo root from Git Bash, or from PowerShell with `C:\Program Files\Git\usr\bin` on `PATH`) lists the ops tasks for the clusters and prints the common flows (setup, failover, failback, load test). Task names are grouped by phase - `aws:setup:*`, `aws:dns:*`, `aws:failover:*`, `aws:failback:*`, `aws:status:*`, `aws:loadtest:*`, `homelab:setup:*`, `homelab:seal:*`, `homelab:deploy:*` - plus `client:*` for manual Workers deploy/rollback. The root `Taskfile.yaml` includes `infra/clusters/{aws,homelab}/Taskfile.yaml` and `aws/Taskfile.client.yaml`; `infra/clusters/Taskfile.data.yaml` (backup/restore/bloom-reset/restart) is included into both as the `data` namespace (`aws:data:*`, `homelab:data:*`) with its own `KUBECTL` var. Top-level `vars` of included Taskfiles are **global**, not per-file — a name defined in two of them silently resolves to one value everywhere, which is why the kubectl prefixes are `KC_AWS`/`KC_HOME`. Task ignores an `env:` entry whose variable is already set in the OS environment, so `PATH` cannot be extended from a Taskfile and an `AWS_PROFILE` already set in the shell would beat `env: AWS_PROFILE: trellify` - `AWS_PROFILE_GUARD` in the aws Taskfile refuses to run in that case; the root `UNIX_TOOLS` var fails every task early when `sed`/`grep`/`head` are missing, and heredoc tasks call `{{.BASH}}` (Git's `bash.exe` by full path) because a bare `bash` from PowerShell resolves to WSL's `System32\bash.exe`. Check any change with `task --dry <task>` before running it.
-
-### Tests
-
-```bash
-pnpm test                    # every Vitest suite (shared, server unit + integration, client) with coverage
+pnpm test                    # every Vitest suite with coverage
 pnpm shared test             # shared Zod schemas only
-pnpm be test:unit            # server unit tests — no Docker needed
-pnpm be test:integration     # server integration tests — needs Docker (Testcontainers starts mongo:8.0 + redis:8-alpine)
-pnpm fe test                 # client (jsdom + Testing Library + MSW)
-
-pnpm e2e:up                  # Mongo + Redis for Playwright (e2e/docker-compose.yml, ports 27019/6381)
-pnpm test:e2e                # Playwright; starts its own API (3100) and Vite (5174) from e2e/e2e.env
-pnpm e2e:down
+pnpm be test:unit            # no Docker needed
+pnpm be test:integration     # needs Docker (Testcontainers mongo:8.0 + redis:8-alpine)
+pnpm fe test                 # jsdom + Testing Library + MSW
 ```
 
-CI (`.github/workflows/ci.yml`) runs `pnpm audit --prod --audit-level=high` → lint → knip → knip:production → format check → CSP hash check → pkg:build → typecheck → apps:build → `pnpm test` → SonarCloud, and Playwright plus a report-only ZAP baseline against the local API in a separate `e2e` job. Every workflow is pinned to `ubuntu-26.04`; nothing uses `ubuntu-latest`. Its kernel 7.0 trips MongoDB's refusal to start on kernels 6.19+ ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)), so the Testcontainers Mongo (`test/integration/setup/global-setup.ts`) and the e2e compose Mongo set `GLIBC_TUNABLES=glibc.pthread.rseq=1`; drop it from either and that suite fails on CI only. The production StatefulSet does not set it, so the same limit applies to the homelab and EKS node kernels. The client's `typecheck` is `tsc -b`, not `tsc --noEmit`: its root `tsconfig.json` is solution-style (`"files": []` plus references to `tsconfig.app.json`/`tsconfig.node.json`), and plain `tsc --noEmit` only reads that root, checks zero files and exits 0. Only build mode follows the references. The Postman collection (`postman/collections/Trellify.postman_collection.json`) and the k6 load tests (below) remain the manual and performance checks; Lighthouse audits of production are run locally (below).
-
-### Load testing (k6)
-
-Runs against the kind dev cluster in loadtest mode — the production server image on `infra/apps/trellify/overlays/loadtest` (the dev overlay plus `NODE_ENV=production`, the raised write rate limit and prod's resource limits), so requests go through ingress-nginx like prod. It shares the dev database `trellify` on kind (the seed only touches `k6-` documents) and never touches real data. Requires the dev cluster tooling and `k6` on PATH.
-
-```bash
-tilt up -- --loadtest # production image; add --server-replicas=3 for multi-pod
-pnpm loadtest:seed    # seed users/boards/cards, mint JWTs into k6/data/users.json
-pnpm k6 smoke         # gate — 1 VU through every flow; if this fails, later numbers are meaningless
-pnpm k6 mixed load    # main run; `pnpm k6` with no args prompts for scenario and profile
-tilt down             # PVCs survive; deleting the kind cluster needs a re-seed
-```
-
-`pnpm k6 <scenario> <profile>` is the single entrypoint for every run — scenarios are `smoke`, `mixed`, `board-read`, `board-write`, `auth`, `socket-fanout`; profiles are `smoke`, `baseline`, `load`, `stress`, `spike`, `soak`, `capacity`. `--prom` pushes to Prometheus, `--ts` writes a time-series file for `pnpm k6:peak-rps`, `--watch` samples pod CPU (kubelet stats) and each server pod's `/metrics` through `kubectl`, and any other flag is forwarded to `k6 run`.
-
-Every request carries a `CF-Connecting-IP` that changes per VU and iteration (`k6/lib/api.js`), because the `/api` Ingress limits each client IP to 20 rps. The limit answers 429 through `limit-req-status-code` in the controller config (`infra/platform/ingress-nginx/values.yaml`); an Ingress annotation of that name is ignored.
-
-`--aws` runs k6 in a pod `loadtest/k6` on a tainted `loadgen` node of the EKS cluster (the node group only exists when `loadgen_node_count > 0`), resolving `trellify-api.duonggiabao.com` to the in-cluster ingress-nginx through `hostAliases`. It only accepts a kubectl context whose cluster is `trellify-dr`, skips the auth flow (real Turnstile secret) and keeps prod's rate limits. A cluster seeded for k6 must have its R2 backup CronJob suspended, or a k6 archive becomes the newest one on R2 and the next real failover restores it.
-
-`k6/README.md` documents the profiles, thresholds, and the Prometheus remote-write path.
-
-### Lighthouse (Unlighthouse)
-
-Audits the **deployed** site (`UNLIGHTHOUSE_SITE`, default `https://trellify.duonggiabao.com`), never a local build. Config is `unlighthouse.config.ts` at the root, which is registered as a knip entry.
-
-```bash
-pnpm lighthouse         # public pages, interactive UI
-pnpm lighthouse:auth    # authenticated pages, loads .env.unlighthouse (gitignored)
-pnpm lighthouse:ci      # public pages, headless, fails on ci.budget
-pnpm lighthouse:ci:auth # authenticated pages, headless
-```
-
-**There is deliberately no GitHub Actions workflow for it.** Cloudflare Bot Fight Mode (Free plan) answers GitHub-hosted runners with a Managed Challenge, WAF custom rules cannot skip Bot Fight Mode, and a self-hosted runner on a public repo would let fork PRs run code inside the home network. Don't add a workflow back without solving that first.
-
-The config works around three behaviours of Unlighthouse 0.18. Removing any of these workarounds breaks the scans without an error:
-
-- **Throttling is set explicitly.** `resolveUserConfig` checks `if (typeof config.scanner?.throttle)`, which is always truthy, so without `lighthouseOptions.throttling` every scan uses slow 4G, even with `device: "desktop"` (performance ~0.55 instead of ~0.95).
-- **Auth is injected by the `authenticate` hook into `defaultBrowserContext()`.** Lighthouse runs in a child process on a tab in the browser's default context, while puppeteer-cluster gives every job its own throwaway incognito context. The `cookies`/`localStorage` options therefore never reach the page being measured, and every protected route renders `/login`. `disableStorageReset` is on for the authenticated run so Lighthouse does not wipe `persist:root` before loading the page. The hook first trades `UNLIGHTHOUSE_REFRESH_TOKEN` for a fresh access token via `GET /api/v1/users/refresh_token` (refresh tokens are not rotated, so it works for its whole 14 days) and throws if that fails, so only the refresh token and `persist:root` live in `.env.unlighthouse`.
-- **`maxConcurrency: 1`.** Parallel runs hit `NO_NAVSTART` and silently drop routes from the report.
-
-`unlighthouse-ci` passes a route that has no report or a null/0 score (`if (!categories) return;`, `if (category.score && ...)`), so a Cloudflare challenge page or a protected route redirected to `/login` used to count as a pass. The `worker-finished` hook reads each route's `lighthouse.json` and fails on a missing report, a `runtimeError`, a final path that differs from the requested one, or a missing score; it sets `process.exitCode` inside an `exit` listener because the CLI calls `process.exit(0)` itself afterwards. The authenticated run has `disableStorageReset` on, which also keeps the HTTP cache between pages, so its performance numbers lean towards a warm cache.
-
-Public and authenticated routes are separate runs, split on whether the auth variables are present, because `AuthLayout` redirects a logged-in user away from `/login`/`/register`. Best practices is capped around 0.81 by Cloudflare's injected `/cdn-cgi/challenge-platform` script, and SEO is 0.63 on `noindex` pages. The budgets account for both; a drop below that is a real regression, such as a CSP violation in the console.
+Vitest everywhere except E2E. Specs are `*.spec.ts(x)`; both `tsconfig.build.json` files exclude `**/*spec.ts` and `vitest.config.ts`, so nothing test-related reaches `dist/`. knip: production files are the `!`-suffixed `project` globs in `knip.json`; test-only folders (`apps/server/test`, `apps/client/src/test`, `e2e`) are deliberately left unsuffixed so `knip --production` ignores them.
 
 ## Monorepo Layout
 
@@ -120,8 +46,8 @@ pnpm workspaces + Turbo:
 - `apps/server` — Express 5 + MongoDB + Socket.io + BullMQ backend (two entrypoints: `src/index.ts`, `src/worker.ts`)
 - `packages/shared` — Zod schemas, socket event constants, logger (`@workspace/shared`)
 - `packages/eslint` / `packages/typescript` — shared configs
-- `infra/` — Kubernetes manifests reconciled by ArgoCD: `platform/`, `apps/`, `clusters/{homelab,aws}` (see Deployment)
-- `k6/` — load-test scenarios, profiles, and helpers (excluded from knip)
+- `infra/` — Kubernetes manifests reconciled by ArgoCD
+- `k6/` — load tests (excluded from knip)
 - `unlighthouse.config.ts` — Lighthouse audits of the deployed site
 
 `@workspace/shared` is consumed through built subpath exports only: `@workspace/shared/schemas/*`, `@workspace/shared/utils/*` and `@workspace/shared/constants/*` (no root import). Because it resolves to `dist/`, run `pnpm pkg:build` after changing shared code if apps start reporting stale or missing exports. A new top-level folder under `packages/shared/src/` needs its own entry in the package's `exports` - dev (`tsx`, Vite) and `pnpm typecheck` resolve through tsconfig `paths` and never notice, but `tsconfig.build.json` drops that mapping, so the server's `apps:build` fails with TS2307 and plain Node rejects the import with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
@@ -136,169 +62,6 @@ Versions are centralized via **pnpm catalog**. Never write a version number in a
 
 Internal packages skip the catalog and use `"workspace:*"`. `pnpm-workspace.yaml` sets `saveExact` and `engineStrict`. The repo has no `.npmrc`: since pnpm 11 it is read for registry and auth only, so a setting added there is silently ignored — put pnpm settings in `pnpm-workspace.yaml`. `engineStrict` checks dependencies' `engines` against `nodeVersion`; it does not stop a workspace running on the wrong Node. `devEngines.runtime` in the root `package.json` is what pins Node: pnpm downloads 26.13.0 and runs every script with it, whatever `node -v` says. Keep `engines.node` in every workspace `package.json` anyway: `eslint-plugin-n` reads it from the nearest `package.json` to decide which Node APIs are allowed, and without it falls back to `>=16.0.0` and fails lint on anything newer (`import.meta.dirname` in `e2e/support/environment.ts` is the first to break). A pre-commit hook (`scripts/check-lockfile.sh`) verifies the lockfile is in sync.
 
-## Backend Architecture
-
-Strict layered pattern: **Controller → Service → Model → Database**
-
-**File naming.** Layer folders hold one role per domain and repeat the folder name in the suffix: `controllers/board.controller.ts`, `services/board.service.ts`, also `models/`, `validations/`, `middlewares/`, `providers/`, `routes/`, `types/`. Subsystem folders hold several roles for the same domain and do **not** repeat the folder name - shared infra sits at the root as `<subsystem>.<role>.ts` and each domain gets its own subfolder of `<domain>.<role>.ts`. `queues/` and `sockets/` are the two subsystems:
-
-```
-queues/   queue.constants.ts  redis.client.ts   user/   user.queue.ts  user.worker.ts  user.processor.ts
-sockets/  socket.server.ts    socket.auth.ts    board/  board.handlers.ts  board.broadcast.ts  board.viewers.ts
-```
-
-A new realtime domain is a new folder under `sockets/`, registered from `startSockets()` - don't flatten it back into the root.
-
-- **Controllers** (`src/controllers/`) — thin HTTP handlers; call a service, send the response, pass errors to `next()`. No business logic. Get the authenticated user with `actorId(request)` from `src/utils/request-user.ts` — never read `request.jwtDecoded` inline.
-- **Services** (`src/services/`) — all business logic; throw `ApiError` (`src/utils/api-error.ts`)
-- **Models** (`src/models/`) — MongoDB access only; validate with Zod before insert/update; always filter `_destroy: false`
-- **Validations** (`src/validations/`) — Zod middleware applied at the route level, using schemas from `@workspace/shared/schemas/*`
-- **Providers** (`src/providers/`) — external service wrappers: Brevo (email), Cloudinary (uploads), JWT, Redis, Prometheus registry
-
-MongoDB **native driver**, not Mongoose. Soft delete only — set `_destroy: true`, never hard-delete, never expose `_destroy` to the frontend. Every read of a soft-deleted domain filters `_destroy: false`, including inside `$lookup` (`boardModel.getDetailsById` passes `pipeline: [{ $match: { _destroy: false, archivedAt: null } }]` on the columns and cards joins - archived columns and cards are left out of the snapshot but stay readable through `GET /boards/:id/archived`, and `null` also matches documents written before the field existed); the two exceptions are `findAllIds`/`countAll`, which feed the append-only bloom filters and must see tombstones. Prefer aggregation pipelines over N+1 queries.
-
-Indexes are declarative: `ENSURE_INDEXES` in `src/config/indexes.ts` runs at startup against a single `INDEX_PLAN` array. Adding a new query pattern means adding its index there, not creating one by hand in the database.
-
-Error messages are i18n keys (e.g. `"Error.BoardNotFound"`). Never expose stack traces in production.
-
-### Real-time (Socket.io)
-
-- Everything realtime lives in `src/sockets/`, behind one entry point: `startSockets(httpServer)` from `src/sockets/index.ts` creates the Socket.io server, attaches the Redis adapter, and registers the auth middleware and connection handlers in that order. `src/index.ts` only calls it and keeps the returned instance for the shutdown sequence - don't wire socket behaviour into the entrypoint again.
-- Socket auth middleware (`src/sockets/socket.auth.ts`) runs on connection; every socket joins its own `user:<userId>` room, and board viewers join `board:<boardId>`. Room name helpers and all event name constants live in `@workspace/shared/utils/socket-events` — add new events there, never as string literals.
-- REST mutations broadcast **after** `response.json()` via `broadcastBoardUpdate(request, boardId, reason)` from `src/sockets/board/board.broadcast.ts`. It re-fetches a board snapshot and emits `BE_BOARD_UPDATED` to the board room. Sends are serialised per board through the `inFlight` map so a slow snapshot query for an earlier update cannot land after a newer one — the client replaces the whole board on every payload, so an out-of-order emit rolls it backwards and it stays there.
-- **Never gate a broadcast on adapter room membership.** `adapter.rooms`, `adapter.sockets()` and `adapter.hasRoom()` are all **local to one process** — `@socket.io/redis-adapter` does not override `sockets()` or `hasRoom()`, so they silently report only the sockets attached to the pod you are running on. Production runs 3-6 server replicas and the `/api` Ingress has no session affinity (only `/socket.io` does), so the pod handling a write is usually not the pod holding the viewers' sockets; a "nobody is watching, skip the emit" check built on those APIs drops most updates permanently. `board_broadcast_local_recipients` is safe to _observe_ for that reason but must never drive control flow. The only cross-node membership API is `io.in(room).fetchSockets()`, and that is a fan-out RPC that waits for every node with a 5s `requestsTimeout` — keep it off the write path.
-- Whether anybody is watching a board is answered by a **Redis viewer registry** (`src/sockets/board/board.viewers.ts`), a set of socket ids per board under `bv:<boardId>`. `JOIN_BOARD` adds to it before acking, leave/disconnect/evict remove from it, and `emitBoardPresence` reconciles it from the `fetchSockets()` result it already fetches - removing only ids the adapter confirms are gone, never `DEL`-ing the key, so a concurrent join elsewhere cannot be clobbered. `broadcastBoardUpdate` skips the snapshot and emit when the registry holds nobody but the actor (`board_broadcast_skipped_total`); that is what keeps a solo user's writes, and a write-heavy load against unwatched boards, from costing a full board snapshot each. Three rules keep it safe: **never put a TTL on those keys** (a key expiring under live viewers reads back empty, which means "skip" - silent realtime loss); any Redis error means broadcast, never skip; and Redis losing the registry is repaired by `registerViewerRegistryRecovery`, which re-registers this instance's sockets on every reconnect.
-- The client echoes its socket id on every Axios request in the `x-socket-id` header (`SOCKET_ID_HEADER`); the broadcast uses `.except(actorSocketId)` so the originating tab doesn't double-apply its own change. Preserve this header plumbing when touching the HTTP client or broadcast helper.
-- A Redis adapter (`@socket.io/redis-adapter`) backs Socket.io so broadcasts fan out across scaled instances — use adapter-aware APIs (`io.in(...).fetchSockets()`) rather than assuming a single process.
-
-### Read-through cache (Redis)
-
-`src/providers/cache.provider.ts` is the only cache engine - a generic `getOrLoad({ cacheName, key, ttlSeconds, negativeTtlSeconds, load })` plus `invalidate(key)`. It coalesces concurrent misses in two layers: a process-local in-flight `Map`, then a Redis lock (`SET sf:<key> <token> PX 10000 NX`) so only one replica of the 3-6 runs the loader while the others poll the value key and return what the leader stored. A miss that finds no board caches the JSON literal `null` under a shorter TTL, so a flood of requests for an id that does not exist cannot keep reaching Mongo. TTLs carry +-10% jitter so entries created together do not expire together.
-
-Rules that keep it safe:
-
-- **Every failure path reads through.** Any Redis error or timeout logs a warning, increments `cache_requests_total{result="error"}` and runs the loader. `enableOfflineQueue` is on, so a command issued during an outage would hang rather than reject; every Redis call in the cache is therefore wrapped in a `CACHE_COMMAND_TIMEOUT_MS` race, deliberately tighter than the client-wide `REDIS_COMMAND_TIMEOUT_MS` so the cache keeps its own budget. Set both above the p99 command latency _including a reconnect_: too tight and the cache silently fails open on every request while still looking healthy.
-- **Authorization is cached separately, on a short leash, and never taken from the board snapshot.** `boardService.getDetails` gates on `canUserAccessBoard` before touching the board entry. That check reads `c:v1:board-membership:<id>` - only `ownerIds`/`memberIds`/`type`, under `BOARD_MEMBERSHIP_CACHE_TTL_SECONDS` (5s) - never the `ownerIds` embedded in the cached board, whose 30s TTL would keep a removed member reading for far too long. Three facts keep the short entry safe: `ownerIds` is written once in `boardModel.createNew` and never mutated, so owner checks cannot go stale; `UPDATE_BOARD_SCHEMA` only picks title/description/type/columnOrderIds/labels, so no request can add itself as a member; and membership changes through exactly two calls, `pushMemberIds` and `pullMemberIds`.
-- **Membership invalidation does not go through `broadcastBoardUpdate`.** It is called from the services - `board.service.removeMember`, `board.service.update`, and the ACCEPTED branch of `invitation.service.updateBoardInvitation` - so it lands _before_ the response. The broadcast hook is too late here: `board.controller.removeMember` awaits `evictUserFromBoardRoom` first, and that runs a `fetchSockets()` fan-out with a 5s `requestsTimeout`, which would roughly double the window in which a removed member can still read. `removeMember` itself reads `boardModel.findMembership` directly, uncached - it is deciding whether to change membership and must not act on a stale copy.
-- **The broadcast path must never read the cache.** `sendBoardUpdate` calls `boardService.getBoardSnapshot`, which always goes to Mongo. The client replaces its whole board with that payload, so emitting a stale snapshot rolls the board backwards and leaves it there.
-- **Invalidation has exactly one site**: `broadcastBoardUpdate` drops `c:v3:board:<id>` before the `getIo()` guard, which covers every board/column/card/invitation mutation. Add a mutation that does not broadcast and it will serve stale reads until the TTL. `PUT /v1/users/update` is the known one - `displayName`/`avatar` are embedded through the `owners`/`members` lookups, so a profile edit shows up a TTL late. `DELETE /v1/boards/:id` is the other: it does not broadcast, so `boardService.deleteItem` drops both board entries itself.
-- **The snapshot carries no comments.** The cards `$lookup` replaces `comments` with `commentCount`, because the snapshot is cached, returned on every board load and broadcast to every viewer after every write, while the board view only needs the count. The card modal loads them from `GET /cards/:id/comments` (`useCardComments`) and reloads whenever the card's `updatedAt`/`columnId` changes, so every card mutation must bump `updatedAt` - comment, member and cover writes included - or other viewers keep a stale list. The owners/members joins project `userModel.PUBLIC_USER_PROJECTION`, a whitelist; never go back to excluding fields, or every new user field (`starredBoardIds` leaked that way) reaches every board member.
-- Cache only the value _after_ `groupCardsIntoColumns`. That helper compares BSON `ObjectId`s (`card.columnId.equals(...)`), which JSON round-tripping destroys; the grouped result only carries ids, so it survives.
-- `cachedRaw` lets a caller hand `getOrLoad` a cache entry it has already read, so `decide()` skips its own `GET`. It exists for the bloom-guarded path described below; `undefined` means "not read, fetch it yourself" and `null` means "already read, it was a miss" - collapsing those two into one value reintroduces the round trip it was added to remove.
-- Cache keys are `c:v1:<domain>:<id>` and locks `sf:c:v1:<domain>:<id>`. The `v1` segment is a payload-shape version - bump it when the snapshot shape changes so a new deploy cannot read old entries. TTLs are mandatory here, unlike the `bv:` viewer keys where they are forbidden.
-
-Watch `cache_requests_total{cache,result}` and `cache_loader_duration_seconds`. The histogram count is the number of loads that actually reached the database, so a burst of N concurrent requests for a cold key should move it by 1.
-
-### Bloom filter (cache penetration)
-
-Negative caching only stops a repeated bad id. A flood of _distinct_ random ObjectIds defeats it entirely - every request is a fresh key, so every request reaches Mongo and leaves a negative entry behind. `src/providers/bloom.provider.ts` is the generic engine (`isPossiblyPresent`, `addItem`, `buildFilter`); `src/config/bloom.ts` holds the three filter descriptors and `ENSURE_BLOOM_FILTERS`, the way `src/config/indexes.ts` holds `INDEX_PLAN`.
-
-| filter | key             | capacity  | guards                                                           |
-| ------ | --------------- | --------- | ---------------------------------------------------------------- |
-| board  | `bf:v1:boards`  | 100_000   | `board.service.getMembership`, `removeMember`                    |
-| column | `bf:v1:columns` | 200_000   | `column.service.assertColumnAccess`, `moveCardToDifferentColumn` |
-| card   | `bf:v1:cards`   | 1_000_000 | `card.service.assertCardAccess`, `moveCardToDifferentColumn`     |
-
-**A probe only helps where it runs before the first Mongo read.** Board reads and `POST /cards|/columns` were covered by the board filter alone because they call `assertBoardAccess` first, but `assertCardAccess`/`assertColumnAccess` must read the card or column to _find_ its `boardId` - by the time the board filter runs, the query has already happened. That is why cards and columns need filters of their own, and why the probe goes above the `findOneById`, never below it. `moveCardToDifferentColumn` checks all three ids before its `Promise.all`; it was the worst endpoint at 3 reads per request.
-
-Every `:id` route param is validated against `OBJECT_ID_RULE` before any of this (`*_ID_PARAMS_SCHEMA` in `packages/shared/src/schemas/`). Do not lean on the filter for that: a malformed id reaching `new ObjectId()` throws a `BSONError` and returns 500, and the filter only masks it while it happens to be loaded.
-
-`BF.*` is a Redis 8 built-in, but **only when the modules are loaded**. The image ships `redisbloom.so` and its `docker-entrypoint.sh` appends a `--loadmodule` flag per module - and `infra/apps/trellify/base/redis/statefulset.yaml` overrides `command:`, which skips that entrypoint entirely. That is why `redis.conf` carries an explicit `loadmodule /usr/local/lib/redis/modules/redisbloom.so`; delete that line and every probe fails open, silently losing the protection while everything still looks healthy.
-
-A false negative here is not a slow read, it is a **permanent 404 on a row that exists**. Four rules keep that impossible:
-
-- **An unusable filter key must read as "might exist," and the guard has to check `TYPE`, not `EXISTS`.** `BF.EXISTS` returns 0 both for an absent key and for a key holding the wrong type - it does not raise on a type mismatch. A plain `EXISTS` guard therefore covers the missing case but lets a wrong-type key through, where that 0 reads as "definitely not present" and 404s every real row. Both scripts compare `redis.call("type", ...)` against `MBbloom--`, that type name being part of the RedisBloom RDB format and so effectively frozen. The probe reports the mismatch as `result="unavailable"` and fails open; any Redis error or timeout does the same under `result="error"`.
-- **`BF.ADD` must never create the filter.** On a missing key it would silently build a default-sized filter holding only that one id, and every _other_ id would then read as absent. `ADD_IF_BUILT_SCRIPT` makes adding to a missing filter a no-op.
-- **The build is atomic, and it repairs a wrong-type key.** `buildFilter` reserves `<key>:building`, fills it, then `RENAME`s over the live key, so no reader ever sees a partially filled filter. One replica wins the `sf:<key>` lock; the rest fail open until the rename lands. Its early exit compares `TYPE` too, so anything that is not a bloom filter falls through to a rebuild and gets overwritten rather than leaving the probe failing open forever.
-- **Never put a TTL on a `bf:` key** - same rule as the `bv:` viewer keys, and for the same reason: an expired key reads back as "absent", which here means a 404 rather than a skipped broadcast.
-
-**The board probe and the membership cache read are one Redis call, not two.** `getMembership` used to probe and then let `getOrLoad` do its own `GET`, which cost two round trips on _every_ board access - and since legitimate traffic only ever holds ids that exist, all of those probes returned `present` and the extra trip bought nothing. Measured on `board-read baseline` (median of 3), the split version cost p95 +12.7% and 7.4% throughput against `BLOOM_FILTER_ENABLED=false`; `MIGHT_EXIST_AND_READ_SCRIPT` runs `BF.EXISTS` and the `GET` in one `EVAL` and hands the raw entry to `getOrLoad` as `cachedRaw`, which puts it back within noise of the filter being off. Keep any future guard-plus-cache pair merged the same way rather than stacking round trips.
-
-That script is the one place here that **touches two keys in a single `EVAL`** (`bf:v1:boards` and `c:v1:board-membership:<id>`), which is only safe because Redis runs as a single instance. Under Redis Cluster those keys hash to different slots, the `EVAL` fails `CROSSSLOT`, and the fail-open `catch` turns that into a **silent** loss of protection - every probe lands on `bloom_filter_checks_total{result="error"}` while the app keeps serving normally. Sharding Redis means splitting the script back into two calls, or hash-tagging the keys into one slot.
-
-The other probe sites are deliberately left as standalone calls: `assertCardAccess`, `assertColumnAccess` and the three ids `moveCardToDifferentColumn` checks all go straight to Mongo afterwards, so there is no cache read to merge with.
-
-`ENSURE_BLOOM_FILTERS` runs **after `server.listen`, unawaited**, so startup time never scales with collection size; until it finishes the probes fail open. `addItem` runs inside `createNew` for all three domains and is awaited before the response, otherwise a client could read its own new row back as a 404.
-
-Ids written **outside** those `createNew` paths - a Mongo restore, a migration, the loadtest seed script - are invisible to the filter and would 404 forever. `buildFilter` therefore compares `BF.CARD` against `countAll()` and rebuilds when the filter holds fewer ids than the collection; `REGISTER_BLOOM_RECOVERY` re-runs it on every Redis reconnect. That comparison is only sound because **every domain here is soft-deleted and `findAllIds`/`countAll` deliberately do not filter `_destroy`** - the filter is append-only, so it must hold every id ever created, and the two numbers stay equal for the life of the collection. Filtering `_destroy` in either helper would make `held` drift above `expected` and blind the check permanently. Restoring a database or bulk-importing still needs a manual **`DEL bf:v1:boards bf:v1:columns bf:v1:cards`** - an absent filter fails open and the next start rebuilds it.
-
-`BLOOM_FILTER_ENABLED=false` is the kill switch and restores exactly the previous behaviour. Watch `bloom_filter_checks_total{filter,result}` - `absent` is work avoided, a rising `error` means Redis is unhealthy and every probe is reading through - and `bloom_filter_items`, which is 0 whenever no filter is loaded.
-
-### The shared Redis client
-
-`getRedisClient()` (`src/providers/redis.provider.ts`) is one lazily built ioredis singleton shared by the rate limiter, the viewer registry and the cache. BullMQ does not use it - `queues/redis.client.ts` hands BullMQ a plain options object and it builds its own connections - and the worker process never instantiates it at all.
-
-- **Never add an option to that client without overriding it in `setupSocketAdapter`.** `duplicate()` copies the parent options wholesale, so the Socket.io adapter's pub/sub pair inherits whatever you set. The adapter issues `SUBSCRIBE`/`PSUBSCRIBE` fire-and-forget, and ioredis re-issues them on every reconnect with no error handling - so a `commandTimeout` firing during a network flap leaves the sub client permanently unsubscribed and cross-node broadcasts dead, with nothing logged anywhere. `ADAPTER_CLIENT_OPTIONS` in `src/sockets/socket.server.ts` opts the pair out; extend it whenever you extend the client.
-- Register event listeners **inside** the `if (!redisClient)` guard. `getRedisClient()` is called from hot paths, and re-attaching on every call blows past Node's `maxListeners`.
-- `quit()` rejects when the connection is already gone. Both `closeRedisClient` and `closeSocketAdapter` catch that and fall back to `disconnect()` - without it the exit hook never reaches `CLOSE_DB()` and the pod hangs until SIGKILL.
-- `checkRateLimit` (`src/utils/rate-limiter.ts`) is **fail-open**: a Redis outage logs a warning and lets the request through rather than blocking every password reset. It runs INCR and EXPIRE in one Lua call, because a crash between two separate commands would leave a counter with no TTL and lock that caller out for good. The 429 is thrown outside the try block so the catch cannot swallow it. Every outcome lands on `rate_limit_decisions_total{bucket,result}`, so a wave of 429s and a silent fail-open during a Redis outage are both visible - watch `result="unavailable"`, which means the limit is not being enforced at all.
-- `rateLimitMiddleware` (`src/middlewares/rate-limit.middleware.ts`) keys on `actorId(request)`, so it **must be mounted after `authMiddleware.isAuthorized`**. Every write route shares the `write` bucket (`WRITE_RATE_LIMIT_PER_MINUTE`, 300) which is sized for continuous drag-and-drop - each drop is one `PUT /boards/supports/moving_card`; `POST /invitations/board` additionally carries a tighter `invite` bucket (`INVITE_RATE_LIMIT_PER_MINUTE`, 20) because it writes rows into somebody else's invitation list. The loadtest overlay (`infra/apps/trellify/overlays/loadtest`) raises `WRITE_RATE_LIMIT_PER_MINUTE` to an effectively unlimited value: the limiter keys on the user id and the stack seeds only 50 users, so the production ceiling turns every write profile into a wall of 429s. Raise it there, never switch the middleware off, or the capacity numbers stop including its Redis `INCR`. `userService.login` calls `checkRateLimit` directly, keyed on the submitted email (`LOGIN_RATE_LIMIT_PER_MINUTE`, 10) because no user is authenticated yet; the loadtest overlay raises it for the same reason.
-
-### Background jobs (BullMQ + Redis)
-
-`src/worker.ts` is a **separate process** from the API server. Queues live in `src/queues/<domain>/` with a consistent four-file shape: `*.queue.ts` (producer), `*.worker.ts` (consumer), `*.processor.ts` (job logic), `*.interface.ts` (payload types). Queue names go in `src/queues/queue.constants.ts` and are namespaced by `QUEUE_PREFIX`. Redis is also used directly for rate limiting (`src/utils/rate-limiter.ts`).
-
-The `email` queue (`src/queues/email/`) carries two job kinds, discriminated by `data.kind`: `send-email` (enqueued with `enqueueEmail`, used for board invitations) and `due-reminder` (`scheduleDueReminder`, enqueued whenever a card's `dueDate` is set). A reminder is delayed until 24h before the due date and its `jobId` is `due-<cardId>-<dueTs>`, so re-saving the same date does not queue it twice. Changing or clearing the date never removes the old job - the processor re-reads the card and skips anything that no longer matches (deleted, archived, completed, or a different `dueDate`). Both enqueue helpers log and swallow Redis errors, so an email can never fail the request that triggered it.
-
-Both entrypoints register `async-exit-hook` shutdown sequences (metrics server/queue/adapter/Redis/Mongo) — extend those when adding a long-lived resource.
-
-### Observability
-
-Both the API server and the worker expose a Prometheus endpoint on a **second HTTP server** at `METRICS_PORT` (9464), separate from the app port — `startMetricsServer()` in `src/providers/metrics.provider.ts`. In production each runs in its own pod, so both keep 9464; locally `pnpm start:dev` runs them on one host, so `start:worker:dev` sets `METRICS_PORT=9465` for the worker. A metrics server that cannot bind logs an error and the process keeps serving - the worker's `/healthz` server is deliberately left fatal, because the k8s probes depend on it. All custom metrics are declared in that one file against a single `Registry`; add new ones there and export them rather than creating a registry elsewhere. `src/middlewares/metrics.middleware.ts` records latency for every request, including ones that never match a route.
-
-## Frontend Architecture
-
-**Page → Container Component → Presentational Component → UI Primitive**
-
-- **Pages** (`src/pages/`) — route components; connect to Redux, orchestrate data fetching
-- **Components** (`src/components/`) — reusable UI built on MUI 7; style via the `sx` prop
-- **Redux** (`src/redux/`) — Redux Toolkit slices: `activeBoard`, `user`, `activeCard`, `notifications`; only `user` is persisted to localStorage via redux-persist
-- **APIs** (`src/apis/index.ts`) — Axios functions over the shared client in `src/utils/http.ts`
-- **Real-time** — Socket.io client in `src/socketClient.ts`; board subscription lives in `src/hooks/useBoardSocket.ts`
-
-Auth token refresh convention: the API returns **410 Gone** (not 401) for an expired access token. `http.ts` intercepts 410, refreshes once through a shared `refreshTokenPromise`, and replays the original request; a 401 means logout. Keep those two status codes distinct.
-
-The board filter (`cardFilter` in `activeBoardSlice`, `src/utils/cardFilter.ts`) only **hides** cards at render time with `display: none` and disables dragging while it is active. Never filter `column.cards` itself: `moveCardInTheSameColumn` and `moveCardBetweenDifferentColumns` send `cardOrderIds` built from that array, so a filtered list would drop the hidden cards from the saved order.
-
-Drag-and-drop uses `@dnd-kit`; Markdown editing uses `@uiw/react-md-editor`; bot protection uses Cloudflare Turnstile (client widget + `src/middlewares/turnstile.middleware.ts` on the server).
-
-`VITE_API_ENDPOINT` is `https://trellify-api.duonggiabao.com` in production builds, set by the `deploy-client` job; nothing else in the bundle may hardcode a backend URL. The client (`trellify.`) and API (`trellify-api.`) are cross-origin but **same-site**, which is why `SameSite=lax` cookies still flow; a client on `*.workers.dev` would be cross-site and could not log in. Keep the API a first-level subdomain, because Universal SSL does not cover `api.trellify.duonggiabao.com`. Every API request needs a preflight (`x-socket-id`), and `OPTIONS` counts towards the Ingress's 20 rps per IP, so `corsOptions.maxAge` must stay.
-
-The UI must keep working with no cluster running. `http.ts` turns a missing response or a 502/503/504/530 into one deduplicated toast and never logs out on it, including when the token refresh is what failed; pages that load data show a Retry instead of a skeleton that never ends.
-
-### Error monitoring (Sentry)
-
-`Sentry.init` in `apps/client/src/main.tsx` is enabled only in production builds, so dev and E2E never send events. The DSN lives in `@workspace/shared/constants/sentry` because both apps need it. The browser never talks to `sentry.io`: `tunnel` posts every envelope to `POST /diagnostics` on the client's own origin, which the Cloudflare Worker in `apps/client/worker/index.ts` handles (`run_worker_first: ["/diagnostics"]` in `wrangler.jsonc`; every other path is served straight from static assets and never runs the script). It forwards the raw bytes upstream and relays `X-Sentry-Rate-Limits`/`Retry-After` so the SDK still backs off. The tunnel lives on the Worker, not the API, so Sentry keeps receiving events while the cluster is off. `dataCollection.userInfo` makes Sentry infer the user's IP from whoever connects to it, which behind the tunnel is the Worker, so the forward sets `X-Forwarded-For` from `CF-Connecting-IP`. Drop that header and every event reports a Cloudflare egress IP. The Worker module may export only its `default` handler and types: workerd treats every other named export as an entrypoint and refuses a plain value at startup, which unit tests and `tsc` do not catch. The legacy `POST /api/v1/diagnostics` route on the server (`src/providers/sentry.provider.ts`) still exists for bundles cached before the switch. The tunnel exists because ad blockers and antivirus web filters (Kaspersky's is one) block `*.sentry.io` outright, which loses those users' errors silently. The tunnel refuses any envelope whose header DSN is not this project's, so it cannot be used as an open relay to other Sentry projects. Keep the forward byte-exact — replay segments are compressed binary, so decoding the body as text corrupts them. Don't add Sentry's ingest host back to the CSP `connect-src`; nothing needs it. `skipBrowserExtensionCheck` is on because an extension that injects `chrome.runtime.id` into the page otherwise makes the SDK disable itself.
-
-Source maps are uploaded by `@sentry/vite-plugin` only when `SENTRY_AUTH_TOKEN` is set. The `deploy-client` job in `build-k8s-images.yml` passes it as an environment variable plus `SENTRY_RELEASE` set to the deploy's `sha-<short>` tag. The build then emits `hidden` maps, uploads them and deletes them from `dist`, so a `.map` is never uploaded to Cloudflare. Without the token (`ci.yml`, local builds) the plugin is disabled and no maps are generated at all.
-
-### CSP and inline scripts
-
-`apps/client/public/_headers` holds the security headers and pins a `script-src` allowlist of sha256 hashes for the inline `<script>` blocks in `apps/client/index.html`. Static hosting has no per-request nonce. Rules that match the same path have their values joined with a comma, so `Cache-Control` must never go in the `/*` rule. Editing any inline script without updating those hashes ships a CSP that blocks the script and breaks the page — `scripts/check-csp-hashes.sh` (pre-commit and CI) fails with the exact hashes to paste in.
-
-## Testing
-
-Vitest everywhere except E2E. Specs are `*.spec.ts(x)`; both `tsconfig.build.json` files exclude `**/*spec.ts` and `vitest.config.ts`, so nothing test-related reaches `dist/`.
-
-- **Unit tests sit next to the file they cover** inside `src/` (`board.broadcast.ts` ↔ `board.broadcast.spec.ts`). Do not mirror `src/` into a separate tree.
-- **Server integration tests live in `apps/server/test/integration/`**, grouped by feature or endpoint (`api/`, `providers/`, `utils/`), and import helpers through the `test/*` alias. `setup/global-setup.ts` starts the containers once and hands their URLs to workers through `project.provide`; `setup/environment.ts` writes them into `process.env` **before** anything imports `src/config/environment`; `setup/lifecycle.ts` mocks Brevo, Cloudinary and Turnstile, empties every collection plus `FLUSHALL` before each test, and closes the BullMQ queue, Redis and Mongo after each file. Files run serially (`fileParallelism: false`) because they share one Mongo and one Redis.
-- **Use real Redis, never a mock, for the cache/bloom/rate-limit paths.** They depend on Lua `EVAL`, `TYPE` and `BF.*`, which no in-memory fake implements faithfully. `global-setup.ts` fails fast if the image comes up without RedisBloom.
-- **`NODE_ENV=test` makes `src/config/environment.ts` skip `.env` entirely.** `dotenv` never overwrites a variable that is already set, so loading `.env` under test would fill every variable the test did not set with real values (Atlas URI, Brevo key, Cloudinary). Each Vitest config and `e2e/e2e.env` supplies the full variable set itself.
-- `src/app.ts` exports `createApp()`, the Express app with no `listen`, sockets or metrics server; supertest drives it directly. `src/index.ts` wraps it for production.
-- **Client**: `src/test/setup.ts` registers jest-dom and an MSW server that fails on any unhandled request; `src/test/render.tsx` renders with the real slice reducers, the app theme and a `MemoryRouter`. Mock network at the MSW layer, not by stubbing axios, so the interceptors in `http.ts` stay under test.
-- **E2E (`e2e/`)** is its own workspace. Playwright starts `webServer` before `globalSetup`, so it cannot use Testcontainers and uses `e2e/docker-compose.yml` instead. It runs on ports 3100/5174/9474 so it can never reuse a running dev server. The `setup` project seeds an active user straight into Mongo, logs in through the real form with Cloudflare's always-pass Turnstile test keys (which needs network access to Cloudflare), and saves `storageState` for the other projects. E2E files are `*.e2e.ts`, not `*.spec.ts`, which keeps them out of the Vitest lint rules.
-- knip: production files are the `!`-suffixed `project` globs in `knip.json`; test-only folders (`apps/server/test`, `apps/client/src/test`, `e2e`) are deliberately left unsuffixed so `knip --production` ignores them.
-
-## Deployment
-
-The backend's production is a single-node k3s cluster; every manifest lives in `infra/` and **ArgoCD reconciles the cluster to `main`**. Nothing is applied by hand — changing production means committing to `infra/`, and a `kubectl` change is reverted by `selfHeal` within seconds. Rollback is `git revert` of the bump commit.
-
-`.github/workflows/build-k8s-images.yml` runs on `workflow_run` of `CI`, only when CI **passed** on a push to `main` (a failed run sends a Telegram notice instead and deploys nothing). It checks out `workflow_run.head_sha`, never `github.sha`, which in a `workflow_run` event is whatever `main` points to by then. It skips the build when nothing outside `infra/**` and `*.md` changed since the commit the overlay currently pins, which replaces the `paths-ignore` that `workflow_run` cannot use. Otherwise it builds the image to `ghcr.io/baoduong254/trellify-server:sha-<short>` and `deploy-client` runs `wrangler deploy` from `apps/client` (`wrangler.jsonc`, secrets `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`), then a second job runs `kustomize edit set image` in `infra/apps/trellify/overlays/prod` and pushes a `chore(deploy): ... [skip ci]` commit. The `[skip ci]` marker stops CI from running on that commit, and so stops it from triggering another build — don't remove it. `latest` is published but never deployed; the overlay pins the sha tag plus the image digest (`kustomize edit set image ...:<tag>@<digest>`), and the runtime pulls by digest, so an overwritten tag on GHCR cannot change what runs. The bump fails rather than pin a tag alone. A nightly `schedule` run Trivy-scans the pinned server image and, only on a fixable HIGH/CRITICAL CVE in an OS (Alpine) package, rebuilds the **deployed** commit (never `main` HEAD, which may not have passed CI) as `sha-<short>-<YYYYMMDDHHMM>`; `workflow_dispatch` gets the same suffix. The gate passes `--pkg-types os` on purpose: a rebuild cannot fix a JS or Node CVE (that needs a lockfile or base-image bump through Renovate), so counting them would rebuild and roll the pods every night for nothing. Never give a rebuild the plain `sha-<short>` tag: it would overwrite an immutable tag and the bump would be a no-op, so nothing rolls. `APK_UPGRADE_DATE` (UTC date) is a build arg on the server Dockerfile so the `apk upgrade` layer cannot be restored from the GHA cache forever. The scheduled bump skips itself if the overlay moved during the rebuild, so it never rolls back a newer deploy. Each pushed digest also gets BuildKit SBOM/provenance, a Trivy scan and a cosign keyless signature; a fixable CRITICAL CVE fails `build-and-push`, so `bump-manifest` never runs and nothing deploys. Changes under `infra/**` are checked by `.github/workflows/infra.yml` (`kustomize build` + `kubeconform -strict`, CRD schemas from the datreeio catalog, then a blocking `trivy config` scan at HIGH/CRITICAL). An accepted finding goes in `infra/.trivyignore.yaml` with a `statement` explaining why; every workload runs with `readOnlyRootFilesystem: true`, so a container that needs to write gets an `emptyDir` (usually `/tmp`). CI builds every folder with a `kustomization.yaml`, so a new manifest folder needs one or it goes unvalidated.
-
-`infra/README.md` is the reference for the cluster: platform vs. application ArgoCD projects, SealedSecrets (and the master key that must be backed up outside the repo), the three Ingresses, the NetworkPolicy, and the MongoDB → R2 backup CronJob. Read it before touching anything under `infra/`. `infra/` has three parts. `platform/` holds shared cluster add-ons, `apps/trellify/` holds the workload, and `clusters/<homelab|aws>/` holds only what differs per cluster. The ArgoCD entry point for each cluster is `clusters/<name>/argocd/kustomization.yaml`, so a new Application has to be listed there. Anything under `platform/` or `apps/trellify/overlays/prod` reaches **both** clusters. The README section "AWS Failover" covers the cold-standby EKS cluster: Terraform lives in `clusters/aws/terraform/`, the AWS cluster uses a separate Cloudflare tunnel, and `active_origin` in the Cloudflare stack is the only switch for API, ArgoCD and Grafana traffic; the client is served by Cloudflare whichever cluster is live, and a `git revert` of a bump does not roll it back (`wrangler rollback` does). `infra/README.md` stays descriptive: architecture and configuration only, no step-by-step procedures.
-
-The only compose stack is `e2e/docker-compose.yml` for Playwright; load tests run on the kind cluster.
-
 ## Critical Rules
 
 **Review** — after changing code, spawn the `ocr-reviewer` subagent (`.claude/agents/ocr-reviewer.md`), which runs OCR delegate review with a clean context and reports only; verify its High/Medium findings and fix the real ones. The `Stop` hook in `.claude/settings.json` (`.claude/hooks/ocr-review-gate.sh`) blocks finishing a turn while the non-Markdown diff differs from the one last reviewed. The diff is hashed when the reviewer starts (`.git/ocr-reviewed.pending.<agent_id>`) and promoted to `.git/ocr-reviewed` only if the reviewer's final message starts with its `## OCR review -` header, so edits made during the review and failed runs both stay unreviewed.
@@ -307,7 +70,7 @@ The only compose stack is `e2e/docker-compose.yml` for Playwright; load tests ru
 
 **Type safety** — no `any` (use `unknown`); explicit return types everywhere; no `as` assertions unless unavoidable.
 
-**Validation** — every Zod schema lives in `packages/shared/src/schemas/`; validate at both the route level (middleware) and the model level (before DB writes). Route middleware is built with `validateRequest({ params, body })` (`src/utils/validate-request.ts`), never hand-rolled `try/parseAsync/catch` blocks — it checks params before body, maps any failure to 422, and **replaces `request.body` with the parsed value**, so a field outside the schema never reaches a controller. That write-back is the only thing standing between a request and `$set`: the models' `INVALID_UPDATE_FIELDS` denylists are narrow, and before the write-back existed any board member could `$set` `ownerIds`/`memberIds`/`_destroy`, and any user could `$set` their own `role`. Two rules follow. First, an `UPDATE_*_SCHEMA` is an explicit allowlist of what the client may change — never `COLLECTION_SCHEMA.partial()`. Second, it must not carry defaults: Zod 4 still applies `.default()` inside `.partial()`, so a title-only update would reset `columnOrderIds`/`cardOrderIds`/`comments` to `[]`. Reuse a collection field with `.shape.<field>.unwrap()`. Models take the separate `*PatchType` (`Partial<collection>`) for server-side writes. `test/integration/api/mass-assignment.spec.ts` pins both rules. A route that takes an id in `request.params` validates it too, not just the body — an unvalidated id reaches `new ObjectId()` and turns a 404 into a 500.
+**Validation** — every Zod schema lives in `packages/shared/src/schemas/`; validate at both the route level (middleware) and the model level (before DB writes). An `UPDATE_*_SCHEMA` is an explicit allowlist without defaults, never `COLLECTION_SCHEMA.partial()`; route ids are validated too. Details in `apps/server/CLAUDE.md`.
 
 **Dead code** — knip runs on pre-commit and in CI. An exported symbol nobody imports, or a dependency nobody uses, will fail the build; delete it or wire it up rather than leaving it dangling.
 
@@ -315,17 +78,11 @@ The only compose stack is `e2e/docker-compose.yml` for Playwright; load tests ru
 
 ## Environment Variables
 
-Copy the `.env.example` in both `apps/server/` and `apps/client/` to `.env`. Both apps validate env with Zod at startup (`apps/server/src/config/environment.ts`, `apps/client/src/config/env.ts`) and **throw on the first invalid or missing variable** — add any new variable to the schema and to `.env.example` together.
-
-Server: `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGODB_URI`, `DATABASE_NAME`, `REDIS_URL`, `QUEUE_PREFIX`, `WORKER_CONCURRENCY`, `WORKER_HEALTH_PORT`, `METRICS_PORT`, `ACCESS_TOKEN_*` / `REFRESH_TOKEN_*` / `COOKIE_MAX_AGE`, `BREVO_API_KEY`, `ADMIN_EMAIL_*`, `CLOUDINARY_*`, `TURNSTILE_SECRET_KEY`, `CACHE_ENABLED`, `CACHE_COMMAND_TIMEOUT_MS`, `REDIS_COMMAND_TIMEOUT_MS`, `BOARD_CACHE_TTL_SECONDS`, `BOARD_CACHE_NEGATIVE_TTL_SECONDS`, `BOARD_MEMBERSHIP_CACHE_TTL_SECONDS`, `LOGIN_RATE_LIMIT_PER_MINUTE`.
-
-Client: `VITE_API_ENDPOINT` (server origin, e.g. `http://localhost:3000` in dev, `https://trellify-api.duonggiabao.com` in production), `VITE_TURNSTILE_SITE_KEY` (dev test key: `1x00000000000000000000AA`).
-
-In production these come from `infra/apps/trellify/base/config-server.env` (non-sensitive) and SealedSecrets (everything else) — a new server variable needs adding in both places. That file is turned into a hash-suffixed ConfigMap by `configMapGenerator`; never convert it back to a plain ConfigMap manifest, or a config-only change stops rolling pods and silently never takes effect.
+Copy the `.env.example` in both `apps/server/` and `apps/client/` to `.env`. Both apps validate env with Zod at startup (`apps/server/src/config/environment.ts`, `apps/client/src/config/env.ts`) and **throw on the first invalid or missing variable** — add any new variable to the schema and to `.env.example` together. A new server variable also needs adding to `infra/apps/trellify/base/config-server.env` or SealedSecrets.
 
 ## Git Conventions
 
-Conventional Commits (`feat(scope): description`), enforced by commitlint on `commit-msg`. Hooks are managed by **lefthook** (`lefthook.yaml`) — pre-commit runs gitleaks on the staged diff, lockfile check, CSP hash check, knip, prettier, and `lint:fix`. The gitleaks hook needs the binary on `PATH` (`winget install Gitleaks.Gitleaks`); `.gitleaks.toml` allowlists only SealedSecret ciphertext and the public SonarCloud project key - a real hit means rotate the secret, never allowlist it. After push, GitHub secret scanning (push protection + alerts) is the server-side layer; there is no gitleaks step in CI. Branch naming: `feature/*`, `bugfix/*`, `hotfix/*` off `main`. Releases are automated by release-please.
+Conventional Commits (`feat(scope): description`), enforced by commitlint on `commit-msg`. Hooks are managed by **lefthook** (`lefthook.yaml`) — pre-commit runs gitleaks on the staged diff, lockfile check, CSP hash check, knip, prettier, and `lint:fix`. The gitleaks hook needs the binary on `PATH` (`winget install Gitleaks.Gitleaks`); `.gitleaks.toml` allowlists only SealedSecret ciphertext and the public SonarCloud project key - a real hit means rotate the secret, never allowlist it. Branch naming: `feature/*`, `bugfix/*`, `hotfix/*` off `main`. Releases are automated by release-please.
 
 ## Further Reading
 

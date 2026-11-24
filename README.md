@@ -355,7 +355,7 @@ pnpm e2e:down              # stop and delete the E2E containers and their data
 - **Server integration tests** live in [`apps/server/test/integration/`](apps/server/test/integration), grouped by feature (`api/`, `providers/`, `utils/`) rather than mirroring `src/`, because each one exercises several layers at once.
 - **End-to-end tests** live in [`e2e/tests/`](e2e/tests) as `*.e2e.ts`. See [`e2e/README.md`](e2e/README.md) for how to run, debug and write them.
 
-The conventions behind these suites - why the cache and bloom filter are tested against real Redis, how the integration containers are wired, what the client test helpers provide - are documented in the Testing section of [`CLAUDE.md`](CLAUDE.md).
+The conventions behind these suites - why the cache and bloom filter are tested against real Redis, how the integration containers are wired, what the client test helpers provide - are documented in [`apps/server/CLAUDE.md`](apps/server/CLAUDE.md) and [`apps/client/CLAUDE.md`](apps/client/CLAUDE.md).
 
 ### Test isolation
 
